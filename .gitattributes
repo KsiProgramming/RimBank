@@ -1,0 +1,26 @@
+# Normalise line endings: LF in the repository, native on checkout
+* text=auto
+
+# Source & config
+*.cs      text diff=csharp
+*.csproj  text
+*.slnx    text
+*.props   text
+*.targets text
+*.json    text
+*.yaml    text
+*.yml     text
+*.md      text
+*.http    text
+
+# Shell scripts must stay LF, Windows scripts CRLF
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.cmd  text eol=crlf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
+*.zip binary
