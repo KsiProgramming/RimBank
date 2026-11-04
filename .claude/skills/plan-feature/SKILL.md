@@ -14,7 +14,7 @@ Read these in full before doing anything else:
 - `specs/roadmap.md`: the ordered stages and phases (for example **1.2 Aggregate**), plus the shared **Definition of done** at the top that applies to every phase.
 - `specs/mission.md`: mission, BIAN source of truth, guiding principles, quality bar and non-goals. Use them to keep scope honest: small verifiable steps, business language only, money correctness, Problem Details everywhere, HTTP and MCP parity, and money-moving MCP tools off by default.
 - `specs/tech-stack.md`: the chosen libraries, naming and namespace rules, dependency rules, and the API/MCP/error contracts. The plan must use these choices, not alternatives. Any deviation needs an ADR, and that ADR becomes part of the plan.
-- For a phase that touches a BIAN service domain, also read the relevant spec in `release14.0.0/apis-iso20022_ext-ddd/` (the OpenAPI under `oas3/yamls/` and the AsyncAPI under `asyncapi-3.x/yamls/`). It shows the Control Record, Behavior Qualifiers, operations and events in scope.
+- For a phase that touches a BIAN service domain, also read the relevant spec in `doc-0/release14.0.0/apis-iso20022_ext-ddd/` (the OpenAPI under `oas3/yamls/` and the AsyncAPI under `asyncapi-3.x/yamls/`). It shows the Control Record, Behavior Qualifiers, operations and events in scope.
 
 ## 2. Find the next feature
 

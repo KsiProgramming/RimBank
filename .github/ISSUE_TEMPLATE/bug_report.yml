@@ -1,0 +1,51 @@
+name: Bug report
+description: Something does not behave as the BIAN spec, the constitution or the docs say it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report security vulnerabilities here; see SECURITY.md. Do not paste real personal or customer data.
+  - type: input
+    id: service-domain
+    attributes:
+      label: Service domain
+      description: The affected BIAN service domain or component (e.g. Party Reference Data Directory, SharedKernel, Host).
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Channel
+      options:
+        - HTTP API
+        - MCP tool
+        - Integration event
+        - Build / tooling
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the request or tool call and the response (Problem Details body if any).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Reference the BIAN spec, a spec in specs/ or an ADR if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version

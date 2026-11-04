@@ -17,13 +17,13 @@ We want to show that a bank's core can be built openly, so that its code reads l
 
 ## Source of truth
 
-1. **BIAN v14 ISO 20022 extended DDD specifications** (`release14.0.0/apis-iso20022_ext-ddd/`) are the authoritative input for:
+1. **BIAN v14 ISO 20022 extended DDD specifications** (`doc-0/release14.0.0/apis-iso20022_ext-ddd/`) are the authoritative input for:
    - bounded contexts (one per service domain),
    - aggregates (Control Record = aggregate root; each Behavior Qualifier is modelled as an entity inside it or as its own aggregate, decided per domain in an ADR),
    - operations (Initiate, Update, Control, Exchange, Execute, Request, Retrieve, Notify, …),
    - integration events (AsyncAPI 3 channels such as `PartyReferenceDataDirectoryEntry/Created`),
    - ISO 20022-aligned data types.
-2. The **semantic APIs** (`release14.0.0/semantic-apis/`) are secondary reference material only.
+2. The **semantic APIs** (`doc-0/release14.0.0/semantic-apis/`) are secondary reference material only.
 3. When BIAN is ambiguous or underspecified, the decision is recorded in an ADR, and RimBank's model stays faithful to the *intent* of the service domain.
 
 ## Scope

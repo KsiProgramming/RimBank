@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Central Package Management: every package version lives here, never in a .csproj.
+    Adding, replacing or removing a technology requires an ADR (see specs/tech-stack.md).
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Packages are added by the phase that first needs them. -->
+  </ItemGroup>
+</Project>
