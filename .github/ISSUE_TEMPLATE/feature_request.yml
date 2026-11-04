@@ -1,0 +1,35 @@
+name: Feature or roadmap proposal
+description: Propose a roadmap phase, a new BIAN service domain or an improvement.
+labels: ["enhancement"]
+body:
+  - type: input
+    id: roadmap-phase
+    attributes:
+      label: Roadmap phase
+      description: The phase number from specs/roadmap.md (e.g. 1.8), or "new" if it is not on the roadmap.
+    validations:
+      required: true
+  - type: input
+    id: service-domain
+    attributes:
+      label: BIAN service domain
+      description: The BIAN v14 service domain and operation or Behavior Qualifier involved, if any.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Business need
+      description: What banking capability is missing, in business language?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How it could work. Note any decision that would need an ADR.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Constitution check
+      options:
+        - label: This fits the mission and is not a non-goal (specs/mission.md)
+          required: true

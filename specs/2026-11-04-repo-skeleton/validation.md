@@ -8,9 +8,9 @@ Applying the Definition of done to this phase: there is no C# code, so unit, int
 
 ## Automated checks (run locally)
 - [ ] `dotnet --version` from the repository root prints `10.0.3xx` (matches `global.json`)
-- [ ] `dotnet build RimBank.slnx` succeeds with 0 warnings and 0 errors
+- [ ] `dotnet build RimBank.slnx` exits 0 with 0 errors. *Finding during implementation:* with no projects, NuGet restore prints one warning ("Nothing to restore"). This is expected until 0.3 adds the first project. From then on the build must have 0 warnings.
 - [ ] `dotnet format RimBank.slnx --verify-no-changes` exits 0
-- [ ] If the empty solution is rejected by either command: `dotnet sln RimBank.slnx list` succeeds instead, and the result is noted in the PR description (the full build gate then starts with 0.3)
+- [ ] `dotnet sln RimBank.slnx list` succeeds (reports no projects)
 - [ ] `git ls-files --eol` shows `i/lf` for all new text files
 
 ## Manual / demo checks (reviewer checklist)

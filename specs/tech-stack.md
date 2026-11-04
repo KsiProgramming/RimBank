@@ -67,7 +67,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 ├─ Directory.Packages.props
 ├─ specs/                         # constitution (this folder)
 ├─ docs/adr/                      # architecture decision records
-├─ release14.0.0/                 # BIAN v14 specs (read-only input)
+├─ doc-0/release14.0.0/           # BIAN v14 specs (read-only input, ADR 0002)
 ├─ src/
 │  ├─ RimBank.SharedKernel/       # Money, Currency, Result, typed ids, decider abstractions (no infra)
 │  ├─ RimBank.Host/               # composition root: wires all contexts, ProblemDetails, auth, OTel
