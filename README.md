@@ -14,10 +14,11 @@ The code is meant to read like the business it serves. Every BIAN service domain
 | Service domain | Bounded context (one core project) | `RimBank.Party.PartyReferenceDataDirectory` |
 | Control Record | Aggregate root (event-sourced) | `PartyReferenceDataDirectoryEntry` |
 | Behavior Qualifier | Entity inside the aggregate (or its own aggregate, by ADR) | `Demographics`, `Reference` |
-| Operation (Initiate, Update, Retrieve, …) | Command or query, with a pure decision | `RegisterParty` |
+| Operation (Register, Initiate, Update, Control, Execute, …) | Command with a pure decision, appending events | `RegisterParty` |
+| Retrieve operation | Query over a read model (projection of events) | `RetrievePartyReferenceDataDirectoryEntry` |
 | AsyncAPI channel | Integration event in `.PublishedLanguage` | `PartyReferenceDataDirectoryEntryCreated` |
 
-Namespaces follow `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]` (adapters: `.Api`, `.Mcp`, `.Postgresql`, …).
+Namespaces follow `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]` (adapters: `.Api`, `.Mcp`, `.Postgresql`, `.Subscriptions`, …). Contexts never share read models; they integrate only through published integration events (see [ADR 0003](docs/adr/0003-separate-commands-and-queries.md) and [ADR 0004](docs/adr/0004-loosely-coupled-contexts.md)).
 
 ## Repository layout
 
