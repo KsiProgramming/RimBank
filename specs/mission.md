@@ -20,7 +20,7 @@ We want to show that a bank's core can be built openly, so that its code reads l
 1. **BIAN v14 ISO 20022 extended DDD specifications** (`doc-0/release14.0.0/apis-iso20022_ext-ddd/`) are the authoritative input for:
    - bounded contexts (one per service domain),
    - aggregates (Control Record = aggregate root; each Behavior Qualifier is modelled as an entity inside it or as its own aggregate, decided per domain in an ADR),
-   - operations (Initiate, Update, Control, Exchange, Execute, Request, Retrieve, Notify, …),
+   - operations (Initiate, Update, Control, Exchange, Execute, Request, Retrieve, Notify, …). `Retrieve` operations are **queries**; all other operations are **commands** (see principle 5),
    - integration events (AsyncAPI 3 channels such as `PartyReferenceDataDirectoryEntry/Created`),
    - ISO 20022-aligned data types.
 2. The **semantic APIs** (`doc-0/release14.0.0/semantic-apis/`) are secondary reference material only.
@@ -43,11 +43,16 @@ Party → Product → Account → Ledger positions → Payments → General ledg
    - Expected business failures are values (`Result`), not exceptions.
    - Composition over inheritance; types are sealed by default.
 4. **Event-sourced truth.** Aggregate state is the result of business events. The audit trail is a built-in part of the model, not an afterthought.
-5. **Usable by AI agents as well as by applications.** Every service domain's capabilities are available both as BIAN HTTP APIs and as **MCP (Model Context Protocol) tools**. Both are thin adapters over the same core, so an AI agent gets the same business rules, authorisation, audit trail and errors as any other consumer.
-6. **Autonomous bounded contexts.** Service domains never share tables or reference each other's core. They integrate through published integration events and, where unavoidable, explicit API calls.
-7. **Uniform, standard errors.** Every error is returned as RFC 9457 Problem Details with a stable, documented error code. For HTTP this is an `application/problem+json` response; for MCP it is an error tool result whose content is the same Problem Details JSON.
-8. **Production-grade from the first commit.** Security, correctness of money, idempotency, observability, and test coverage are part of every phase's definition of done. They are not a later hardening step.
-9. **Small, verifiable steps.** Each roadmap phase is small, ships working tested code, and records significant decisions as ADRs.
+5. **Commands and queries are separate (CQRS).** A command changes state through an aggregate's decision and returns only an acknowledgement. A query reads a read model (a projection of business events) and never changes state. Business decisions never depend on an eventually consistent read model when money or an invariant is at stake. We separate logically everywhere, and add separate or asynchronous read models only where a query needs a different shape, cross-stream data or independent scaling.
+6. **Usable by AI agents as well as by applications.** Every service domain's capabilities are available both as BIAN HTTP APIs and as **MCP (Model Context Protocol) tools**. Both are thin adapters over the same core, so an AI agent gets the same business rules, authorisation, audit trail and errors as any other consumer.
+7. **Autonomous, loosely coupled bounded contexts.** Service domains never share tables or read models, and never reference each other's core. They integrate through published integration events and, where unavoidable, explicit API calls. In particular:
+   - **Read models are private.** A context's views are an internal detail. No other context queries, joins or subscribes to them, and they are never part of a contract.
+   - **Consumers own their copy.** When a context needs another context's data, it keeps its own minimal local read model, fed by integration events and translated at its edge by its own subscriptions adapter, so a producer can change its model without breaking consumers.
+   - **No callbacks to read.** Integration events carry the data consumers need, so a consumer does not query the producer to complete them.
+   - **Failure stays local.** One context's slow or broken projection, or its outage, does not stop another context from accepting commands or answering queries.
+8. **Uniform, standard errors.** Every error is returned as RFC 9457 Problem Details with a stable, documented error code. For HTTP this is an `application/problem+json` response; for MCP it is an error tool result whose content is the same Problem Details JSON.
+9. **Production-grade from the first commit.** Security, correctness of money, idempotency, observability, and test coverage are part of every phase's definition of done. They are not a later hardening step.
+10. **Small, verifiable steps.** Each roadmap phase is small, ships working tested code, and records significant decisions as ADRs.
 
 ## Quality bar (non-negotiable for production banking)
 
@@ -56,7 +61,8 @@ Party → Product → Account → Ledger positions → Payments → General ledg
 - **Auditability:** every state change is traceable to an actor, a time, a correlation ID and a business event.
 - **Security:** authenticated by default, authorised per BIAN operation, PII protected at rest and in logs, secrets never in source.
 - **Observability:** OpenTelemetry traces, metrics and structured logs in every bounded context.
-- **Tests:** unit tests for domain decisions, integration tests against a real PostgreSQL instance, architecture tests for dependency rules, and conformance tests against the BIAN specs.
+- **Rebuildable reads:** every read model can be rebuilt from the event streams at any time, without data loss.
+- **Tests:** unit tests for domain decisions and projections, integration tests against a real PostgreSQL instance, architecture tests for dependency rules, and conformance tests against the BIAN specs.
 
 ## Non-goals
 
