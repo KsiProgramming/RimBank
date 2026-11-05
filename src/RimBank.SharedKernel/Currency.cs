@@ -15,7 +15,7 @@ namespace RimBank.SharedKernel;
 /// </para>
 /// <para>
 /// <c>default(Currency)</c> cannot be prevented for a struct. It has no code and is not a currency:
-/// <c>Money</c> refuses it, and <see cref="TryCreate"/> never returns it.
+/// <see cref="Money"/> refuses it, and <see cref="TryCreate"/> never returns it.
 /// </para>
 /// <para>JSON: a plain string such as <c>"EUR"</c>.</para>
 /// </remarks>
