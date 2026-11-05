@@ -63,6 +63,10 @@ Every aggregate identifier is a `readonly record struct` implementing `ITypedId<
 
 Amounts are always `Money` over a `decimal`, never `double` or `float` and never a bare `decimal` with a currency string beside it ([ADR 0009](docs/adr/0009-money-and-currency.md)). Turn untrusted input into money with `Money.TryCreate(amount, currencyCode)`, round explicitly with the mode the business rule names (`Round()` is banker's rounding), and divide only with `Allocate` / `Split` so no minor unit is lost. Property tests over money register `MoneyArbitraries` from `tests/RimBank.SharedKernel.Testing`: `[Properties(Arbitrary = [typeof(MoneyArbitraries)])]`.
 
+### Aggregates and projections
+
+An aggregate state is a `sealed record` implementing `IDecider<TSelf, TCommand, TEvent>`: `Initial` and `Evolve` in `<Aggregate>.cs`, `Decide` in a `partial` in `Decisions.cs`. A view is projected by a `sealed class …Projection` implementing `IProjection<TView, TEvent>` ([ADR 0010](docs/adr/0010-decider-and-projection-contracts.md)). Keep both pure: time and new IDs come in the command, set by the handler. Build decisions with `Decision.Accept<TEvent>(…)` / `Decision.Nothing<TEvent>()` or return an `Error`. Test them with `DeciderSpecification` (Given / When / Then) and `ProjectionSpecification` (Given / Then view), and run `DeciderLaws`, including `ProjectionAgreesWithState` for each view. All three come from `tests/RimBank.SharedKernel.Testing`. An event or view holding a collection needs value equality.
+
 ### What CI runs
 
 Every push to `main` and every pull request runs two workflows (policy: [ADR 0005](docs/adr/0005-ci-and-supply-chain-policy.md)):
