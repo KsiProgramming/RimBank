@@ -45,9 +45,13 @@ jobs:
           - language: csharp
             build-mode: manual
     env:
-      SARIF_DIR: ${{ github.workspace }}/../codeql-sarif
       UPLOAD: ${{ github.event.repository.private && 'never' || 'always' }}
     steps:
+      # SARIF goes to the runner's temp directory, outside the checkout. upload-artifact refuses
+      # paths containing '..', and the runner context is not available in job-level env.
+      - name: Set SARIF directory
+        run: echo "SARIF_DIR=$RUNNER_TEMP/codeql-sarif" >> "$GITHUB_ENV"
+
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
