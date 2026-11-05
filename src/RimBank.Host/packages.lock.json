@@ -106,6 +106,12 @@
           "Polly.Core": "8.4.2"
         }
       },
+      "rimbank.problems": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
       "rimbank.servicedefaults": {
         "type": "Project",
         "dependencies": {
@@ -117,6 +123,9 @@
           "OpenTelemetry.Instrumentation.Http": "[1.20.1, )",
           "OpenTelemetry.Instrumentation.Runtime": "[1.20.1, )"
         }
+      },
+      "rimbank.sharedkernel": {
+        "type": "Project"
       },
       "Microsoft.Extensions.Http.Resilience": {
         "type": "CentralTransitive",

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The single Error → RFC 9457 Problem Details mapping (ADR 0015), shared by every .Api, every .Mcp and RimBank.Host.
+    It references SharedKernel and ASP.NET Core only, and holds no business logic (specs/tech-stack.md §4).
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Problems</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

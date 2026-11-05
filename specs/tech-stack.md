@@ -81,6 +81,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, auth, OTel
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
+│  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  └─ Party/
 │     ├─ RimBank.Party.PartyReferenceDataDirectory/                    # core
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
@@ -93,6 +94,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.AppHost.Tests/          # Aspire resource model and a real startup with Docker (ADR 0014)
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
+   ├─ RimBank.Problems.Tests/         # the Error → Problem Details mapping (ADR 0015)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
@@ -140,9 +142,10 @@ Commands and queries sit next to each other inside the business flow or Behavior
 | Core (`RimBank.X.Y`) | SharedKernel, its own `.PublishedLanguage` | ASP.NET Core, Marten, Wolverine, Npgsql, **any other context's** core, adapters or `.PublishedLanguage` |
 | `.PublishedLanguage` | BCL only | Everything else |
 | `.Subscriptions` | Its own core, SharedKernel, other contexts' `.PublishedLanguage`, Wolverine | Other contexts' cores or adapters, its own `.Api`, `.Mcp`, `.Postgresql` |
-| `.Api` | Its own core, SharedKernel, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
-| `.Mcp` | Its own core, SharedKernel, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
+| `.Api` | Its own core, SharedKernel, `RimBank.Problems`, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
+| `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
 | `.Postgresql` | Its own core, SharedKernel, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
+| `RimBank.Problems` | SharedKernel, ASP.NET Core | Cores, adapters, other composition projects ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)) |
 | `RimBank.Host` | All adapters and cores (composition only) | Business logic |
 
 **Core and Wolverine:** handlers in the core are plain classes with `Handle` methods. They **return** events and messages (Wolverine's cascading convention) instead of taking framework services, so the core has no package reference to Wolverine or Marten. Persistence goes through ports in the core. The `.Postgresql` adapter implements those ports with Marten: the write port over event streams, and the read port over projected documents.
@@ -168,7 +171,7 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
   - `type`: a stable URN, for example `urn:rimbank:problem:party:party-not-found`
   - `title`, `status`, `detail`, `instance`
   - extensions: `errorCode`, `traceId`, and `errors` (field → messages) for validation failures
-- Each core `Error` maps to a Problem Details response in one place per context (`.Api`). Unhandled exceptions become a generic 500 Problem Details response with no internal details exposed.
+- Each core `Error` maps to a Problem Details response in one place for the whole solution, `RimBank.Problems`, which every `.Api` and `.Mcp` uses (`error.ToHttpResult()`); the host emits `shared.not-found` and `shared.unexpected` itself ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)). Unhandled exceptions become a generic 500 Problem Details response with no internal details exposed.
 - BIAN-declared statuses are honoured: 400, 401, 403, 404, 429 and 500, plus 409 for concurrency and idempotency conflicts.
 - Every state-changing endpoint requires an `Idempotency-Key` header.
 

@@ -637,7 +637,14 @@
       "rimbank.host": {
         "type": "Project",
         "dependencies": {
+          "RimBank.Problems": "[0.1.0-alpha, )",
           "RimBank.ServiceDefaults": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.problems": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
         }
       },
       "rimbank.servicedefaults": {
@@ -651,6 +658,9 @@
           "OpenTelemetry.Instrumentation.Http": "[1.20.1, )",
           "OpenTelemetry.Instrumentation.Runtime": "[1.20.1, )"
         }
+      },
+      "rimbank.sharedkernel": {
+        "type": "Project"
       },
       "Microsoft.Extensions.Http.Resilience": {
         "type": "CentralTransitive",

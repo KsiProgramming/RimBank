@@ -1,0 +1,14 @@
+using RimBank.SharedKernel;
+
+namespace RimBank.Problems;
+
+/// <summary>The errors the host reports itself, in the <c>shared</c> context of ADR 0006 (ADR 0015).</summary>
+public static class SharedProblems
+{
+    /// <summary>No endpoint matches the request (404).</summary>
+    public static Error NotFound { get; } = Error.NotFound("shared.not-found", "No resource exists at this address.");
+
+    /// <summary>An exception reached the host (500). The response never says more than this.</summary>
+    public static Error Unexpected { get; } =
+        Error.Unexpected("shared.unexpected", "An unexpected error occurred. Quote the traceId when you report it.");
+}

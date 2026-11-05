@@ -1,5 +1,6 @@
 // Stand-ins for the composition projects (ADR 0014). The rules match dependencies by namespace, so these empty
-// types let a bad context depend on RimBank.Host, RimBank.AppHost or RimBank.ServiceDefaults without referencing them.
+// types let a bad context depend on RimBank.Host, RimBank.AppHost, RimBank.ServiceDefaults or RimBank.Problems without
+// referencing them.
 
 namespace RimBank.Host.Modules
 {
@@ -23,5 +24,13 @@ namespace RimBank.ServiceDefaults
     public static class ServiceDefaultsExtensions
     {
         public static string LiveTag => "live";
+    }
+}
+
+namespace RimBank.Problems
+{
+    public static class SharedProblems
+    {
+        public static string NotFoundCode => "shared.not-found";
     }
 }
