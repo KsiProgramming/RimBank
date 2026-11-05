@@ -27,3 +27,27 @@ namespace RimBank.SampleBanking.ApiImplementsHostModule.Api
         public string ServiceDomain => "ApiImplementsHostModule";
     }
 }
+
+// problems-only-in-adapters-and-host: a core returns an Error; it never builds Problem Details itself.
+namespace RimBank.SampleBanking.CoreUsesProblems
+{
+    public static class CoreUsesProblemsEntry
+    {
+        public static string NotFound() => RimBank.Problems.SharedProblems.NotFoundCode;
+    }
+}
+
+// problems-only-in-adapters-and-host: a .Postgresql adapter never answers a caller, so it has no Problem Details.
+namespace RimBank.SampleBanking.PostgresqlUsesProblems.Postgresql
+{
+    public static class PostgresqlUsesProblemsStore
+    {
+        public static string NotFound() => RimBank.Problems.SharedProblems.NotFoundCode;
+    }
+}
+
+// problems-dependencies: RimBank.Problems references SharedKernel and ASP.NET Core only, never Marten.
+namespace RimBank.Problems.FixtureViolations
+{
+    public sealed record ProblemsUsesMarten(Marten.IDocumentSession Session);
+}

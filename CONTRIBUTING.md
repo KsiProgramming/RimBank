@@ -114,6 +114,8 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `service-defaults-only-in-host` | Only `RimBank.Host` uses `RimBank.ServiceDefaults` | tech-stack §1–§2, ADR 0014 |
 | `nothing-depends-on-apphost` | Nothing uses `RimBank.AppHost` | tech-stack §1, ADR 0014 |
 | `host-is-the-composition-root` | Nothing outside `RimBank.Host` uses it; a context never implements `IServiceDomainModule` itself | tech-stack §2, §4, ADR 0014 |
+| `problems-only-in-adapters-and-host` | Only `.Api`, `.Mcp` and `RimBank.Host` use `RimBank.Problems` | tech-stack §4, ADR 0015 |
+| `problems-dependencies` | `RimBank.Problems` uses SharedKernel, ASP.NET Core and the BCL only | tech-stack §4, ADR 0015 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |
 | `query-handlers-stay-on-read-side` | A query handler never uses an `IWritePort`, an aggregate, an `ICommand` or a command handler | tech-stack §4, ADR 0012 |
 | `projections-implement-contract` | A `…Projection` is a sealed class implementing `IProjection`, and every `IProjection` is named `…Projection` | ADR 0010 |

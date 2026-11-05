@@ -1,12 +1,14 @@
 namespace RimBank.Architecture.Tests;
 
-// The composition projects (tech-stack §2–§4, ADR 0014): RimBank.Host composes, RimBank.AppHost orchestrates, and
-// RimBank.ServiceDefaults is applied by the host. Contexts and SharedKernel never reach up to any of them.
+// The composition projects (tech-stack §2–§4, ADR 0014, ADR 0015): RimBank.Host composes, RimBank.AppHost orchestrates,
+// RimBank.ServiceDefaults is applied by the host, and RimBank.Problems maps errors for the adapters that answer callers.
+// Contexts and SharedKernel never reach up to any of them.
 public static partial class ArchitectureRules
 {
     private const string HostRoot = "RimBank.Host";
     private const string AppHostRoot = "RimBank.AppHost";
     private const string ServiceDefaultsRoot = "RimBank.ServiceDefaults";
+    private const string ProblemsRoot = "RimBank.Problems";
 
     public static ArchitectureRule ServiceDefaultsOnlyInHost { get; } = new(
         "service-defaults-only-in-host",
@@ -22,6 +24,32 @@ public static partial class ArchitectureRules
         "host-is-the-composition-root",
         "tech-stack §2 and §4, ADR 0014: RimBank.Host references contexts, never the other way round; a context registers through a module class inside the host",
         code => DependenciesOn(code, HostRoot, allowedFrom: [HostRoot]));
+
+    public static ArchitectureRule ProblemsOnlyInAdaptersAndHost { get; } = new(
+        "problems-only-in-adapters-and-host",
+        "tech-stack §4 and ADR 0015: only .Api, .Mcp and RimBank.Host turn an Error into Problem Details; a core returns the Error",
+        code =>
+            from type in code.Types
+            where !Namespaces.IsWithin(type.NamespaceName(), HostRoot)
+                && !Namespaces.IsWithin(type.NamespaceName(), ProblemsRoot)
+                && ContextAddress.Parse(type.NamespaceName())?.Part is not (ContextPart.Api or ContextPart.Mcp)
+            from target in code.Targets(type)
+            where Namespaces.IsWithin(target.NamespaceName(), ProblemsRoot)
+            select new Violation(type.Display(), $"depends on {target.Display()} ({ProblemsRoot})"));
+
+    public static ArchitectureRule ProblemsDependencies { get; } = new(
+        "problems-dependencies",
+        "tech-stack §4 and ADR 0015: RimBank.Problems references SharedKernel and ASP.NET Core only",
+        code =>
+            from type in code.Types
+            where Namespaces.IsWithin(type.NamespaceName(), ProblemsRoot)
+            from target in code.Targets(type)
+            where !IsBcl(target)
+                && !Namespaces.IsWithin(target.NamespaceName(), AspNetCore)
+                && !Namespaces.IsWithin(target.NamespaceName(), "Microsoft.Extensions")
+                && !Namespaces.IsWithin(target.NamespaceName(), "RimBank.SharedKernel")
+                && !Namespaces.IsWithin(target.NamespaceName(), ProblemsRoot)
+            select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, ASP.NET Core or the BCL"));
 
     private static IEnumerable<Violation> DependenciesOn(CodeBase code, string root, IReadOnlyList<string> allowedFrom) =>
         from type in code.Types
