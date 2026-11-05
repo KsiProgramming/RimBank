@@ -19,7 +19,7 @@ Each group is one commit. The solution builds and the tests pass after each one.
 ## 3. Test helpers and laws (test-first, dogfooded)
 - [ ] `tests/RimBank.SharedKernel.Testing/DeciderSpecification.cs`: `Given(...)` / `When(...)` / `Then(...)` / `ThenFails(kind, code)`; folds from `Initial`; failure message lists given events, command, expected vs actual
 - [ ] `tests/RimBank.SharedKernel.Testing/ProjectionSpecification.cs`: `Given(...)` / `Then(view)` / `ThenNoView()`
-- [ ] `tests/RimBank.SharedKernel.Testing/DeciderLaws.cs` and `ProjectionLaws.cs`: FsCheck properties for determinism, decided-events-evolve, and projection/aggregate agreement (`Func<TState, TView?>` mapping), taking the caller's `Arbitrary<TCommand>`
+- [ ] `tests/RimBank.SharedKernel.Testing/DeciderLaws.cs` (one class; the agreement law is a generic method on it): FsCheck properties for determinism, decided-events-evolve, and projection/aggregate agreement (`Func<TState, TView?>` mapping), taking the caller's `Arbitrary<TCommand>`
 - [ ] Rewrite the group 1–2 sample tests with the helpers (`SampleLedgerSpecificationTests.cs`, `SampleLedgerViewSpecificationTests.cs`)
 - [ ] `.../DecidersAndProjections/SampleLedgerLawsProperties.cs`: runs the three laws with a `SampleLedgerCommand` arbitrary built on `MoneyArbitraries`; agreement mapping `state → view` (balance, postings, closed)
 - [ ] `.../DecidersAndProjections/SpecificationHelperTests.cs` (helper self-tests): wrong events, missing events, unexpected success, unexpected failure, wrong error code, wrong view and an unexpected view each fail with a `ShouldAssertException` whose message names expected and actual
