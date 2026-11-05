@@ -1,6 +1,6 @@
 using FsCheck.Xunit;
 
-namespace RimBank.SharedKernel.Tests.Money;
+namespace RimBank.SharedKernel.Tests.MoneyAndCurrency;
 
 public sealed class FsCheckSmokeProperties
 {

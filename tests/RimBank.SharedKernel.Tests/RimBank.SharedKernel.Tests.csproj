@@ -17,6 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The reviewed ISO 4217 snapshot read by CurrencyTableSnapshotTests. -->
+    <None Include="MoneyAndCurrency\Iso4217.snapshot.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Shouldly" />
     <Using Include="Xunit" />
   </ItemGroup>
