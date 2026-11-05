@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
     Shared test helpers that every context's test project can reference:
-    the typed ID contract (0.4), and later the decider and projection helpers (0.6).
+    the typed ID contract (0.4), FsCheck money generators (0.5), and later the decider and projection helpers (0.6).
     A class library, not a test executable: it has no tests of its own.
   -->
   <PropertyGroup>
@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3.extensibility.core" />
+    <PackageReference Include="FsCheck" />
     <PackageReference Include="Shouldly" />
   </ItemGroup>
 

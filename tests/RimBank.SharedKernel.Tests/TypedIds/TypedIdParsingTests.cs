@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.Tests.TypedIds;
+namespace RimBank.SharedKernel.TypedIds.Tests;
 
 public sealed class TypedIdParsingTests
 {

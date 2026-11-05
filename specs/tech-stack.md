@@ -86,13 +86,15 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
    ├─ RimBank.Architecture.Tests/
-   ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), decider/projection helpers (0.6)
+   ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
       ├─ RimBank.Party.PartyReferenceDataDirectory.Api.Tests/          # HTTP + Problem Details + BIAN conformance
       ├─ RimBank.Party.PartyReferenceDataDirectory.Mcp.Tests/          # MCP client → tools, Problem Details errors, parity with Api
       └─ RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/   # Testcontainers
 ```
+
+**Test namespaces:** a test namespace follows the code under test from the outside in, adds the test folder, and always ends with `.Tests`: `<namespace of the project under test>.<folder>.Tests`. For example `RimBank.SharedKernel.MoneyAndCurrency.Tests` (folder `MoneyAndCurrency/` of `RimBank.SharedKernel.Tests`) or `RimBank.Party.PartyReferenceDataDirectory.Registration.Tests`; root files use the project name (`RimBank.SharedKernel.Tests`). Never `….Tests.<Folder>`. Shared test libraries such as `RimBank.SharedKernel.Testing` keep their own name.
 
 ### 3.4 Inside a core project: business names only
 

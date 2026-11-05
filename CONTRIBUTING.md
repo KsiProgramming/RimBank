@@ -30,6 +30,8 @@ Work outside the roadmap (bug fixes, docs) is welcome as small, focused PRs. Ope
 - **Commands and queries are separate.** Commands go through a decision and return an acknowledgement; queries read only from read models. Money rules are never checked against a read model ([ADR 0003](docs/adr/0003-separate-commands-and-queries.md)).
 - **Loosely coupled contexts.** Read models are private. Contexts share only `.PublishedLanguage` integration events, consumed through their own `.Subscriptions` adapter; cross-context requests are events, not commands ([ADR 0004](docs/adr/0004-loosely-coupled-contexts.md)).
 - **Money correctness.** `decimal` with ISO 4217 currency and minor units, never `double` or `float`.
+- **Switch expressions, always.** Write `value switch { … }`, never a `switch (value) { case …: break; }` statement. When the arms have side effects, let each arm return the new state (for example a tuple) and assign it, with a small helper method for an arm that needs statements. The build flags convertible switch statements (`csharp_style_prefer_switch_expression = true:warning` in `.editorconfig`).
+- **Test namespaces end with `.Tests`.** A test namespace follows the code under test from the outside in, then adds the test folder, and `.Tests` always comes last: `<namespace of the project under test>.<folder>.Tests`. For example `RimBank.SharedKernel.MoneyAndCurrency.Tests`, `RimBank.SharedKernel.TypedIds.Tests`, `RimBank.Party.PartyReferenceDataDirectory.Registration.Tests`; a file at the root of a test project uses `RimBank.SharedKernel.Tests`. Never `RimBank.SharedKernel.Tests.MoneyAndCurrency`. Shared test libraries keep their own name (`RimBank.SharedKernel.Testing`).
 - **Problem Details everywhere.** Every error returns RFC 9457 Problem Details, over HTTP and MCP.
 - **HTTP and MCP parity.** Every BIAN operation exposed over HTTP is also an MCP tool, with a parity test.
 - **No secrets or PII** in source, logs or test fixtures.
@@ -56,6 +58,10 @@ Expected business failures are returned as `Result<T>` / `Result` with an `Error
 ### Typed identifiers
 
 Every aggregate identifier is a `readonly record struct` implementing `ITypedId<TSelf>` over a version 7 GUID ([ADR 0008](docs/adr/0008-typed-identifier-pattern.md)). Copy the declaration template from the ADR next to the aggregate, and add one contract test class: `public sealed class XIdContractTests : TypedIdContractTests<XId>;` (from `tests/RimBank.SharedKernel.Testing`). Create new IDs with `XId.New(timeProvider)` in the command handler, never inside `Decide`, and turn untrusted input into an ID with `XId.TryCreate(...)`.
+
+### Money
+
+Amounts are always `Money` over a `decimal`, never `double` or `float` and never a bare `decimal` with a currency string beside it ([ADR 0009](docs/adr/0009-money-and-currency.md)). Turn untrusted input into money with `Money.TryCreate(amount, currencyCode)`, round explicitly with the mode the business rule names (`Round()` is banker's rounding), and divide only with `Allocate` / `Split` so no minor unit is lost. Property tests over money register `MoneyArbitraries` from `tests/RimBank.SharedKernel.Testing`: `[Properties(Arbitrary = [typeof(MoneyArbitraries)])]`.
 
 ### What CI runs
 
