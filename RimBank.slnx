@@ -7,11 +7,14 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/RimBank.Host/RimBank.Host.csproj" />
+    <Project Path="src/RimBank.ServiceDefaults/RimBank.ServiceDefaults.csproj" />
     <Project Path="src/RimBank.SharedKernel/RimBank.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/RimBank.Architecture.Fixtures/RimBank.Architecture.Fixtures.csproj" />
     <Project Path="tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj" />
+    <Project Path="tests/RimBank.Host.Tests/RimBank.Host.Tests.csproj" />
     <Project Path="tests/RimBank.SharedKernel.Testing/RimBank.SharedKernel.Testing.csproj" />
     <Project Path="tests/RimBank.SharedKernel.Tests/RimBank.SharedKernel.Tests.csproj" />
   </Folder>

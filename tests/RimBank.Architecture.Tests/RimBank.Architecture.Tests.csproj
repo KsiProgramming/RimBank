@@ -11,8 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\RimBank.Host\RimBank.Host.csproj" />
+    <ProjectReference Include="..\..\src\RimBank.ServiceDefaults\RimBank.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\src\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
     <ProjectReference Include="..\RimBank.Architecture.Fixtures\RimBank.Architecture.Fixtures.csproj" />
+    <ProjectReference Include="..\RimBank.Host.Tests\RimBank.Host.Tests.csproj" />
     <ProjectReference Include="..\RimBank.SharedKernel.Testing\RimBank.SharedKernel.Testing.csproj" />
     <ProjectReference Include="..\RimBank.SharedKernel.Tests\RimBank.SharedKernel.Tests.csproj" />
   </ItemGroup>

@@ -20,12 +20,30 @@
   <PropertyGroup>
     <FsCheckVersion>3.6.0</FsCheckVersion>
     <XunitV3Version>4.0.2</XunitV3Version>
+    <OpenTelemetryVersion>1.20.1</OpenTelemetryVersion>
+    <MicrosoftExtensionsVersion>10.11.0</MicrosoftExtensionsVersion>
   </PropertyGroup>
+
+  <!-- Hosting: service defaults for RimBank.Host (specs/tech-stack.md §1, ADR 0014) -->
+  <ItemGroup Label="Hosting">
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MicrosoftExtensionsVersion)" />
+  </ItemGroup>
+
+  <!-- Observability (specs/tech-stack.md §1, mission quality bar) -->
+  <ItemGroup Label="Observability">
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
+  </ItemGroup>
 
   <!-- Testing (specs/tech-stack.md §9, ADR 0007) -->
   <ItemGroup Label="Testing">
     <PackageVersion Include="FsCheck" Version="$(FsCheckVersion)" />
     <PackageVersion Include="FsCheck.Xunit.v3" Version="$(FsCheckVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="xunit.v3" Version="$(XunitV3Version)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitV3Version)" />

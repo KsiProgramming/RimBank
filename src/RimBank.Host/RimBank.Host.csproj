@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    The single deployable host of the modular monolith (specs/tech-stack.md §2). Composition only: it applies the
+    service defaults and registers each context's module (ADR 0014). It holds no business logic (§4).
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Host</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.ServiceDefaults\RimBank.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>
