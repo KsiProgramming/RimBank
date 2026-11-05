@@ -17,7 +17,7 @@ How the Definition of done applies to this phase: there is no C# code, so unit, 
 ## Manual / demo checks
 - [ ] Locally, from the repo root, the commands listed in CONTRIBUTING give the same result as CI:
   `dotnet restore RimBank.slnx && dotnet build RimBank.slnx -c Release --no-restore && dotnet test RimBank.slnx -c Release --no-build && dotnet format RimBank.slnx --verify-no-changes --no-restore` → exit 0 (the "Nothing to restore" warning is expected until 0.3, as recorded in 0.1)
-- [ ] Security → Code scanning shows a completed `actions` analysis with no open high-severity alerts
+- [ ] While private: the `codeql-sarif-actions` artifact exists on the PR run, and the "Fail on error-level findings" step reports 0. Once public: Security → Code scanning shows a completed `actions` analysis with no open high-severity alerts
 - [ ] The README badges render and link to the workflow runs
 - [ ] Note for 0.3 (not a merge blocker): the first PR that adds a `.csproj` must show the csharp CodeQL leg actually analysing code, and the test step running tests
 

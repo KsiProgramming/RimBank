@@ -1,0 +1,7 @@
+# Default owner for everything. Replace with maintainer teams if the repository moves to an organisation.
+* @KsiProgramming
+
+# The constitution, ADRs and the pipeline need an owner's review.
+/specs/           @KsiProgramming
+/docs/adr/        @KsiProgramming
+/.github/         @KsiProgramming

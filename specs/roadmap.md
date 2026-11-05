@@ -22,7 +22,7 @@
 ## Stage 0: Foundations
 
 - [x] **0.1 Repository skeleton:** `RimBank.slnx`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `.editorconfig`, `.gitignore`, MIT `LICENSE`, `README.md`, `docs/adr/0001-record-architecture-decisions.md`.
-- [ ] **0.2 CI pipeline:** GitHub Actions workflow for restore, build, test and `dotnet format --verify-no-changes`; Dependabot; CodeQL.
+- [x] **0.2 CI pipeline:** GitHub Actions workflow for restore, build, test and `dotnet format --verify-no-changes`; Dependabot; CodeQL.
 - [ ] **0.3 SharedKernel: Result & Error:** `Result<T>`, `Error` (code, message, kind, including `NotFound` and `Conflict`), with unit tests.
 - [ ] **0.4 SharedKernel: typed identifiers:** base pattern for `Guid` v7 strongly typed IDs.
 - [ ] **0.5 SharedKernel: Money & Currency:** ISO 4217 currency, minor units, rounding policy, with arithmetic property tests (FsCheck).

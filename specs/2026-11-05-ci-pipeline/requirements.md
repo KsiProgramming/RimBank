@@ -53,7 +53,10 @@ There is no BIAN service domain in this phase. Commands, queries and read models
 - 0005: CI and supply-chain policy: workflows are pinned to SHAs and kept current by Dependabot, run with least-privilege permissions, and define the required status checks (`ci / build`, `codeql`); the runner and SDK are pinned.
 
 ## Open questions
-- **CodeQL availability:** CodeQL code scanning is free for public repositories. If `KsiProgramming/RimBank` is private, it needs GitHub Advanced Security. Confirm the repository is public.
-- **CODEOWNERS owner:** use `@KsiProgramming` (the org) or a maintainers team? The default is the org until a team exists.
-- **`dotnet test` on an empty solution:** we expect exit 0 with "nothing to test" (as with build in 0.1). If it fails, the step is guarded by the same `hashFiles('**/*.csproj')` condition until 0.3.
+Answered during implementation:
+- **CodeQL availability:** the repository is **private and user-owned**, so code scanning is not available. User decision: CodeQL still runs on every PR. While the repository is private, it uses `upload: never`, keeps the SARIF as an artifact and fails the job on error-level findings. Once the repository is public, results are uploaded automatically (ADR 0005).
+- **CODEOWNERS owner:** `@KsiProgramming` is a user account, not an org, so it is the single owner.
+- **`dotnet test` on an empty solution:** verified locally with SDK 10.0.301. Restore, build, test and format all exit 0, so no guard is needed.
+
+Still open:
 - **Test runner mode:** xUnit v3 on .NET 10 may run on Microsoft.Testing.Platform (`global.json` `"test": { "runner": … }`), which changes the `dotnet test` arguments. This is decided in 0.3; the CI test step is updated then.
