@@ -1,21 +1,38 @@
 <Project>
   <!--
-    Central Package Management: every package version lives here, never in a .csproj.
-    Adding, replacing or removing a technology requires an ADR (see specs/tech-stack.md).
+    Central Package Management: every package version lives here, never in a .csproj (ADR 0013).
+    - Projects reference packages without a version: <PackageReference Include="Shouldly" />.
+    - VersionOverride is disabled, so a project cannot drift from the version set here.
+    - Transitive pinning: a PackageVersion here also pins that package when it arrives transitively,
+      so a vulnerable transitive dependency is fixed by adding or raising its version here.
+    - Packages are grouped by concern and sorted by name. Packages that always move together share a
+      version property, so they cannot drift from each other.
+    - Adding, replacing or removing a technology requires an ADR (specs/tech-stack.md).
+    - Versions are kept current by Dependabot (.github/dependabot.yml); restore is locked in CI.
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Packages are added by the phase that first needs them. -->
-    <!-- Testing (specs/tech-stack.md §9) -->
-    <PackageVersion Include="FsCheck" Version="3.6.0" />
-    <PackageVersion Include="FsCheck.Xunit.v3" Version="3.6.0" />
+  <!-- Versions shared by packages of the same family. -->
+  <PropertyGroup>
+    <FsCheckVersion>3.6.0</FsCheckVersion>
+    <XunitV3Version>4.0.2</XunitV3Version>
+  </PropertyGroup>
+
+  <!-- Testing (specs/tech-stack.md §9, ADR 0007) -->
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="FsCheck" Version="$(FsCheckVersion)" />
+    <PackageVersion Include="FsCheck.Xunit.v3" Version="$(FsCheckVersion)" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="xunit.v3" Version="$(XunitV3Version)" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitV3Version)" />
+  </ItemGroup>
+
+  <!-- Architecture tests (CONTRIBUTING "Architecture rules", ADR 0012) -->
+  <ItemGroup Label="Architecture">
     <PackageVersion Include="TngTech.ArchUnitNET" Version="0.13.4" />
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
-    <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.2" />
   </ItemGroup>
 </Project>

@@ -1,30 +1,63 @@
 <Project>
-  <!-- Shared build settings for every project. See specs/tech-stack.md §1. -->
+  <!--
+    Shared build settings for every project. See specs/tech-stack.md §1 and ADR 0013.
+    Imported before each .csproj; Directory.Build.targets (imported after) holds the build guards.
+  -->
+
+  <!-- Language and compiler -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!--
+    Warnings: every warning is an error, and none is suppressed here or in code.
+    A diagnostic's severity is changed only in an .editorconfig, scoped to the files it covers (ADR 0013).
+  -->
+  <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Missing XML doc comments are not errors; public API docs are encouraged, not forced. -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!-- Versioning: the single source of the product version. Pre-release until roadmap 7.10 (v0.1.0). -->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == ''">alpha</VersionSuffix>
+  </PropertyGroup>
+
+  <!--
+    NuGet supply chain (ADR 0005, ADR 0013): versions live in Directory.Packages.props, every project
+    commits a packages.lock.json, CI restores in locked mode, and a known vulnerability in any direct or
+    transitive package fails the build (NU1901-NU1904 are warnings, so errors).
+  -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <RestoreLockedMode>true</RestoreLockedMode>
   </PropertyGroup>
 
+  <!-- Package metadata -->
   <PropertyGroup>
     <Authors>RimBank contributors</Authors>
     <Company>RimBank contributors</Company>
     <Product>RimBank</Product>
     <Copyright>Copyright (c) 2026 RimBank contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/KsiProgramming/RimBank</PackageProjectUrl>
     <RepositoryUrl>https://github.com/KsiProgramming/RimBank</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 </Project>

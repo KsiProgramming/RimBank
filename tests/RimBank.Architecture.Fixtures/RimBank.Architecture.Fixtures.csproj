@@ -6,7 +6,6 @@
     A class library loaded only by RimBank.Architecture.Tests; never referenced from src/.
   -->
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
     <RootNamespace>RimBank.Architecture.Fixtures</RootNamespace>
   </PropertyGroup>
 
