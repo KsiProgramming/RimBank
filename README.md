@@ -1,5 +1,8 @@
 # RimBank
 
+[![ci](https://github.com/KsiProgramming/RimBank/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KsiProgramming/RimBank/actions/workflows/ci.yml)
+[![codeql](https://github.com/KsiProgramming/RimBank/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/KsiProgramming/RimBank/actions/workflows/codeql.yml)
+
 **RimBank is an open-source, production-grade core banking platform built in .NET that implements the [BIAN](https://bian.org) Service Landscape v14 using Domain-Driven Design and hexagonal architecture.**
 
 The code is meant to read like the business it serves. Every BIAN service domain becomes a bounded context, and its names, flows and capabilities come from BIAN and banking, not from frameworks. Every capability is available both as a BIAN HTTP API and as an [MCP](https://modelcontextprotocol.io) tool for AI agents, over the same core and with the same business rules.

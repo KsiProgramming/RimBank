@@ -1,0 +1,36 @@
+# Weekly dependency updates. Minor and patch updates are grouped; majors come as separate PRs
+# (a major version of a stack technology may need an ADR, see specs/tech-stack.md).
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+    commit-message:
+      prefix: deps
+    groups:
+      nuget-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies]
+    commit-message:
+      prefix: deps

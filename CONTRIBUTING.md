@@ -47,6 +47,38 @@ dotnet format RimBank.slnx --verify-no-changes
 
 Warnings are errors, and package versions live only in `Directory.Packages.props`.
 
+### What CI runs
+
+Every push to `main` and every pull request runs two workflows (policy: [ADR 0005](docs/adr/0005-ci-and-supply-chain-policy.md)):
+
+- **`ci` / `build`**: the same commands you can run locally:
+
+  ```bash
+  dotnet restore RimBank.slnx
+  dotnet build RimBank.slnx -c Release --no-restore
+  dotnet test RimBank.slnx -c Release --no-build
+  dotnet format RimBank.slnx --verify-no-changes --no-restore
+  ```
+
+- **`codeql` / `analyze (actions)` and `analyze (csharp)`**: static analysis of the workflows and the C# code (the `security-and-quality` suite). It also runs weekly.
+
+Dependabot opens weekly PRs for NuGet packages, GitHub Actions and the .NET SDK.
+
+When you change a workflow:
+
+- Pin every action to a full commit SHA with a version comment, for example `uses: actions/checkout@<40-char sha> # v7.0.1`.
+- Keep top-level `permissions: contents: read` and widen permissions only for the job that needs it.
+- Never add secrets to workflows.
+
+### Branch protection (maintainers)
+
+Configure a branch ruleset for `main` in the repository settings:
+
+- Require a pull request before merging, with at least one approval, and dismiss stale approvals when new commits are pushed.
+- Require review from code owners ([.github/CODEOWNERS](.github/CODEOWNERS)).
+- Require these status checks to pass, and require branches to be up to date: `build`, `analyze (actions)`, `analyze (csharp)`.
+- Block force pushes and branch deletion.
+
 ## Commits and pull requests
 
 - Write commit messages in the imperative mood ("Add Money arithmetic"), and keep each one focused.

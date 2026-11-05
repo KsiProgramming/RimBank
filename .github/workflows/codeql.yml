@@ -1,0 +1,120 @@
+# CodeQL static analysis of the C# code and of the GitHub Actions workflows.
+# Policy: docs/adr/0005-ci-and-supply-chain-policy.md.
+#
+# - csharp: analysed only once the solution contains a .csproj (the first one arrives in 0.3).
+# - While the repository is private, code scanning is unavailable: results are not uploaded,
+#   the SARIF is kept as a workflow artifact, and the job fails on any error-level finding.
+#   Once the repository is public, results are uploaded to Security > Code scanning instead.
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 4 * * 1" # Mondays 04:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  analyze:
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: csharp
+            build-mode: manual
+    env:
+      SARIF_DIR: ${{ github.workspace }}/../codeql-sarif
+      UPLOAD: ${{ github.event.repository.private && 'never' || 'always' }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Decide whether there is code to analyse
+        id: scope
+        run: |
+          if [ "${{ matrix.language }}" != "csharp" ] || [ -n "${{ hashFiles('**/*.csproj') }}" ]; then
+            echo "analyse=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "analyse=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No .csproj in the solution yet: skipping C# analysis."
+          fi
+
+      - name: Initialise CodeQL
+        if: steps.scope.outputs.analyse == 'true'
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+
+      - name: Set up .NET (from global.json)
+        if: steps.scope.outputs.analyse == 'true' && matrix.language == 'csharp'
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        if: steps.scope.outputs.analyse == 'true' && matrix.language == 'csharp'
+        run: dotnet build RimBank.slnx -c Release
+
+      - name: Analyse
+        if: steps.scope.outputs.analyse == 'true'
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:${{ matrix.language }}
+          upload: ${{ env.UPLOAD }}
+          output: ${{ env.SARIF_DIR }}
+
+      - name: Keep SARIF (private repository)
+        if: steps.scope.outputs.analyse == 'true' && env.UPLOAD == 'never'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: codeql-sarif-${{ matrix.language }}
+          path: ${{ env.SARIF_DIR }}
+          retention-days: 30
+
+      - name: Fail on error-level findings (private repository)
+        if: steps.scope.outputs.analyse == 'true' && env.UPLOAD == 'never'
+        run: |
+          shopt -s nullglob
+          total=0
+          for f in "$SARIF_DIR"/*.sarif; do
+            findings=$(jq -r '
+              .runs[]
+              | ([.tool.driver.rules[]?, .tool.extensions[]?.rules[]?]
+                 | map({key: .id, value: (.defaultConfiguration.level // "warning")})
+                 | from_entries) as $levels
+              | .results[]?
+              | select((.level // $levels[.ruleId] // "warning") == "error")
+              | "\(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri // "?"):\(.locations[0].physicalLocation.region.startLine // 0) \(.message.text)"
+            ' "$f")
+            if [ -n "$findings" ]; then
+              while IFS= read -r line; do echo "::error::$line"; total=$((total + 1)); done <<< "$findings"
+            fi
+          done
+          echo "Error-level findings: $total"
+          [ "$total" -eq 0 ]
