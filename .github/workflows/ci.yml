@@ -40,11 +40,12 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      - name: Restore
-        run: dotnet restore RimBank.slnx
+      - name: Restore (locked)
+        # Lock files are committed; restore fails if a project's dependencies drift from them (ADR 0013).
+        run: dotnet restore RimBank.slnx --locked-mode
 
       - name: Build
         run: dotnet build RimBank.slnx -c Release --no-restore
@@ -52,6 +53,9 @@ jobs:
       - name: Test
         # Microsoft.Testing.Platform mode (global.json "test.runner"), see ADR 0007.
         run: dotnet test --solution RimBank.slnx -c Release --no-build --report-xunit-trx --results-directory TestResults
+
+      - name: Test repository scripts
+        run: python3 -m unittest discover -s scripts
 
       - name: Check formatting
         run: dotnet format RimBank.slnx --verify-no-changes --no-restore

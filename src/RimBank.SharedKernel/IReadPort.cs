@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace RimBank.SharedKernel;
 
 /// <summary>
@@ -11,5 +9,4 @@ namespace RimBank.SharedKernel;
 /// the architecture tests forbid it in command handlers and projections, so a business decision never depends on an
 /// eventually consistent view (mission principle 5).
 /// </remarks>
-[SuppressMessage("Design", "CA1040:Avoid empty interfaces", Justification = "A marker the architecture tests classify types by (ADR 0012).")]
 public interface IReadPort;

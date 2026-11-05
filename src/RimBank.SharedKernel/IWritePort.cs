@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace RimBank.SharedKernel;
 
 /// <summary>
@@ -11,5 +9,4 @@ namespace RimBank.SharedKernel;
 /// Implemented over Marten event streams in the context's <c>.Postgresql</c> adapter. Command handlers use it; the
 /// architecture tests forbid it in query handlers and projections.
 /// </remarks>
-[SuppressMessage("Design", "CA1040:Avoid empty interfaces", Justification = "A marker the architecture tests classify types by (ADR 0012).")]
 public interface IWritePort;

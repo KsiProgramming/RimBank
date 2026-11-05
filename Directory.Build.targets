@@ -1,0 +1,38 @@
+<Project>
+  <!--
+    Build guards for every project, imported after each .csproj (ADR 0013).
+    They turn the repository's governance rules into build errors, locally and in CI.
+  -->
+
+  <!--
+    RB0001: no warning suppression in source code. A diagnostic's severity is changed only in an
+    .editorconfig next to the code, scoped to the files it covers, with its reason.
+    RB0002: no <NoWarn> or <WarningsNotAsErrors> in a project file, for the same reason.
+    (VersionOverride is rejected by NuGet itself: CentralPackageVersionOverrideEnabled=false, NU1013.)
+    Generated files under obj/ are skipped: they are not written by people.
+  -->
+  <Target Name="RimBankGovernanceChecks" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <_RimBankIntermediateDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)'))</_RimBankIntermediateDir>
+      <_RimBankSuppressionPattern>#pragma\s+warning\s+disable|\bSuppressMessage(Attribute)?\s*\(|\bUnconditionalSuppressMessage(Attribute)?\s*\(</_RimBankSuppressionPattern>
+      <_RimBankProjectFile>$([System.IO.File]::ReadAllText('$(MSBuildProjectFullPath)'))</_RimBankProjectFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_RimBankSourceFile Include="@(Compile->'%(FullPath)')"
+                          Condition="!$([System.String]::Copy('%(FullPath)').StartsWith('$(_RimBankIntermediateDir)'))" />
+      <_RimBankSuppressingFile Include="@(_RimBankSourceFile)"
+                               Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($([System.IO.File]::ReadAllText('%(Identity)')), '$(_RimBankSuppressionPattern)'))" />
+    </ItemGroup>
+
+    <Error Condition="'@(_RimBankSuppressingFile)' != ''"
+           Code="RB0001"
+           File="%(_RimBankSuppressingFile.Identity)"
+           Text="Warning suppressed in code (#pragma warning disable or [SuppressMessage]). Set the diagnostic's severity in the nearest .editorconfig instead, scoped to this file, with the reason (ADR 0013)." />
+
+    <Error Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(_RimBankProjectFile)', '&lt;(NoWarn|WarningsNotAsErrors)\b'))"
+           Code="RB0002"
+           File="$(MSBuildProjectFullPath)"
+           Text="&lt;NoWarn&gt; or &lt;WarningsNotAsErrors&gt; in a project file. Set the diagnostic's severity in an .editorconfig instead (ADR 0013)." />
+  </Target>
+</Project>

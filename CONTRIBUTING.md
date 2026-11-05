@@ -47,7 +47,12 @@ dotnet test --solution RimBank.slnx
 dotnet format RimBank.slnx --verify-no-changes
 ```
 
-Warnings are errors, and package versions live only in `Directory.Packages.props`.
+Warnings are errors, and package versions live only in `Directory.Packages.props` ([ADR 0013](docs/adr/0013-warning-and-package-governance.md)):
+
+- **Never suppress a warning in code or in a project file.** `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` and `<WarningsNotAsErrors>` fail the build (RB0001, RB0002). Fix the code, or, when the rule really does not apply, add a `dotnet_diagnostic.<ID>.severity = none` entry to the `.editorconfig` nearest the code (the project's own, or `tests/.editorconfig`), scoped to the files it covers, with a comment giving the reason.
+- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. CI restores in locked mode, and a package with a known vulnerability fails the build. Packages come only from nuget.org (`NuGet.config`).
+- **Public API in `src/` has XML doc comments** (CS1591 is enforced there).
+- The product version is set once, in `Directory.Build.props`.
 
 Tests use xUnit v3 and Shouldly on Microsoft.Testing.Platform ([ADR 0007](docs/adr/0007-test-platform.md)). Run one class with `dotnet test --solution RimBank.slnx --filter-class <Namespace.ClassName>`.
 
@@ -113,10 +118,11 @@ Every push to `main` and every pull request runs two workflows (policy: [ADR 000
 - **`ci` / `build`**: the same commands you can run locally:
 
   ```bash
-  dotnet restore RimBank.slnx
+  dotnet restore RimBank.slnx --locked-mode
   dotnet build RimBank.slnx -c Release --no-restore
   dotnet test --solution RimBank.slnx -c Release --no-build --report-xunit-trx --results-directory TestResults
   dotnet format RimBank.slnx --verify-no-changes --no-restore
+  python3 -m unittest discover -s scripts
   ```
 
 - **`codeql` / `analyze (actions)` and `analyze (csharp)`**: static analysis of the workflows and the C# code (the `security-and-quality` suite). It also runs weekly.
@@ -127,7 +133,34 @@ When you change a workflow:
 
 - Pin every action to a full commit SHA with a version comment, for example `uses: actions/checkout@<40-char sha> # v7.0.1`.
 - Keep top-level `permissions: contents: read` and widen permissions only for the job that needs it.
-- Never add secrets to workflows.
+- Never add secrets to workflows. The one exception is `roadmap-board`'s `ROADMAP_BOARD_TOKEN` ([ADR 0013](docs/adr/0013-warning-and-package-governance.md)).
+
+### Roadmap board
+
+[`specs/roadmap.md`](specs/roadmap.md) is mirrored on GitHub by `scripts/sync_roadmap_board.py` ([ADR 0013](docs/adr/0013-warning-and-package-governance.md)): one milestone per stage, one issue per phase (labels `roadmap-phase` and `stage:N`), and the **RimBank roadmap** Projects board. Edit the roadmap, never the synced issues: their titles and bodies are overwritten. Ticking a phase in a PR closes its issue and moves its card to Done once the PR is merged. Move a card to In Progress yourself when you start a phase, and reference the phase issue in your PR.
+
+The `roadmap-board` workflow runs the sync after every merge that changes the roadmap. It needs a `ROADMAP_BOARD_TOKEN` repository secret (a token with the `repo` and `project` scopes); without it, a maintainer runs the script locally:
+
+```bash
+gh auth refresh -s project                     # once
+python scripts/sync_roadmap_board.py --dry-run # show what would change
+python scripts/sync_roadmap_board.py
+```
+
+### Labels
+
+Every issue and pull request carries **one `type:`** label, any **`area:`** labels that apply, and at most **one `context:`** label. The set is defined in `scripts/sync_roadmap_board.py` (`LABELS`) and created by the sync; roadmap phase issues get theirs automatically.
+
+| Prefix | Labels | Meaning |
+|---|---|---|
+| `type:` | `feature`, `adr`, `bug`, `chore`, `docs`, `security` | What kind of change |
+| `area:` | `shared-kernel`, `architecture`, `host`, `domain`, `read-models`, `api`, `mcp`, `persistence`, `messaging`, `security`, `observability`, `bian-conformance`, `ci`, `performance` | Which technical concern |
+| `context:` | `party`, `product-directory`, `position-keeping`, `current-account`, `payments`, `finance` | Which BIAN bounded context (tech-stack §3.2) |
+| `stage:` | `stage:0` … `stage:8` | Which roadmap stage (synced) |
+| | `roadmap-phase` | An issue mirrored from the roadmap (synced: edit the roadmap, not the issue) |
+| | `dependencies` | Opened by Dependabot |
+
+A new label is added to `LABELS` in a PR, never created by hand, so the taxonomy stays in one place. A new bounded context adds its `context:` label in the same PR as its BIAN mapping ADR.
 
 ### Branch protection (maintainers)
 

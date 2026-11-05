@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace RimBank.SharedKernel;
 
 /// <summary>
@@ -11,5 +9,4 @@ namespace RimBank.SharedKernel;
 /// command handler. The architecture tests check that it stays on the write side: it uses an <see cref="IWritePort"/>
 /// and the aggregate's decisions, never an <see cref="IReadPort"/>, a view, a query or a query handler.
 /// </remarks>
-[SuppressMessage("Design", "CA1040:Avoid empty interfaces", Justification = "A marker the architecture tests classify types by (ADR 0012).")]
 public interface ICommand;

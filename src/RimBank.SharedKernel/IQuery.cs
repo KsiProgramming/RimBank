@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace RimBank.SharedKernel;
 
 /// <summary>
@@ -13,6 +11,5 @@ namespace RimBank.SharedKernel;
 /// <see cref="IWritePort"/>, an aggregate (<see cref="IDecider{TSelf, TCommand, TEvent}"/>), a command or a
 /// command handler.
 /// </remarks>
-[SuppressMessage("Design", "CA1040:Avoid empty interfaces", Justification = "A marker the architecture tests classify types by (ADR 0012).")]
 public interface IQuery<TView>
     where TView : class;

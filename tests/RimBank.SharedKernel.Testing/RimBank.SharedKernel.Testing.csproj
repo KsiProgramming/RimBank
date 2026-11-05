@@ -5,7 +5,6 @@
     A class library, not a test executable: it has no tests of its own.
   -->
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
     <RootNamespace>RimBank.SharedKernel.Testing</RootNamespace>
   </PropertyGroup>
 

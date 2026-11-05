@@ -1,0 +1,7 @@
+# Diagnostic exceptions for RimBank.SharedKernel.Testing (inherits tests/.editorconfig).
+# Warnings are never suppressed in code (docs/adr/0013-warning-and-package-governance.md).
+
+# CA1000: `Given(...)` and the laws are the entry points of the specifications; the type arguments
+# cannot be inferred and are named once per aggregate through an alias.
+[{DeciderLaws,DeciderSpecification,ProjectionSpecification}.cs]
+dotnet_diagnostic.CA1000.severity = none

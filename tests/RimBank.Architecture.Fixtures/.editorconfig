@@ -1,0 +1,14 @@
+# Diagnostic exceptions for RimBank.Architecture.Fixtures (inherits tests/.editorconfig).
+# This project holds deliberately bad code that proves each architecture rule bites, so some
+# analyzers must stay quiet on exactly that code. Never suppress in code
+# (docs/adr/0013-warning-and-package-governance.md).
+
+# CA1040: empty interfaces are the point of a stub.
+# IDE0130: the namespaces must match the real packages (Marten, Wolverine, ...), not the folder.
+[Stubs/FrameworkStubs.cs]
+dotnet_diagnostic.CA1040.severity = none
+dotnet_diagnostic.IDE0130.severity = none
+
+# IDE0250: the missing `readonly` on a typed ID is the violation this fixture shows.
+[Bad/NamingAndValueViolations.cs]
+dotnet_diagnostic.IDE0250.severity = none

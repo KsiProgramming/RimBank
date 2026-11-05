@@ -1,0 +1,8 @@
+<Project>
+  <!-- Settings for every project under tests/, on top of the root Directory.Build.props (ADR 0013). -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>
