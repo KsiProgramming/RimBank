@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.Tests.MoneyAndCurrency;
+namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
 
 // The usage sample from ADR 0009, kept compiling and passing here.
 public sealed class MoneyUsageSampleTests

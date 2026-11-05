@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.Tests.MoneyAndCurrency;
+namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
 
 public sealed class CurrencyTests
 {

@@ -2,7 +2,7 @@ using System.Text.Json;
 using FsCheck.Xunit;
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.SharedKernel.Tests.MoneyAndCurrency;
+namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
 
 [Properties(Arbitrary = [typeof(MoneyArbitraries)])]
 public sealed class MoneyTextProperties

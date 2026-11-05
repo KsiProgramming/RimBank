@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace RimBank.SharedKernel.Tests.MoneyAndCurrency;
+namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
 
 // The snapshot (Iso4217.snapshot.csv) is the reviewed copy of the table: SIX ISO 4217 List One,
 // edition 2026-09-17, without fund codes and codes with "N.A." minor units (ADR 0009).

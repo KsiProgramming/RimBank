@@ -35,18 +35,12 @@ public sealed class MoneyJsonConverter : JsonConverter<Money>
         {
             var property = reader.GetString();
             reader.Read();
-            switch (property)
+            (amount, currency) = property switch
             {
-                case Money.AmountField:
-                    amount = StringValue(ref reader, "The amount must be a JSON string, for example \"10.50\".");
-                    break;
-                case Money.CurrencyField:
-                    currency = StringValue(ref reader, "The currency must be a JSON string, for example \"EUR\".");
-                    break;
-                default:
-                    reader.Skip();
-                    break;
-            }
+                Money.AmountField => (StringValue(ref reader, "The amount must be a JSON string, for example \"10.50\"."), currency),
+                Money.CurrencyField => (amount, StringValue(ref reader, "The currency must be a JSON string, for example \"EUR\".")),
+                _ => Skipped(ref reader, amount, currency),
+            };
         }
 
         var result = Currency.TryCreate(currency);
@@ -73,6 +67,13 @@ public sealed class MoneyJsonConverter : JsonConverter<Money>
         writer.WriteString(Money.AmountField, value.FormatAmount());
         writer.WriteString(Money.CurrencyField, value.Currency.Code);
         writer.WriteEndObject();
+    }
+
+    // An unknown property is skipped (tolerant reader); what was read so far is kept.
+    private static (string? Amount, string? Currency) Skipped(ref Utf8JsonReader reader, string? amount, string? currency)
+    {
+        reader.Skip();
+        return (amount, currency);
     }
 
     private static string? StringValue(ref Utf8JsonReader reader, string message) =>

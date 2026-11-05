@@ -2,7 +2,7 @@ using FsCheck;
 using FsCheck.Xunit;
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.SharedKernel.Tests.MoneyAndCurrency;
+namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
 
 // No minor unit is created or lost when money is divided (mission, quality bar; ADR 0009).
 [Properties(Arbitrary = [typeof(MoneyArbitraries)])]
