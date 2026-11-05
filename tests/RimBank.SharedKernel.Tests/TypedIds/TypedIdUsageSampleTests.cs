@@ -1,6 +1,6 @@
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.SharedKernel.Tests.TypedIds;
+namespace RimBank.SharedKernel.TypedIds.Tests;
 
 // The usage sample from ADR 0008, kept compiling and passing here.
 public sealed class TypedIdUsageSampleTests

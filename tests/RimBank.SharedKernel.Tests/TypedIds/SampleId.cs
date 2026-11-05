@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.Tests.TypedIds;
+namespace RimBank.SharedKernel.TypedIds.Tests;
 
 // The declaration template from ADR 0008. A real identifier lives next to its aggregate,
 // for example PartyReferenceDataDirectoryEntry/PartyReferenceDataDirectoryEntryId.cs.

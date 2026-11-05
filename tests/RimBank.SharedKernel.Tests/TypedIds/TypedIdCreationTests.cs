@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.Tests.TypedIds;
+namespace RimBank.SharedKernel.TypedIds.Tests;
 
 // Creation rules for every identifier are in TypedIdContractTests (see SampleIdContractTests).
 // These tests cover the TypedId helpers directly.
