@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace RimBank.SharedKernel;
 
 /// <summary>
-/// An expected failure, returned as a value inside a <c>Result</c> rather than thrown.
+/// An expected failure, returned as a value inside a <see cref="Result{T}"/> or <see cref="Result"/> rather than thrown.
 /// </summary>
 /// <remarks>
 /// <para>
