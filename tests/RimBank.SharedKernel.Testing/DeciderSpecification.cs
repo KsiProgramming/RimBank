@@ -27,10 +27,6 @@ public sealed class DeciderSpecification<TState, TCommand, TEvent>
     private DeciderSpecification(IReadOnlyList<TEvent> given) => _given = given;
 
     /// <summary>The events already in the stream; none for a new aggregate.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Design",
-        "CA1000:Do not declare static members on generic types",
-        Justification = "The entry point of the specification; the type arguments are named once through an alias.")]
     public static DeciderSpecification<TState, TCommand, TEvent> Given(params TEvent[] events)
     {
         ArgumentNullException.ThrowIfNull(events);

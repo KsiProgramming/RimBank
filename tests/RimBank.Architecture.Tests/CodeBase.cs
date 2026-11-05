@@ -57,7 +57,6 @@ public sealed class CodeBase
     /// <summary>The test assemblies (<c>*.Tests</c>) and their types.</summary>
     public IReadOnlyList<(string Assembly, IReadOnlyList<IType> Types)> TestAssemblies { get; }
 
-#pragma warning disable CA1822 // One classification API for rules: marker checks sit with the handler and view checks, which need state.
     public bool IsCommand(IType type) => type.IsAssignableTo(CommandMarker);
 
     public bool IsQuery(IType type) => type.IsAssignableTo(QueryMarker);
@@ -71,7 +70,6 @@ public sealed class CodeBase
     public bool IsProjection(IType type) => type is not Interface && type.IsAssignableTo(ProjectionContract);
 
     public bool IsTypedId(IType type) => type is not Interface && type.IsAssignableTo(TypedIdContract);
-#pragma warning restore CA1822
 
     public bool IsCommandHandler(IType type) => _commandHandlers.Contains(type.FullName);
 

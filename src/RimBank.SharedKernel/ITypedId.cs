@@ -31,10 +31,6 @@ public interface ITypedId<TSelf>
     Guid Value { get; }
 
     /// <summary>Creates a new identifier whose timestamp is the current time of <paramref name="time"/>.</summary>
-    [SuppressMessage(
-        "Naming",
-        "CA1716:Identifiers should not match keywords",
-        Justification = "'New' is the name prescribed by ADR 0008; RimBank is C# only.")]
     static abstract TSelf New(TimeProvider time);
 
     /// <summary>Wraps a trusted value, for example one read back from the event store.</summary>

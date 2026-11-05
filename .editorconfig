@@ -1,5 +1,8 @@
 # RimBank editor and code-style rules.
 # Style rules marked `warning` are enforced at build time (EnforceCodeStyleInBuild + TreatWarningsAsErrors).
+# Warnings are never suppressed in code (#pragma, [SuppressMessage]) or with <NoWarn>: an exception is a
+# `dotnet_diagnostic.<ID>.severity` entry in the nearest nested .editorconfig, scoped to the files it
+# covers, with its reason (docs/adr/0013-warning-and-package-governance.md).
 root = true
 
 [*]
@@ -122,7 +125,3 @@ dotnet_naming_rule.locals_camel.style = camel
 dotnet_naming_rule.locals_camel.severity = warning
 dotnet_naming_symbols.locals_and_parameters.applicable_kinds = parameter, local
 dotnet_naming_style.camel.capitalization = camel_case
-
-# Tests: underscores in test method names keep them readable as sentences.
-[tests/**.cs]
-dotnet_diagnostic.CA1707.severity = none

@@ -1,0 +1,15 @@
+# Diagnostic exceptions for RimBank.SharedKernel (inherits the root .editorconfig).
+# Warnings are never suppressed in code; each exception lives here, scoped to the files it covers,
+# with its reason (docs/adr/0013-warning-and-package-governance.md).
+
+# CA1716: 'Error' is the name prescribed by the constitution (tech-stack §7); RimBank is C# only.
+[Error.cs]
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1716: 'New' is the name prescribed by ADR 0008; RimBank is C# only.
+[ITypedId.cs]
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1040: CQRS role markers the architecture tests classify types by (ADR 0012).
+[{ICommand,IQuery,IReadPort,IWritePort}.cs]
+dotnet_diagnostic.CA1040.severity = none

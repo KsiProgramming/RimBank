@@ -29,9 +29,7 @@ namespace RimBank.SampleBanking.FloatingLedger
 // typed-ids-are-readonly-record-structs: a typed ID is readonly (ADR 0008).
 namespace RimBank.SampleBanking.TypedIdNotReadOnly
 {
-#pragma warning disable IDE0250 // The missing readonly is the violation this fixture shows.
     public record struct TypedIdNotReadOnlyId : ITypedId<TypedIdNotReadOnlyId>
-#pragma warning restore IDE0250
     {
         private TypedIdNotReadOnlyId(Guid value) => Value = value;
 

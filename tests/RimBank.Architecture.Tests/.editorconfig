@@ -1,0 +1,7 @@
+# Diagnostic exceptions for RimBank.Architecture.Tests (inherits tests/.editorconfig).
+# Warnings are never suppressed in code (docs/adr/0013-warning-and-package-governance.md).
+
+# CA1822: one classification API for rules; the marker checks sit with the handler and view checks,
+# which need instance state.
+[CodeBase.cs]
+dotnet_diagnostic.CA1822.severity = none

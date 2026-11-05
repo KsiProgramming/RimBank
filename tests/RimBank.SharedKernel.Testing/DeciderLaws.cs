@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using FsCheck;
 using FsCheck.Fluent;
 
@@ -27,10 +26,6 @@ namespace RimBank.SharedKernel.Testing;
 /// <typeparam name="TState">The aggregate state.</typeparam>
 /// <typeparam name="TCommand">The aggregate's command base type.</typeparam>
 /// <typeparam name="TEvent">The aggregate's event base type.</typeparam>
-[SuppressMessage(
-    "Design",
-    "CA1000:Do not declare static members on generic types",
-    Justification = "Laws are named once per aggregate; the type arguments cannot be inferred.")]
 public static class DeciderLaws<TState, TCommand, TEvent>
     where TState : IDecider<TState, TCommand, TEvent>
 {

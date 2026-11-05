@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace RimBank.SharedKernel;
@@ -18,10 +17,6 @@ namespace RimBank.SharedKernel;
 /// An invalid code or an empty message is a programmer error and throws <see cref="ArgumentException"/>.
 /// </para>
 /// </remarks>
-[SuppressMessage(
-    "Naming",
-    "CA1716:Identifiers should not match keywords",
-    Justification = "'Error' is the name prescribed by the constitution (tech-stack §7); RimBank is C# only.")]
 public sealed partial record Error
 {
     private const string CodeConvention = "<context>.<error-name>, lower-case kebab-case, for example 'party.party-not-found'";

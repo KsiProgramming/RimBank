@@ -31,10 +31,6 @@ public sealed class ProjectionSpecification<TProjection, TView, TEvent>
     }
 
     /// <summary>The events to project, in stream order.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Design",
-        "CA1000:Do not declare static members on generic types",
-        Justification = "The entry point of the specification; the type arguments are named once through an alias.")]
     public static ProjectionSpecification<TProjection, TView, TEvent> Given(params TEvent[] events)
     {
         ArgumentNullException.ThrowIfNull(events);

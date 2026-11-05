@@ -1,0 +1,9 @@
+# Diagnostic exceptions for every test project (inherits the root .editorconfig).
+# Warnings are never suppressed in code; each exception lives in an .editorconfig, scoped as narrowly
+# as possible, with its reason (docs/adr/0013-warning-and-package-governance.md).
+
+[*.cs]
+# CA1707: underscores in test method names keep them readable as sentences.
+dotnet_diagnostic.CA1707.severity = none
+# CS1591: test code is not public API; XML docs are encouraged, not required.
+dotnet_diagnostic.CS1591.severity = none
