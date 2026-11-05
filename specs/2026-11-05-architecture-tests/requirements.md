@@ -73,7 +73,13 @@ There is no BIAN service domain in this phase.
 - **0012: CQRS role markers**: the four markers, how handlers and views are classified, why markers instead of names, the temporary "no read port in command handlers" rule until 4.2, and the fixture approach for proving rules.
 
 ## Open questions
-- **Referencing test executables:** xUnit v3 test projects are `OutputType=Exe`. If a `ProjectReference` from one test executable to another causes build or runner problems, load the test assemblies from the build output by path instead (same configuration). Decide in group 2.
-- **ArchUnitNET and xUnit v3 package:** check that the current ArchUnitNET release supports xUnit v3 / MTP and the pinned .NET 10 SDK. Decide in group 1 and record the package in ADR 0012.
-- **Detecting `readonly record struct`:** ArchUnitNET may not expose "record" or "readonly" on structs. If it does not, the rule uses reflection (`IsReadOnlyAttribute` plus the compiler-generated `PrintMembers`). Decide in group 1.
+- ~~**Referencing test executables**~~ Answered: a `ProjectReference` from `RimBank.Architecture.Tests` to `RimBank.SharedKernel.Tests` (both xUnit v3 executables) builds and runs fine. The solution under test is every `RimBank.*` assembly in the test project's output, except the fixtures, so adding the project reference is all a new project needs.
+- ~~**ArchUnitNET and xUnit v3 package**~~ Answered: `TngTech.ArchUnitNET` 0.13.4 (netstandard2.0) works on .NET 10 and MTP. The `TngTech.ArchUnitNET.xUnitV3` glue package is not used: it pulls in legacy `System.Net.Http` / `System.Text.RegularExpressions` packages, and the rules raise a `ShouldAssertException` themselves. 0.13.5 was 10 days old at the time; Dependabot can move the pin. Recorded in ADR 0012.
+- ~~**Detecting `readonly record struct`**~~ Answered: ArchUnitNET exposes `IsRecord` on classes but not on structs, and its `IsCompilerGenerated` only looks at names. The rule reads `[IsReadOnly]` on the type and a `PrintMembers` method carrying `[CompilerGenerated]`. Reflection was not needed.
 - **Reference read ports (4.2):** proposed shape is an `IReferenceReadPort` marker that command handlers may depend on, added with the first local reference read model. To be confirmed in 4.2's ADR.
+- **Found during implementation:**
+  - The rules are small checks over ArchUnitNET's loaded types and dependency graph (signatures, fields, generic arguments and method bodies), not its fluent DSL. "Another context than mine" and "a view is what a projection returns" do not fit the DSL, and the checks give one plain message per offending type with the rule's source.
+  - To keep each bad context breaking exactly one rule, the dependency-table rules look only inside a context and at frameworks; every reference to another context is judged by `cross-context-isolation` alone.
+  - Compiler-generated types (lambdas, async state machines) are folded into the type that owns them, so a dependency in an `async` handler body still counts against the handler.
+  - The rule set is 20 rules: the seven dependency-table rows are separate rules, `assembly-names` is its own rule, and the projection contract and purity are two rules.
+  - The markers were added with the fixtures in the first commit, not in group 4, because the good fixture context needs them.
