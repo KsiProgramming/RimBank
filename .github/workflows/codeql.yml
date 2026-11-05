@@ -47,11 +47,6 @@ jobs:
     env:
       UPLOAD: ${{ github.event.repository.private && 'never' || 'always' }}
     steps:
-      # SARIF goes to the runner's temp directory, outside the checkout. upload-artifact refuses
-      # paths containing '..', and the runner context is not available in job-level env.
-      - name: Set SARIF directory
-        run: echo "SARIF_DIR=$RUNNER_TEMP/codeql-sarif" >> "$GITHUB_ENV"
-
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -91,14 +86,14 @@ jobs:
         with:
           category: /language:${{ matrix.language }}
           upload: ${{ env.UPLOAD }}
-          output: ${{ env.SARIF_DIR }}
+          output: ${{ runner.temp }}/codeql-sarif
 
       - name: Keep SARIF (private repository)
         if: steps.scope.outputs.analyse == 'true' && env.UPLOAD == 'never'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: codeql-sarif-${{ matrix.language }}
-          path: ${{ env.SARIF_DIR }}
+          path: ${{ runner.temp }}/codeql-sarif
           retention-days: 30
 
       - name: Fail on error-level findings (private repository)
@@ -106,7 +101,7 @@ jobs:
         run: |
           shopt -s nullglob
           total=0
-          for f in "$SARIF_DIR"/*.sarif; do
+          for f in "$RUNNER_TEMP"/codeql-sarif/*.sarif; do
             findings=$(jq -r '
               .runs[]
               | ([.tool.driver.rules[]?, .tool.extensions[]?.rules[]?]
