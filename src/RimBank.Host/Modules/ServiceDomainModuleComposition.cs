@@ -1,0 +1,50 @@
+namespace RimBank.Host.Modules;
+
+/// <summary>Registers and maps a list of <see cref="IServiceDomainModule"/>s, in list order (ADR 0014).</summary>
+public static class ServiceDomainModuleComposition
+{
+    /// <summary>Calls each module's <see cref="IServiceDomainModule.AddServices"/>, in list order.</summary>
+    /// <param name="builder">The host builder.</param>
+    /// <param name="modules">The modules to register.</param>
+    /// <returns>The same builder.</returns>
+    /// <exception cref="InvalidOperationException">Two modules have the same service domain name.</exception>
+    public static TBuilder AddServiceDomainModules<TBuilder>(this TBuilder builder, IReadOnlyList<IServiceDomainModule> modules)
+        where TBuilder : IHostApplicationBuilder
+    {
+        ArgumentNullException.ThrowIfNull(modules);
+
+        var duplicates = modules
+            .GroupBy(module => module.ServiceDomain, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+        if (duplicates.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Each service domain registers exactly one module, but these are registered more than once: {string.Join(", ", duplicates)}.");
+        }
+
+        foreach (var module in modules)
+        {
+            module.AddServices(builder);
+        }
+
+        return builder;
+    }
+
+    /// <summary>Calls each module's <see cref="IServiceDomainModule.MapEndpoints"/>, in list order.</summary>
+    /// <param name="endpoints">The application's endpoint route builder.</param>
+    /// <param name="modules">The modules to map, the same list given to <see cref="AddServiceDomainModules{TBuilder}"/>.</param>
+    /// <returns>The same endpoint route builder.</returns>
+    public static IEndpointRouteBuilder MapServiceDomainModules(this IEndpointRouteBuilder endpoints, IReadOnlyList<IServiceDomainModule> modules)
+    {
+        ArgumentNullException.ThrowIfNull(modules);
+
+        foreach (var module in modules)
+        {
+            module.MapEndpoints(endpoints);
+        }
+
+        return endpoints;
+    }
+}

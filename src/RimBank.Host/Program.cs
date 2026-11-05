@@ -1,4 +1,4 @@
-using RimBank.ServiceDefaults;
+using RimBank.Host.Modules;
 
 namespace RimBank.Host;
 
@@ -14,14 +14,6 @@ public sealed class Program
 
     /// <summary>Builds and runs the host.</summary>
     /// <param name="args">The command-line arguments.</param>
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
-        builder.AddServiceDefaults();
-
-        var app = builder.Build();
-        app.MapDefaultEndpoints();
-
-        app.Run();
-    }
+    public static void Main(string[] args) =>
+        HostComposition.Build(WebApplication.CreateBuilder(args), ServiceDomainModules.All).Run();
 }
