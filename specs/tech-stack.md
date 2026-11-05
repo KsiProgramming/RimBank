@@ -86,7 +86,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
    ├─ RimBank.Architecture.Tests/
-   ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), decider/projection helpers (0.6)
+   ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
       ├─ RimBank.Party.PartyReferenceDataDirectory.Api.Tests/          # HTTP + Problem Details + BIAN conformance

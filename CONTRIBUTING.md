@@ -57,6 +57,10 @@ Expected business failures are returned as `Result<T>` / `Result` with an `Error
 
 Every aggregate identifier is a `readonly record struct` implementing `ITypedId<TSelf>` over a version 7 GUID ([ADR 0008](docs/adr/0008-typed-identifier-pattern.md)). Copy the declaration template from the ADR next to the aggregate, and add one contract test class: `public sealed class XIdContractTests : TypedIdContractTests<XId>;` (from `tests/RimBank.SharedKernel.Testing`). Create new IDs with `XId.New(timeProvider)` in the command handler, never inside `Decide`, and turn untrusted input into an ID with `XId.TryCreate(...)`.
 
+### Money
+
+Amounts are always `Money` over a `decimal`, never `double` or `float` and never a bare `decimal` with a currency string beside it ([ADR 0009](docs/adr/0009-money-and-currency.md)). Turn untrusted input into money with `Money.TryCreate(amount, currencyCode)`, round explicitly with the mode the business rule names (`Round()` is banker's rounding), and divide only with `Allocate` / `Split` so no minor unit is lost. Property tests over money register `MoneyArbitraries` from `tests/RimBank.SharedKernel.Testing`: `[Properties(Arbitrary = [typeof(MoneyArbitraries)])]`.
+
 ### What CI runs
 
 Every push to `main` and every pull request runs two workflows (policy: [ADR 0005](docs/adr/0005-ci-and-supply-chain-policy.md)):
