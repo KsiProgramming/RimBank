@@ -9,8 +9,8 @@
 |---|---|---|
 | Runtime / language | **.NET (latest GA)**: currently .NET 10 LTS / C# 14 | Pinned via `global.json`. Move to each new GA release after the dependencies support it. |
 | Solution format | `RimBank.slnx` | |
-| Build settings | `Directory.Build.props` | `Nullable=enable`, `TreatWarningsAsErrors=true`, `AnalysisLevel=latest-recommended`, `ImplicitUsings=enable` |
-| Package versions | Central Package Management (`Directory.Packages.props`) | No versions in individual `.csproj` files |
+| Build settings | `Directory.Build.props` / `Directory.Build.targets` | `Nullable=enable`, `TreatWarningsAsErrors=true`, `AnalysisLevel=latest-recommended`, `ImplicitUsings=enable`. Diagnostic severities only in `.editorconfig` files, never suppressed in code ([ADR 0013](../docs/adr/0013-warning-and-package-governance.md)) |
+| Package versions | Central Package Management (`Directory.Packages.props`) | No versions in individual `.csproj` files, no `VersionOverride`; committed lock files, locked restore in CI, NuGet audit, nuget.org only via `NuGet.config` ([ADR 0013](../docs/adr/0013-warning-and-package-governance.md)) |
 | Database | **PostgreSQL** | One schema per service domain |
 | Event store & documents | **Marten** | Event-sourced aggregates (write side); inline and async projections for read models (query side). See §8 |
 | Messaging / application pipeline | **Wolverine** | Command and query dispatch, transactional outbox/inbox, integration events, scheduled messages, sagas. Transport is local (in-process, durable) in the modular monolith and RabbitMQ when a context is extracted. |
@@ -65,8 +65,12 @@ Before a service domain is created, its mapping must be checked against the BIAN
 /
 ├─ RimBank.slnx
 ├─ global.json
-├─ Directory.Build.props
-├─ Directory.Packages.props
+├─ Directory.Build.props         # shared build settings, central product version
+├─ Directory.Build.targets       # build guards: no in-code warning suppression (ADR 0013)
+├─ Directory.Packages.props      # the only place package versions live
+├─ NuGet.config                  # nuget.org only, package source mapping
+├─ .editorconfig                 # code style + solution-wide diagnostic severities; nested ones per project
+├─ scripts/                      # repository tooling (roadmap board sync)
 ├─ specs/                         # constitution (this folder)
 ├─ docs/adr/                      # architecture decision records
 ├─ doc-0/                         # project inputs (read-only)
