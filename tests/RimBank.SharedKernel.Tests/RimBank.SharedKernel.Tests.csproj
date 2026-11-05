@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+    <ProjectReference Include="..\RimBank.SharedKernel.Testing\RimBank.SharedKernel.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
