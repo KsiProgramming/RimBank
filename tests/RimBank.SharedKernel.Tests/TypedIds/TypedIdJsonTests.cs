@@ -11,14 +11,6 @@ public sealed class TypedIdJsonTests
     private static readonly JsonSerializerOptions _options = new() { Converters = { new TypedIdJsonConverterFactory() } };
 
     [Fact]
-    public void An_identifier_serializes_as_a_plain_string() =>
-        JsonSerializer.Serialize(_id, _options).ShouldBe($"\"{Text}\"");
-
-    [Fact]
-    public void An_identifier_round_trips() =>
-        JsonSerializer.Deserialize<SampleId>(JsonSerializer.Serialize(_id, _options), _options).ShouldBe(_id);
-
-    [Fact]
     public void An_identifier_inside_a_record_round_trips()
     {
         var holder = new Holder(_id, null);

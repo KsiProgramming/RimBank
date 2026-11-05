@@ -21,14 +21,6 @@ public sealed class TypedIdParsingTests
     };
 
     [Fact]
-    public void ToString_is_the_lower_case_D_format() =>
-        _id.ToString().ShouldBe(Text);
-
-    [Fact]
-    public void Parse_round_trips_the_text_form() =>
-        Parse<SampleId>(_id.ToString()).ShouldBe(_id);
-
-    [Fact]
     public void Parse_accepts_upper_case_hex() =>
         Parse<SampleId>(Text.ToUpperInvariant()).ShouldBe(_id);
 

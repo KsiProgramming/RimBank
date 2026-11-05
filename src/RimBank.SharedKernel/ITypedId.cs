@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 
 namespace RimBank.SharedKernel;
 
@@ -9,8 +10,8 @@ namespace RimBank.SharedKernel;
 /// <typeparam name="TSelf">The identifier type itself, for example <c>PartyReferenceDataDirectoryEntryId</c>.</typeparam>
 /// <remarks>
 /// <para>
-/// Each identifier is declared next to its aggregate and implements only the static members below, by forwarding
-/// to <see cref="TypedId"/>. Parsing (<see cref="IParsable{TSelf}"/>, <see cref="ISpanParsable{TSelf}"/>),
+/// Each identifier is declared next to its aggregate and implements only the static members below and the
+/// comparison operators, by forwarding to <see cref="TypedId"/>; equality and its operators come from the record struct. Parsing (<see cref="IParsable{TSelf}"/>, <see cref="ISpanParsable{TSelf}"/>),
 /// formatting (<see cref="ISpanFormattable"/>) and ordering (<see cref="IComparable{TSelf}"/>) come from the
 /// default implementations on this interface, so generic code such as model binding or <c>Order()</c> works.
 /// </para>
@@ -22,7 +23,8 @@ namespace RimBank.SharedKernel;
 /// defined order.
 /// </para>
 /// </remarks>
-public interface ITypedId<TSelf> : IEquatable<TSelf>, IComparable<TSelf>, ISpanParsable<TSelf>, ISpanFormattable
+public interface ITypedId<TSelf>
+    : IEquatable<TSelf>, IComparable<TSelf>, IComparisonOperators<TSelf, TSelf, bool>, ISpanParsable<TSelf>, ISpanFormattable
     where TSelf : struct, ITypedId<TSelf>
 {
     /// <summary>The underlying version 7 GUID.</summary>

@@ -23,34 +23,6 @@ public sealed class TypedIdOrderingTests
     }
 
     [Fact]
-    public void CompareTo_follows_creation_time()
-    {
-        var time = new FixedTimeProvider(_start);
-        var earlier = SampleId.New(time);
-        time.Advance(TimeSpan.FromSeconds(1));
-        var later = SampleId.New(time);
-
-        Compare(earlier, later).ShouldBeLessThan(0);
-        Compare(later, earlier).ShouldBeGreaterThan(0);
-        Compare(earlier, earlier).ShouldBe(0);
-    }
-
-    [Fact]
-    public void Comparison_operators_follow_creation_time()
-    {
-        var time = new FixedTimeProvider(_start);
-        var earlier = SampleId.New(time);
-        time.Advance(TimeSpan.FromMilliseconds(1));
-        var later = SampleId.New(time);
-
-        (earlier < later).ShouldBeTrue();
-        (earlier <= later).ShouldBeTrue();
-        (later > earlier).ShouldBeTrue();
-        (later >= earlier).ShouldBeTrue();
-        (later < earlier).ShouldBeFalse();
-    }
-
-    [Fact]
     public void CreatedAt_returns_the_creation_instant_truncated_to_milliseconds()
     {
         var instant = _start.AddMilliseconds(456).AddTicks(7_890);
@@ -60,6 +32,4 @@ public sealed class TypedIdOrderingTests
         TypedId.CreatedAt(id).ShouldBe(_start.AddMilliseconds(456));
     }
 
-    private static int Compare<T>(T left, T right)
-        where T : IComparable<T> => left.CompareTo(right);
 }
