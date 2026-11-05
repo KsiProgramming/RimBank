@@ -17,4 +17,12 @@ public readonly record struct SampleId : ITypedId<SampleId>
     public static Result<SampleId> TryCreate(string? text) => TypedId.TryCreate<SampleId>(text);
 
     public override string ToString() => TypedId.Format(Value);
+
+    public static bool operator <(SampleId left, SampleId right) => TypedId.Compare(left, right) < 0;
+
+    public static bool operator <=(SampleId left, SampleId right) => TypedId.Compare(left, right) <= 0;
+
+    public static bool operator >(SampleId left, SampleId right) => TypedId.Compare(left, right) > 0;
+
+    public static bool operator >=(SampleId left, SampleId right) => TypedId.Compare(left, right) >= 0;
 }

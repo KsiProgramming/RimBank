@@ -8,10 +8,21 @@ namespace RimBank.SharedKernel;
 /// </summary>
 /// <typeparam name="TSelf">The identifier type itself, for example <c>PartyReferenceDataDirectoryEntryId</c>.</typeparam>
 /// <remarks>
-/// Each identifier is declared next to its aggregate and forwards to <see cref="TypedId"/>.
+/// <para>
+/// Each identifier is declared next to its aggregate and implements only the static members below, by forwarding
+/// to <see cref="TypedId"/>. Parsing (<see cref="IParsable{TSelf}"/>, <see cref="ISpanParsable{TSelf}"/>),
+/// formatting (<see cref="ISpanFormattable"/>) and ordering (<see cref="IComparable{TSelf}"/>) come from the
+/// default implementations on this interface, so generic code such as model binding or <c>Order()</c> works.
+/// </para>
+/// <para>
 /// Create new identifiers in the command handler (or the caller), never inside a pure <c>Decide</c> function.
+/// </para>
+/// <para>
+/// Ordering follows creation time to the millisecond; identifiers created in the same millisecond have no
+/// defined order.
+/// </para>
 /// </remarks>
-public interface ITypedId<TSelf>
+public interface ITypedId<TSelf> : IEquatable<TSelf>, IComparable<TSelf>, ISpanParsable<TSelf>, ISpanFormattable
     where TSelf : struct, ITypedId<TSelf>
 {
     /// <summary>The underlying version 7 GUID.</summary>
@@ -33,4 +44,34 @@ public interface ITypedId<TSelf>
 
     /// <summary>Parses untrusted text (the <c>D</c> format); a failure is a <see cref="ErrorKind.Validation"/> error.</summary>
     static abstract Result<TSelf> TryCreate(string? text);
+
+    /// <inheritdoc />
+    int IComparable<TSelf>.CompareTo(TSelf other) => TypedId.Compare((TSelf)this, other);
+
+    /// <inheritdoc />
+    static TSelf IParsable<TSelf>.Parse(string s, IFormatProvider? provider)
+    {
+        ArgumentNullException.ThrowIfNull(s);
+        return TypedId.Parse<TSelf>(s);
+    }
+
+    /// <inheritdoc />
+    static bool IParsable<TSelf>.TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, out TSelf result) =>
+        TypedId.TryParse(s.AsSpan(), out result);
+
+    /// <inheritdoc />
+    static TSelf ISpanParsable<TSelf>.Parse(ReadOnlySpan<char> s, IFormatProvider? provider) =>
+        TypedId.Parse<TSelf>(s);
+
+    /// <inheritdoc />
+    static bool ISpanParsable<TSelf>.TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, out TSelf result) =>
+        TypedId.TryParse(s, out result);
+
+    /// <inheritdoc />
+    string IFormattable.ToString(string? format, IFormatProvider? formatProvider) =>
+        TypedId.Format(Value, format);
+
+    /// <inheritdoc />
+    bool ISpanFormattable.TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider) =>
+        TypedId.TryFormat(Value, destination, out charsWritten, format);
 }

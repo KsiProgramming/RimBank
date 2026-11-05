@@ -14,6 +14,8 @@ public static class TypedId
     /// <summary>The error code for a value that is not a valid identifier (ADR 0006, ADR 0008).</summary>
     public const string InvalidIdentifierCode = "shared.invalid-identifier";
 
+    private const int DFormatLength = 36;
+
     private const string InvalidIdentifierMessage = "The value is not a valid identifier.";
 
     private static readonly Error _invalidIdentifier = Error.Validation(InvalidIdentifierCode, InvalidIdentifierMessage);
@@ -55,7 +57,8 @@ public static class TypedId
     public static bool TryParse<TId>(ReadOnlySpan<char> text, out TId id)
         where TId : struct, ITypedId<TId>
     {
-        if (Guid.TryParseExact(text, "D", out var value) && IsValid(value))
+        // Guid parsing trims surrounding white space; an identifier must be exactly the 36-character D form.
+        if (text.Length == DFormatLength && Guid.TryParseExact(text, "D", out var value) && IsValid(value))
         {
             id = TId.From(value);
             return true;
@@ -65,8 +68,36 @@ public static class TypedId
         return false;
     }
 
+    /// <summary>Compares two identifiers by value, which for version 7 is creation order (to the millisecond).</summary>
+    public static int Compare<TId>(TId left, TId right)
+        where TId : struct, ITypedId<TId> => left.Value.CompareTo(right.Value);
+
     /// <summary>The lower-case <c>D</c> text form of an identifier's value.</summary>
     public static string Format(Guid value) => value.ToString("D");
+
+    /// <summary>The text form of an identifier's value; only the <c>D</c> format (or none) is supported.</summary>
+    /// <exception cref="FormatException"><paramref name="format"/> is not <c>D</c>, empty or null.</exception>
+    public static string Format(Guid value, string? format)
+    {
+        EnsureSupported(format);
+        return Format(value);
+    }
+
+    /// <summary>Writes the lower-case <c>D</c> text form; returns false when <paramref name="destination"/> is too small.</summary>
+    /// <exception cref="FormatException"><paramref name="format"/> is not <c>D</c> or empty.</exception>
+    public static bool TryFormat(Guid value, Span<char> destination, out int charsWritten, ReadOnlySpan<char> format)
+    {
+        EnsureSupported(format);
+        return value.TryFormat(destination, out charsWritten, "D");
+    }
+
+    private static void EnsureSupported(ReadOnlySpan<char> format)
+    {
+        if (!format.IsEmpty && !format.Equals("D", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new FormatException("Identifiers support only the 'D' format.");
+        }
+    }
 
     /// <summary>
     /// The instant encoded in a version 7 identifier, to the millisecond. Informational only:
