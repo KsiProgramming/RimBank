@@ -10,6 +10,7 @@
     <Project Path="src/RimBank.SharedKernel/RimBank.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/RimBank.SharedKernel.Testing/RimBank.SharedKernel.Testing.csproj" />
     <Project Path="tests/RimBank.SharedKernel.Tests/RimBank.SharedKernel.Tests.csproj" />
   </Folder>
 </Solution>
