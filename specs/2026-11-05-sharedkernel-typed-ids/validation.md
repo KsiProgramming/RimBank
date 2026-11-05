@@ -25,7 +25,7 @@ How the Definition of done applies to this phase: the "working code", "unit test
 ## Manual / demo checks
 - [ ] From the repo root, the CONTRIBUTING commands give the same result as CI:
   `dotnet restore RimBank.slnx && dotnet build RimBank.slnx -c Release --no-restore && dotnet test --solution RimBank.slnx -c Release --no-build --report-xunit-trx --results-directory TestResults && dotnet format RimBank.slnx --verify-no-changes --no-restore` → exit 0, `failed: 0`
-- [ ] Read the declaration template in ADR 0008: a reviewer can declare a new ID by copying it (about 15 lines) and inheriting `TypedIdContractTests<TId>`, with no other changes
+- [ ] Read the declaration template in ADR 0008: a reviewer can declare a new ID by copying it (about 25 short lines) and inheriting `TypedIdContractTests<TId>`, with no other changes
 - [ ] `SampleId.TryCreate("not-a-guid")` returns a failure whose `Error` is `Validation` with code `shared.invalid-identifier` and a business-language message (shown by a test; it will be a 400 Problem Details from 0.9)
 
 ## Merge criteria

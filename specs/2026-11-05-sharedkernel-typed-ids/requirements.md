@@ -31,7 +31,7 @@ There is no BIAN service domain in this phase. It adds no commands, queries or r
 - Ordering: `CompareTo` follows `Guid` order, which for v7 is creation-time order at millisecond resolution. Order within the same millisecond is not defined, and the docs say so.
 - Formatting: `ToString()` gives the lower-case `D` format (`0190f5c4-…`), the same as the `Guid` value, with no prefix.
 - `TypedIdJsonConverterFactory` (`System.Text.Json`): reads and writes any `ITypedId<T>` as a plain GUID string, also as a dictionary key (`ReadAsPropertyName` / `WriteAsPropertyName`). An invalid value throws `JsonException`.
-- The hand-written declaration pattern (about 15 lines per ID), shown by a `SampleId` in the tests and in ADR 0008.
+- The hand-written declaration pattern (about 25 short lines per ID, including the comparison operators), shown by a `SampleId` in the tests and in ADR 0008.
 - `tests/RimBank.SharedKernel.Testing`: a reusable `TypedIdContractTests<TId>` that every future ID test class inherits.
 - ADR 0008 (typed identifier pattern).
 
@@ -64,5 +64,5 @@ There is no BIAN service domain in this phase. It adds no commands, queries or r
 - **0008: Typed identifier pattern**: `readonly record struct` + `ITypedId<TSelf>`; v7 only; `New(TimeProvider)`; IDs created outside `Decide`; `TryCreate` vs `From`; the `default` limitation; ordering and `CreatedAt` semantics (informational only); JSON shape; why there is no source generator or library; the declaration template.
 
 ## Open questions
-- **xUnit package for a test library:** `RimBank.SharedKernel.Testing` is not an executable, so it needs `[Fact]` without the `xunit.v3` runner package. Expected: `xunit.v3.extensibility.core`. Confirm during group 1, check that inherited `[Fact]`s are discovered in the derived class of another assembly, and add the version to `Directory.Packages.props`.
-- **Default static implementations:** check whether `ITypedId<TSelf>` can implement `IParsable` / `ISpanParsable` members as static virtual defaults, which would cut the per-ID boilerplate. If not, each ID keeps one-line forwards to `TypedId`. Answer in group 1 and record it in ADR 0008.
+- ~~**xUnit package for a test library**~~ Answered in group 1: `xunit.v3.extensibility.core` 4.0.2 (the same version as `xunit.v3`). Inherited `[Fact]`s from `TypedIdContractTests<TId>` are discovered in the derived class in another assembly (11 contract facts run for `SampleId`). Recorded in ADR 0008.
+- ~~**Default static implementations**~~ Answered in group 1: yes. `ITypedId<TSelf>` implements the `IParsable`, `ISpanParsable`, `ISpanFormattable` and `IComparable` members as defaults, so each ID only declares `New`, `From`, `TryCreate` (×2), `ToString` and, because CA1036 asks for them, the four comparison operators. `ITypedId<TSelf>` also extends `IComparisonOperators<TSelf, TSelf, bool>`, so the compiler enforces the operators and the contract tests can check them. Recorded in ADR 0008. Follow-up for 1.7: confirm that ASP.NET Core route binding finds the explicit `IParsable` implementation.

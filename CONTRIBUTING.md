@@ -53,6 +53,10 @@ Tests use xUnit v3 and Shouldly on Microsoft.Testing.Platform ([ADR 0007](docs/a
 
 Expected business failures are returned as `Result<T>` / `Result` with an `Error`, never thrown ([ADR 0006](docs/adr/0006-result-and-error-model.md)). Error codes are stable and follow `<context>.<error-name>` in lower-case kebab-case, for example `party.party-not-found`. Pick the `ErrorKind` that matches the HTTP status the caller should see, and never rename a released code.
 
+### Typed identifiers
+
+Every aggregate identifier is a `readonly record struct` implementing `ITypedId<TSelf>` over a version 7 GUID ([ADR 0008](docs/adr/0008-typed-identifier-pattern.md)). Copy the declaration template from the ADR next to the aggregate, and add one contract test class: `public sealed class XIdContractTests : TypedIdContractTests<XId>;` (from `tests/RimBank.SharedKernel.Testing`). Create new IDs with `XId.New(timeProvider)` in the command handler, never inside `Decide`, and turn untrusted input into an ID with `XId.TryCreate(...)`.
+
 ### What CI runs
 
 Every push to `main` and every pull request runs two workflows (policy: [ADR 0005](docs/adr/0005-ci-and-supply-chain-policy.md)):
