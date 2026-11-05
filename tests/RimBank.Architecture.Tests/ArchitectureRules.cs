@@ -1,0 +1,36 @@
+namespace RimBank.Architecture.Tests;
+
+/// <summary>
+/// Every architecture rule of the constitution (tech-stack §3, §4, §8.4; ADR 0008–0012), in the order of the
+/// CONTRIBUTING catalogue.
+/// </summary>
+public static partial class ArchitectureRules
+{
+    // An expression body, not an initialiser: the rules are initialised in other files of this partial class, and
+    // static initialisers across partial files run in file order.
+    public static IReadOnlyList<ArchitectureRule> All =>
+    [
+        SharedKernelDependencies,
+        CoreDependencies,
+        PublishedLanguageDependencies,
+        SubscriptionsDependencies,
+        ApiDependencies,
+        McpDependencies,
+        PostgresqlDependencies,
+        CrossContextIsolation,
+        PublishedLanguageHasNoViews,
+        CommandHandlersStayOnWriteSide,
+        QueryHandlersStayOnReadSide,
+        ProjectionsImplementContract,
+        ProjectionsArePure,
+        AggregatesImplementDecider,
+        NamespaceRule,
+        AssemblyNames,
+        BusinessFolderNames,
+        TypedIdsAreReadonlyRecordStructs,
+        NoBinaryFloatingPoint,
+        TestNamespaces,
+    ];
+
+    public static ArchitectureRule Named(string id) => All.Single(rule => rule.Id == id);
+}

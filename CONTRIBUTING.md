@@ -25,7 +25,7 @@ Work outside the roadmap (bug fixes, docs) is welcome as small, focused PRs. Ope
 ## Rules that reviewers check
 
 - **Business language only.** Namespaces follow `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]`. Core code is organised by aggregate, Behavior Qualifier and business flow. Folders such as `Services`, `Repositories`, `Helpers`, `Managers`, `Utils` or `Dtos` are not allowed.
-- **Hexagonal dependencies.** The core depends on nothing technical. Adapters depend on the core, never the other way round (enforced by architecture tests).
+- **Hexagonal dependencies.** The core depends on nothing technical. Adapters depend on the core, never the other way round (enforced by architecture tests, see [Architecture rules](#architecture-rules)).
 - **Pure decisions, failures as values.** `decide(command, state) → events`, `evolve(state, event) → state`, and `Result`/`Error` for business rules.
 - **Commands and queries are separate.** Commands go through a decision and return an acknowledgement; queries read only from read models. Money rules are never checked against a read model ([ADR 0003](docs/adr/0003-separate-commands-and-queries.md)).
 - **Loosely coupled contexts.** Read models are private. Contexts share only `.PublishedLanguage` integration events, consumed through their own `.Subscriptions` adapter; cross-context requests are events, not commands ([ADR 0004](docs/adr/0004-loosely-coupled-contexts.md)).
@@ -66,6 +66,45 @@ Amounts are always `Money` over a `decimal`, never `double` or `float` and never
 ### Aggregates and projections
 
 An aggregate state is a `sealed record` implementing `IDecider<TSelf, TCommand, TEvent>`: `Initial` and `Evolve` in `<Aggregate>.cs`, `Decide` in a `partial` in `Decisions.cs`. A view is projected by a `sealed class …Projection` implementing `IProjection<TView, TEvent>` ([ADR 0010](docs/adr/0010-decider-and-projection-contracts.md)). Keep both pure: time and new IDs come in the command, set by the handler. Build decisions with `Decision.Accept<TEvent>(…)` / `Decision.Nothing<TEvent>()` or return an `Error`. Test them with `DeciderSpecification` (Given / When / Then) and `ProjectionSpecification` (Given / Then view), and run `DeciderLaws`, including `ProjectionAgreesWithState` for each view. All three come from `tests/RimBank.SharedKernel.Testing`. An event or view holding a collection needs value equality.
+
+### Architecture rules
+
+`tests/RimBank.Architecture.Tests` checks the constitution's structural rules with ArchUnitNET. Each rule holds for the solution and is proven to bite against a bad context in `tests/RimBank.Architecture.Fixtures` ([ADR 0012](docs/adr/0012-cqrs-role-markers.md)). Run only these tests with:
+
+```bash
+dotnet test --project tests/RimBank.Architecture.Tests
+```
+
+| Rule | What it checks | Source |
+|---|---|---|
+| `shared-kernel-dependencies` | `RimBank.SharedKernel` uses the BCL only | tech-stack §4 |
+| `core-dependencies` | A core uses SharedKernel and its own `.PublishedLanguage`, never a framework or its own adapters | tech-stack §4 |
+| `published-language-dependencies` | `.PublishedLanguage` uses the BCL only | tech-stack §4 |
+| `subscriptions-dependencies` | `.Subscriptions` never uses its own `.Api`, `.Mcp` or `.Postgresql`, ASP.NET Core, Marten, Npgsql or the MCP SDK | tech-stack §4 |
+| `api-dependencies` | `.Api` never uses `.Postgresql`, Marten, Wolverine.Marten, Npgsql or the MCP SDK | tech-stack §4 |
+| `mcp-dependencies` | `.Mcp` never uses `.Api`, `.Postgresql`, Marten, Wolverine.Marten or Npgsql | tech-stack §4, §6 |
+| `postgresql-dependencies` | `.Postgresql` never uses `.Api`, `.Mcp`, ASP.NET Core or the MCP SDK | tech-stack §4 |
+| `cross-context-isolation` | The only reference to another context is `.Subscriptions` → its `.PublishedLanguage` | tech-stack §8.4, ADR 0004 |
+| `published-language-has-no-views` | No view (a type a projection returns) lives in `.PublishedLanguage` | tech-stack §3.1, §8.4 |
+| `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |
+| `query-handlers-stay-on-read-side` | A query handler never uses an `IWritePort`, an aggregate, an `ICommand` or a command handler | tech-stack §4, ADR 0012 |
+| `projections-implement-contract` | A `…Projection` is a sealed class implementing `IProjection`, and every `IProjection` is named `…Projection` | ADR 0010 |
+| `projections-are-pure` | A projection has no instance fields and never uses ports, handlers or `TimeProvider` | tech-stack §4, §8.2 |
+| `aggregates-implement-decider` | A type with a static `Evolve` implements `IDecider`; every `IDecider` is a sealed record in a core | tech-stack §7, ADR 0010 |
+| `namespace-rule` | `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]` with a catalogued service domain, or a composition project | tech-stack §3.1–3.2, ADR 0011 |
+| `assembly-names` | A project is named after its root namespace, with an allowed adapter suffix | tech-stack §3.1, ADR 0011 |
+| `business-folder-names` | No `Services`, `Repositories`, `Helpers`, `Managers`, `Utils`, `Dtos`, `Commands` or `Queries` namespace segment | mission principle 1, tech-stack §3.4 |
+| `typed-ids-are-readonly-record-structs` | Every `ITypedId<T>` is a `readonly record struct` | tech-stack §7, ADR 0008 |
+| `no-binary-floating-point` | No `double` or `float` (also nullable or as a generic argument) in cores, SharedKernel or `.PublishedLanguage` | quality bar, ADR 0009 |
+| `test-namespaces` | Every type in a `*.Tests` assembly is in a namespace ending with `.Tests` | tech-stack §3.3 |
+
+**Adding a context or project:**
+
+1. Add its row to `ServiceDomainCatalogue.Solution` in the same PR as its BIAN mapping ADR ([ADR 0011](docs/adr/0011-namespace-rule.md)).
+2. Add a `ProjectReference` to it from `tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj`. The rules only see projects referenced there, and `The_solution_loads_every_project_and_never_the_fixtures` lists them.
+3. Mark the CQRS roles: commands implement `ICommand`, queries `IQuery<TView>`, the write port `IWritePort` and the read port `IReadPort`. An unmarked type escapes the CQRS rules.
+
+**Adding a rule:** write it in `ArchitectureRules`, add a bad context that breaks only that rule to the fixtures, list it in `FixtureContexts.Bad`, and add a row to the table above.
 
 ### What CI runs
 

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Fake contexts that prove each architecture rule bites (specs/2026-11-05-architecture-tests, ADR 0012):
+    one good context pair and one bad context per rule. Stub framework namespaces (Stubs/) stand in for
+    Marten, Wolverine, Npgsql, ASP.NET Core and the MCP SDK, so no infrastructure package is referenced.
+    A class library loaded only by RimBank.Architecture.Tests; never referenced from src/.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>RimBank.Architecture.Fixtures</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

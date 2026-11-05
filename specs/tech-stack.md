@@ -85,7 +85,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
-   ├─ RimBank.Architecture.Tests/
+   ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
+   ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
@@ -147,6 +148,8 @@ Commands and queries sit next to each other inside the business flow or Behavior
 | Command handler | Write port, aggregate decisions, its own context's local reference read models used only as decision inputs (see §8.4) | The context's own query read models, query handlers |
 | Query handler | Read port, views | Write port, aggregates, decisions |
 | Projection (`…Projection`) | Domain events, views | Ports, handlers, `TimeProvider` (time comes from event data) |
+
+The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012](../docs/adr/0012-cqrs-role-markers.md)): commands implement `ICommand`, queries `IQuery<TView>`, write ports `IWritePort` and read ports `IReadPort`. A handler is a class with a `Handle` / `HandleAsync` method whose first parameter is a command or a query, and a view is a type returned by an `IProjection`. Until local reference read models exist (4.2), a command handler may use no read port or view at all.
 
 ## 5. API & error contract
 
