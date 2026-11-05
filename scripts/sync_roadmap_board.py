@@ -35,11 +35,74 @@ PHASE_LINE = re.compile(r"^- \[(?P<tick>[ xX])\] \*\*(?P<number>\d+\.\d+) (?P<he
 BACKLOG_LINE = re.compile(r"^- (?!\[)(?P<text>.+?)\s*$")
 TITLE_LIMIT = 100
 
-# name -> (colour, description). Applied with --force, so colours and descriptions follow this.
+# The repository's label taxonomy (CONTRIBUTING "Labels"): one `type:`, any number of `area:`, at most
+# one `context:` per issue or PR. name -> (colour, description). Applied with --force, so colours and
+# descriptions follow this file; labels created by hand are left alone.
+TYPE_COLOUR, AREA_COLOUR, CONTEXT_COLOUR, STAGE_LABEL_COLOUR = "0e8a16", "c5def5", "fbca04", "1d76db"
 LABELS: dict[str, tuple[str, str]] = {
     PHASE_LABEL: ("5319e7", "A phase of specs/roadmap.md (synced, edit the roadmap)"),
+    # What kind of change
+    "type:feature": (TYPE_COLOUR, "New business or platform behaviour"),
+    "type:adr": ("0052cc", "Architecture decision record (docs/adr/)"),
+    "type:bug": ("d73a4a", "Something behaves differently from its spec"),
+    "type:chore": ("fef2c0", "Tooling, CI, dependencies, refactoring with no behaviour change"),
+    "type:docs": ("0075ca", "Documentation, specs or the constitution"),
+    "type:security": ("b60205", "Security fix or hardening (see SECURITY.md for vulnerabilities)"),
+    # Which technical concern
+    "area:shared-kernel": (AREA_COLOUR, "RimBank.SharedKernel: Result, Error, typed IDs, Money, decider"),
+    "area:architecture": (AREA_COLOUR, "Architecture tests and dependency rules (ArchUnitNET)"),
+    "area:host": (AREA_COLOUR, "RimBank.Host, Aspire AppHost and ServiceDefaults"),
+    "area:domain": (AREA_COLOUR, "Aggregates, decisions, events and invariants (write side)"),
+    "area:read-models": (AREA_COLOUR, "Views, projections and queries (read side)"),
+    "area:api": (AREA_COLOUR, "HTTP adapters: Minimal APIs, Problem Details, OpenAPI"),
+    "area:mcp": (AREA_COLOUR, "Model Context Protocol adapters and tools"),
+    "area:persistence": (AREA_COLOUR, "Marten and PostgreSQL adapters, event store"),
+    "area:messaging": (AREA_COLOUR, "Wolverine: dispatch, outbox, subscriptions, published language"),
+    "area:security": (AREA_COLOUR, "Authentication, authorisation, PII, threat model"),
+    "area:observability": (AREA_COLOUR, "OpenTelemetry, health checks, metrics and alerts"),
+    "area:bian-conformance": (AREA_COLOUR, "Conformance with the BIAN v14 OpenAPI and AsyncAPI specs"),
+    "area:ci": (AREA_COLOUR, "GitHub Actions, Dependabot, CodeQL, build governance"),
+    "area:performance": (AREA_COLOUR, "Load tests, mutation tests, throughput"),
+    # Which BIAN bounded context (tech-stack §3.2)
+    "context:party": (CONTEXT_COLOUR, "Party / Party Reference Data Directory"),
+    "context:product-directory": (CONTEXT_COLOUR, "ProductManagement / Product Directory"),
+    "context:position-keeping": (CONTEXT_COLOUR, "AccountManagement / Position Keeping"),
+    "context:current-account": (CONTEXT_COLOUR, "LoansAndDeposits / Current Account"),
+    "context:payments": (CONTEXT_COLOUR, "Payments / Payment Order Initiation, Standing Order, Direct Debit"),
+    "context:finance": (CONTEXT_COLOUR, "Finance / Financial Accounting, Account Reconciliation"),
 }
-STAGE_LABEL_COLOUR = "1d76db"
+
+# Stage -> the bounded context it builds.
+STAGE_CONTEXTS = {
+    1: "context:party",
+    2: "context:product-directory",
+    3: "context:position-keeping",
+    4: "context:current-account",
+    5: "context:payments",
+    6: "context:finance",
+}
+
+# area label -> (pattern over the phase heading, case-insensitive; technology names in the scope,
+# case-sensitive). Headings name the concern; the scope only adds a label when it names the technology.
+AREA_RULES: list[tuple[str, re.Pattern[str], re.Pattern[str] | None]] = [
+    (label, re.compile(heading, re.IGNORECASE), re.compile(scope) if scope else None)
+    for label, heading, scope in [
+        ("area:shared-kernel", r"SharedKernel", None),
+        ("area:architecture", r"Architecture tests", r"ArchUnitNET"),
+        ("area:host", r"Aspire|AppHost", r"\bAspire\b|RimBank\.Host"),
+        ("area:domain", r"Aggregate|\bBQ\b|Control|lifecycle|Capture|Initiate facility|Register flow|Chart of accounts|GL posting|Update", None),
+        ("area:read-models", r"Retrieve|query side|Read models|read model|catalogue|Trial balance|queries|Reconciliation|Read-model", None),
+        ("area:api", r"\bAPI\b|Problem Details|Idempotency|Rate limiting|Register \(command side\)", r"Minimal APIs|`(POST|GET) "),
+        ("area:mcp", r"\bMCP\b", None),
+        ("area:persistence", r"Marten|PostgreSQL", r"\bMarten\b"),
+        ("area:messaging", r"Wolverine|Subscriptions|Published language|Position link|Internal book transfer|Standing Order", r"\bWolverine\b|outbox"),
+        ("area:security", r"Authenticat|Authoris|security|PII|Threat model|Compliance", r"\bKeycloak\b"),
+        ("area:observability", r"Audit|Read-model operations", r"OpenTelemetry"),
+        ("area:bian-conformance", r"Conformance", None),
+        ("area:ci", r"\bCI\b|Repository skeleton|Container images", r"GitHub Actions"),
+        ("area:performance", r"Performance|Mutation testing|Rate limiting|read store", None),
+    ]
+]
 
 
 @dataclass
@@ -110,6 +173,28 @@ def parse_roadmap(roadmap: str) -> list[Stage]:
 def issue_title(phase: Phase) -> str:
     title = phase.title.replace("`", "")
     return title if len(title) <= TITLE_LIMIT else title[: TITLE_LIMIT - 1].rstrip() + "…"
+
+
+def phase_labels(phase: Phase, stage: Stage) -> list[str]:
+    """The labels a phase's issue carries: synced, stage, one type, its areas and its context."""
+    head = phase.title.split(" ", 1)[-1] if phase.key[0].isdigit() and "+" not in phase.key else phase.title
+    areas = {
+        label
+        for label, heading, scope in AREA_RULES
+        if heading.search(head) or (scope is not None and scope.search(phase.scope))
+    }
+    if head.startswith("ADR") or head.startswith("Threat model"):
+        kind = "type:adr"
+    elif (areas & {"area:ci"} and stage.number == 0) or head.startswith("Release"):
+        kind = "type:chore"
+    elif "area:security" in areas and stage.number == 7:
+        kind = "type:security"
+    else:
+        kind = "type:feature"
+    labels = {PHASE_LABEL, stage.label, kind, *areas}
+    if context := STAGE_CONTEXTS.get(stage.number):
+        labels.add(context)
+    return sorted(labels)
 
 
 def issue_body(phase: Phase, stage: Stage, repo: str) -> str:
@@ -222,8 +307,8 @@ def sync_issues(gh: GitHub, stages: list[Stage], numbers: dict[int, int]) -> dic
 
     urls: dict[str, tuple[str, bool]] = {}
     for stage in stages:
-        labels = sorted({PHASE_LABEL, stage.label})
         for phase in stage.phases:
+            labels = phase_labels(phase, stage)
             title, body = issue_title(phase), issue_body(phase, stage, gh.repo)
             state = "closed" if phase.done else "open"
             payload: dict[str, object] = {

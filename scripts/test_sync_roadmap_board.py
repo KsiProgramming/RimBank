@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-from sync_roadmap_board import ROADMAP, issue_body, issue_title, parse_roadmap
+from sync_roadmap_board import LABELS, ROADMAP, issue_body, issue_title, parse_roadmap, phase_labels
 
 SAMPLE = """# Roadmap
 
@@ -70,6 +70,32 @@ class ParseRoadmapTests(unittest.TestCase):
         stage = self.stages[0]
         self.assertTrue(issue_body(stage.phases[0], stage, "o/r").startswith("<!-- roadmap-phase: 0.1 -->"))
         self.assertEqual(issue_title(stage.phases[0]), "0.1 Repository skeleton")
+
+
+class PhaseLabelTests(unittest.TestCase):
+    def labels(self, roadmap: str) -> list[str]:
+        stage = parse_roadmap(roadmap)[0]
+        return phase_labels(stage.phases[0], stage)
+
+    def test_every_phase_has_exactly_one_type_and_known_labels(self) -> None:
+        root = Path(__file__).resolve().parent.parent
+        for stage in parse_roadmap((root / ROADMAP).read_text(encoding="utf-8")):
+            for phase in stage.phases:
+                labels = phase_labels(phase, stage)
+                self.assertEqual(len([l for l in labels if l.startswith("type:")]), 1, phase.title)
+                unknown = [l for l in labels if l not in LABELS and not l.startswith("stage:")]
+                self.assertEqual(unknown, [], phase.title)
+
+    def test_adr_phase_in_a_context_stage(self) -> None:
+        labels = self.labels("## Stage 1: Party\n\n- [ ] **1.1 ADR:** BIAN to DDD mapping.\n")
+        self.assertIn("type:adr", labels)
+        self.assertIn("context:party", labels)
+
+    def test_areas_come_from_the_text(self) -> None:
+        labels = self.labels("## Stage 0: F\n\n- [ ] **0.10 Marten wiring:** one Marten store per context.\n")
+        self.assertIn("area:persistence", labels)
+        self.assertIn("type:feature", labels)
+        self.assertFalse(any(l.startswith("context:") for l in labels))
 
 
 class RealRoadmapTests(unittest.TestCase):

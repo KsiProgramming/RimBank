@@ -147,6 +147,21 @@ python scripts/sync_roadmap_board.py --dry-run # show what would change
 python scripts/sync_roadmap_board.py
 ```
 
+### Labels
+
+Every issue and pull request carries **one `type:`** label, any **`area:`** labels that apply, and at most **one `context:`** label. The set is defined in `scripts/sync_roadmap_board.py` (`LABELS`) and created by the sync; roadmap phase issues get theirs automatically.
+
+| Prefix | Labels | Meaning |
+|---|---|---|
+| `type:` | `feature`, `adr`, `bug`, `chore`, `docs`, `security` | What kind of change |
+| `area:` | `shared-kernel`, `architecture`, `host`, `domain`, `read-models`, `api`, `mcp`, `persistence`, `messaging`, `security`, `observability`, `bian-conformance`, `ci`, `performance` | Which technical concern |
+| `context:` | `party`, `product-directory`, `position-keeping`, `current-account`, `payments`, `finance` | Which BIAN bounded context (tech-stack §3.2) |
+| `stage:` | `stage:0` … `stage:8` | Which roadmap stage (synced) |
+| | `roadmap-phase` | An issue mirrored from the roadmap (synced: edit the roadmap, not the issue) |
+| | `dependencies` | Opened by Dependabot |
+
+A new label is added to `LABELS` in a PR, never created by hand, so the taxonomy stays in one place. A new bounded context adds its `context:` label in the same PR as its BIAN mapping ADR.
+
 ### Branch protection (maintainers)
 
 Configure a branch ruleset for `main` in the repository settings:

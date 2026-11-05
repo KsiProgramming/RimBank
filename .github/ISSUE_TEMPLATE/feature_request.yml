@@ -1,6 +1,6 @@
 name: Feature or roadmap proposal
 description: Propose a roadmap phase, a new BIAN service domain or an improvement.
-labels: ["enhancement"]
+labels: ["type:feature"]
 body:
   - type: input
     id: roadmap-phase

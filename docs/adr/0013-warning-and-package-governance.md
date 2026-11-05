@@ -54,6 +54,7 @@ Option 3 for warnings, option 2 for packages, option 2 for the board.
 **Roadmap board**
 
 - `scripts/sync_roadmap_board.py` (standard library only, plus the `gh` CLI) mirrors `specs/roadmap.md`. It creates one milestone per stage, one issue per phase (keyed by a `<!-- roadmap-phase: N.M -->` marker; growth-backlog bullets are keyed by their text), the `roadmap-phase` and `stage:N` labels, and the "RimBank roadmap" Projects board linked to the repository. A ticked phase closes its issue and moves its card to Done. A card moved to In Progress by a person stays there.
+- A label taxonomy lives in the same script and is applied by the sync: one `type:` label per issue, `area:` labels for technical concerns, one `context:` label per BIAN bounded context, and `stage:N`. Phase issues are labelled from their heading and from the technologies their scope names. Issue templates and Dependabot use the same labels.
 - The roadmap remains the source of truth: issue titles and bodies are overwritten on every sync. Discussion belongs in comments.
 - The `roadmap-board` workflow runs the sync on every push to `main` that changes the roadmap. **This amends ADR 0005** ("workflows use no secrets other than `GITHUB_TOKEN`") for this one job only. The default token cannot write to a user-owned Projects board, so the job reads a `ROADMAP_BOARD_TOKEN` secret with the `repo` and `project` scopes. It runs only on `main` (never on pull requests from forks), checks out without persisting credentials, and does nothing if the secret is missing.
 
