@@ -34,5 +34,15 @@
            Code="RB0002"
            File="$(MSBuildProjectFullPath)"
            Text="&lt;NoWarn&gt; or &lt;WarningsNotAsErrors&gt; in a project file. Set the diagnostic's severity in an .editorconfig instead (ADR 0013)." />
+
+    <!--
+      RB0003: the Aspire AppHost SDK version (pinned in the project's Sdk attribute, which Central Package Management
+      cannot hold) must equal $(AspireVersion) in Directory.Packages.props, so a package update cannot leave the SDK,
+      DCP and the dashboard on another Aspire version (ADR 0014).
+    -->
+    <Error Condition="'$(AspireHostingSDKVersion)' != '' And '$(AspireHostingSDKVersion)' != '$(AspireVersion)'"
+           Code="RB0003"
+           File="$(MSBuildProjectFullPath)"
+           Text="Aspire.AppHost.Sdk is $(AspireHostingSDKVersion) but AspireVersion in Directory.Packages.props is $(AspireVersion). Raise both together (ADR 0014)." />
   </Target>
 </Project>

@@ -49,12 +49,24 @@ dotnet format RimBank.slnx --verify-no-changes
 
 Warnings are errors, and package versions live only in `Directory.Packages.props` ([ADR 0013](docs/adr/0013-warning-and-package-governance.md)):
 
-- **Never suppress a warning in code or in a project file.** `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` and `<WarningsNotAsErrors>` fail the build (RB0001, RB0002). Fix the code, or, when the rule really does not apply, add a `dotnet_diagnostic.<ID>.severity = none` entry to the `.editorconfig` nearest the code (the project's own, or `tests/.editorconfig`), scoped to the files it covers, with a comment giving the reason.
-- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. CI restores in locked mode, and a package with a known vulnerability fails the build. Packages come only from nuget.org (`NuGet.config`).
+- **Never suppress a warning in code or in a project file.** `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` and `<WarningsNotAsErrors>` fail the build (RB0001, RB0002). Fix the code, or, when the rule really does not apply, add a `dotnet_diagnostic.<ID>.severity = none` entry to the `.editorconfig` nearest the code (the project's own, or `tests/.editorconfig`), scoped to the files it covers, with a comment giving the reason. The one exception is the MSBuild warning ASPIRE010 in `RimBank.AppHost.csproj` ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)).
+- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. The one version outside that file is the `Aspire.AppHost.Sdk/<version>` attribute in `src/RimBank.AppHost/RimBank.AppHost.csproj`: raise it together with `AspireVersion`, or the build fails with RB0003. CI restores in locked mode, and a package with a known vulnerability fails the build. Packages come only from nuget.org (`NuGet.config`).
 - **Public API in `src/` has XML doc comments** (CS1591 is enforced there).
 - The product version is set once, in `Directory.Build.props`.
 
 Tests use xUnit v3 and Shouldly on Microsoft.Testing.Platform ([ADR 0007](docs/adr/0007-test-platform.md)). Run one class with `dotnet test --solution RimBank.slnx --filter-class <Namespace.ClassName>`.
+
+`tests/RimBank.AppHost.Tests` starts real containers (PostgreSQL and the host) and needs Docker. In CI it always runs. Locally it is skipped, with the reason shown, when Docker is not reachable.
+
+### Running RimBank locally
+
+With Docker running:
+
+```bash
+dotnet run --project src/RimBank.AppHost
+```
+
+The console prints the Aspire dashboard URL. The dashboard shows `postgres`, the `rimbank` database and `rimbank-host`, with their logs, traces and metrics. The host's probes are `GET /health` and `GET /alive` (see `src/RimBank.Host/RimBank.Host.http`). Both are anonymous and return the status only ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)). PostgreSQL keeps its data in the `rimbank-postgres-data` Docker volume, and its generated password lives in the AppHost's user secrets.
 
 ### Errors
 
@@ -91,6 +103,9 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `postgresql-dependencies` | `.Postgresql` never uses `.Api`, `.Mcp`, ASP.NET Core or the MCP SDK | tech-stack §4 |
 | `cross-context-isolation` | The only reference to another context is `.Subscriptions` → its `.PublishedLanguage` | tech-stack §8.4, ADR 0004 |
 | `published-language-has-no-views` | No view (a type a projection returns) lives in `.PublishedLanguage` | tech-stack §3.1, §8.4 |
+| `service-defaults-only-in-host` | Only `RimBank.Host` uses `RimBank.ServiceDefaults` | tech-stack §1–§2, ADR 0014 |
+| `nothing-depends-on-apphost` | Nothing uses `RimBank.AppHost` | tech-stack §1, ADR 0014 |
+| `host-is-the-composition-root` | Nothing outside `RimBank.Host` uses it; a context never implements `IServiceDomainModule` itself | tech-stack §2, §4, ADR 0014 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |
 | `query-handlers-stay-on-read-side` | A query handler never uses an `IWritePort`, an aggregate, an `ICommand` or a command handler | tech-stack §4, ADR 0012 |
 | `projections-implement-contract` | A `…Projection` is a sealed class implementing `IProjection`, and every `IProjection` is named `…Projection` | ADR 0010 |
@@ -108,6 +123,7 @@ dotnet test --project tests/RimBank.Architecture.Tests
 1. Add its row to `ServiceDomainCatalogue.Solution` in the same PR as its BIAN mapping ADR ([ADR 0011](docs/adr/0011-namespace-rule.md)).
 2. Add a `ProjectReference` to it from `tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj`. The rules only see projects referenced there, and `The_solution_loads_every_project_and_never_the_fixtures` lists them.
 3. Mark the CQRS roles: commands implement `ICommand`, queries `IQuery<TView>`, the write port `IWritePort` and the read port `IReadPort`. An unmarked type escapes the CQRS rules.
+4. Register the context in the host: add `src/RimBank.Host/Modules/<BusinessDomain>/<ServiceDomain>Module.cs` implementing `IServiceDomainModule`, which only calls the adapters' own `Add…` / `Map…` extension methods, and append it to `ServiceDomainModules.All` ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)).
 
 **Adding a rule:** write it in `ArchitectureRules`, add a bad context that breaks only that rule to the fixtures, list it in `FixtureContexts.Bad`, and add a row to the table above.
 

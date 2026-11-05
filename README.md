@@ -47,6 +47,8 @@ dotnet test RimBank.slnx
 dotnet format RimBank.slnx --verify-no-changes
 ```
 
+To run RimBank (Docker required): `dotnet run --project src/RimBank.AppHost`, then open the Aspire dashboard URL printed in the console. See [CONTRIBUTING](CONTRIBUTING.md#running-rimbank-locally).
+
 ## Documentation
 
 - [Mission](specs/mission.md): why RimBank exists, guiding principles, quality bar, non-goals

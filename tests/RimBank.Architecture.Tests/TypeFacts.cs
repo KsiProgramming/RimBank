@@ -8,11 +8,14 @@ internal static class TypeFacts
     {
         "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
         "Microsoft.CodeAnalysis.EmbeddedAttribute",
+
+        // Source generators, such as Aspire's Projects.* metadata in RimBank.AppHost (ADR 0014).
+        "System.CodeDom.Compiler.GeneratedCodeAttribute",
     };
 
     public static string NamespaceName(this IType type) => type.Namespace?.FullName ?? string.Empty;
 
-    /// <summary>Written by the compiler or a build tool (closures, state machines, embedded attributes, xUnit's entry point).</summary>
+    /// <summary>Written by the compiler or a build tool (closures, state machines, embedded attributes, xUnit's entry point, source-generated types).</summary>
     public static bool IsToolGenerated(this IType type) =>
         type.IsCompilerGenerated
         || type.Name.StartsWith('<')

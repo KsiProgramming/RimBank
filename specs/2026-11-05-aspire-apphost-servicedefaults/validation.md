@@ -34,7 +34,7 @@ Definition of done items that do not apply: there are no commands, queries or re
 
 ## Manual / demo checks
 Optional, not required to merge:
-- [ ] `dotnet run --project src/RimBank.AppHost` (Docker running): the dashboard lists `postgres`, `rimbank` and `rimbank-host` as healthy, and a `GET /health` trace from `RimBank.Host.http` shows up in the dashboard
+- [ ] `dotnet run --project src/RimBank.AppHost` (Docker running): the dashboard lists `postgres`, `rimbank` and `rimbank-host` as healthy and shows the host's logs and metrics; `GET /health` from `RimBank.Host.http` returns `Healthy` (probe requests are deliberately not traced, ADR 0014)
 
 ## Merge criteria
 - [ ] All checks above pass in CI

@@ -41,7 +41,7 @@ public static class CodeBases
     {
         var assemblies = SolutionAssemblyNames.Select(name => Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, name + ".dll"))).ToArray();
         var architecture = new ArchLoader().LoadAssemblies(assemblies).Build();
-        var types = architecture.Types.Where(type => !IsGenerated(type)).ToList();
+        var types = architecture.Types.ToList();
         return new CodeBase(
             "solution",
             types.Where(type => IsProductionAssembly(AssemblyName(type))),
@@ -64,11 +64,4 @@ public static class CodeBases
     }
 
     private static string AssemblyName(ArchUnitNET.Domain.IType type) => type.Assembly.Name.Split(',')[0];
-
-    /// <summary>
-    /// The rules govern hand-written code. Types a tool emits with <c>[GeneratedCode]</c>, such as Aspire's
-    /// <c>Projects.RimBank_Host</c> metadata in <c>RimBank.AppHost</c>, are not ours to name (ADR 0014).
-    /// </summary>
-    private static bool IsGenerated(ArchUnitNET.Domain.IType type) =>
-        type.Attributes.Any(attribute => attribute.FullName == "System.CodeDom.Compiler.GeneratedCodeAttribute");
 }
