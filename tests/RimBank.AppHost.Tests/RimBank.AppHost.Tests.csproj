@@ -4,6 +4,15 @@
     <RootNamespace>RimBank.AppHost.Tests</RootNamespace>
   </PropertyGroup>
 
+  <!--
+    One lock file per build-machine runtime: Aspire.AppHost.Sdk adds the DCP and dashboard packages for the machine's
+    RID (Aspire.Hosting.Orchestration.<rid>, Aspire.Dashboard.Sdk.<rid>), so a single lock file cannot be valid on
+    both Windows and Linux. Locked restore (ADR 0013) still applies to each file. See ADR 0014.
+  -->
+  <PropertyGroup>
+    <NuGetLockFilePath>packages.$(NETCoreSdkRuntimeIdentifier).lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Shouldly" />

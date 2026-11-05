@@ -50,7 +50,15 @@ dotnet format RimBank.slnx --verify-no-changes
 Warnings are errors, and package versions live only in `Directory.Packages.props` ([ADR 0013](docs/adr/0013-warning-and-package-governance.md)):
 
 - **Never suppress a warning in code or in a project file.** `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` and `<WarningsNotAsErrors>` fail the build (RB0001, RB0002). Fix the code, or, when the rule really does not apply, add a `dotnet_diagnostic.<ID>.severity = none` entry to the `.editorconfig` nearest the code (the project's own, or `tests/.editorconfig`), scoped to the files it covers, with a comment giving the reason. The one exception is the MSBuild warning ASPIRE010 in `RimBank.AppHost.csproj` ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)).
-- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. The one version outside that file is the `Aspire.AppHost.Sdk/<version>` attribute in `src/RimBank.AppHost/RimBank.AppHost.csproj`: raise it together with `AspireVersion`, or the build fails with RB0003. CI restores in locked mode, and a package with a known vulnerability fails the build. Packages come only from nuget.org (`NuGet.config`).
+- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. The one version outside that file is the `Aspire.AppHost.Sdk/<version>` attribute in `src/RimBank.AppHost/RimBank.AppHost.csproj`: raise it together with `AspireVersion`, or the build fails with RB0003. `RimBank.AppHost`, `RimBank.AppHost.Tests` and `RimBank.Architecture.Tests` keep one lock file per runtime (`packages.win-x64.lock.json`, `packages.linux-x64.lock.json`), because Aspire's orchestrator and dashboard packages depend on the machine ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)). Regenerate both after a package change:
+
+  ```bash
+  for p in src/RimBank.AppHost tests/RimBank.AppHost.Tests tests/RimBank.Architecture.Tests; do
+    dotnet restore $p --force-evaluate -p:NETCoreSdkRuntimeIdentifier=win-x64
+    dotnet restore $p --force-evaluate -p:NETCoreSdkRuntimeIdentifier=linux-x64
+  done
+  dotnet restore RimBank.slnx   # back to your own runtime
+  ``` CI restores in locked mode, and a package with a known vulnerability fails the build. Packages come only from nuget.org (`NuGet.config`).
 - **Public API in `src/` has XML doc comments** (CS1591 is enforced there).
 - The product version is set once, in `Directory.Build.props`.
 

@@ -11,8 +11,17 @@
   </PropertyGroup>
 
   <!--
+    One lock file per build-machine runtime: Aspire.AppHost.Sdk adds the DCP and dashboard packages for the machine's
+    RID (Aspire.Hosting.Orchestration.<rid>, Aspire.Dashboard.Sdk.<rid>), so a single lock file cannot be valid on
+    both Windows and Linux. Locked restore (ADR 0013) still applies to each file. See ADR 0014.
+  -->
+  <PropertyGroup>
+    <NuGetLockFilePath>packages.$(NETCoreSdkRuntimeIdentifier).lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+
+  <!--
     ASPIRE010 is an MSBuild warning (an .editorconfig cannot change it). We keep the SDK default
-    AspireUseCliBundle=false on purpose: DCP and the dashboard then come from NuGet, pinned by packages.lock.json and
+    AspireUseCliBundle=false on purpose: DCP and the dashboard then come from NuGet, pinned by the lock files and
     audited like every other package, and neither CI nor contributors need the Aspire CLI installed. The warning is
     lowered to a message for this project only; ADR 0014 records this exception to ADR 0013.
   -->
