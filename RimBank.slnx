@@ -6,6 +6,10 @@
     <File Path="global.json" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/src/" />
-  <Folder Name="/tests/" />
+  <Folder Name="/src/">
+    <Project Path="src/RimBank.SharedKernel/RimBank.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RimBank.SharedKernel.Tests/RimBank.SharedKernel.Tests.csproj" />
+  </Folder>
 </Solution>

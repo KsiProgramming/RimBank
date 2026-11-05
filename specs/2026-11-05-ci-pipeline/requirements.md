@@ -59,4 +59,4 @@ Answered during implementation:
 - **`dotnet test` on an empty solution:** verified locally with SDK 10.0.301. Restore, build, test and format all exit 0, so no guard is needed.
 
 Still open:
-- **Test runner mode:** xUnit v3 on .NET 10 may run on Microsoft.Testing.Platform (`global.json` `"test": { "runner": … }`), which changes the `dotnet test` arguments. This is decided in 0.3; the CI test step is updated then.
+- ~~**Test runner mode:** xUnit v3 on .NET 10 may run on Microsoft.Testing.Platform (`global.json` `"test": { "runner": … }`), which changes the `dotnet test` arguments. This is decided in 0.3; the CI test step is updated then.~~ Answered in 0.3: Microsoft.Testing.Platform, with `--report-xunit-trx` replacing `--logger trx` ([ADR 0007](../../docs/adr/0007-test-platform.md)).

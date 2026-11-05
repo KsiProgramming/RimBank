@@ -41,11 +41,17 @@ You need the .NET SDK pinned in [global.json](global.json).
 
 ```bash
 dotnet build RimBank.slnx
-dotnet test RimBank.slnx
+dotnet test --solution RimBank.slnx
 dotnet format RimBank.slnx --verify-no-changes
 ```
 
 Warnings are errors, and package versions live only in `Directory.Packages.props`.
+
+Tests use xUnit v3 and Shouldly on Microsoft.Testing.Platform ([ADR 0007](docs/adr/0007-test-platform.md)). Run one class with `dotnet test --solution RimBank.slnx --filter-class <Namespace.ClassName>`.
+
+### Errors
+
+Expected business failures are returned as `Result<T>` / `Result` with an `Error`, never thrown ([ADR 0006](docs/adr/0006-result-and-error-model.md)). Error codes are stable and follow `<context>.<error-name>` in lower-case kebab-case, for example `party.party-not-found`. Pick the `ErrorKind` that matches the HTTP status the caller should see, and never rename a released code.
 
 ### What CI runs
 
@@ -56,7 +62,7 @@ Every push to `main` and every pull request runs two workflows (policy: [ADR 000
   ```bash
   dotnet restore RimBank.slnx
   dotnet build RimBank.slnx -c Release --no-restore
-  dotnet test RimBank.slnx -c Release --no-build
+  dotnet test --solution RimBank.slnx -c Release --no-build --report-xunit-trx --results-directory TestResults
   dotnet format RimBank.slnx --verify-no-changes --no-restore
   ```
 

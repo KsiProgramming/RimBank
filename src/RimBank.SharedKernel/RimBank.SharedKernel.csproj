@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- BCL only: no PackageReference or ProjectReference (specs/tech-stack.md §4). -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.SharedKernel</RootNamespace>
+  </PropertyGroup>
+</Project>
