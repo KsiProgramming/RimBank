@@ -22,7 +22,18 @@
     <XunitV3Version>4.0.2</XunitV3Version>
     <OpenTelemetryVersion>1.20.1</OpenTelemetryVersion>
     <MicrosoftExtensionsVersion>10.11.0</MicrosoftExtensionsVersion>
+    <!-- Keep equal to the Aspire.AppHost.Sdk version in src/RimBank.AppHost/RimBank.AppHost.csproj. -->
+    <AspireVersion>13.6.4</AspireVersion>
   </PropertyGroup>
+
+  <!--
+    Local orchestration: .NET Aspire (specs/tech-stack.md §1, ADR 0014).
+    Aspire.Hosting.AppHost is an implicit reference of Aspire.AppHost.Sdk, versioned by the SDK; listing it here is NU1009.
+  -->
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
+  </ItemGroup>
 
   <!-- Hosting: service defaults for RimBank.Host (specs/tech-stack.md §1, ADR 0014) -->
   <ItemGroup Label="Hosting">

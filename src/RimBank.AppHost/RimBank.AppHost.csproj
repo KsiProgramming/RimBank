@@ -1,0 +1,31 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.4">
+  <!--
+    Local orchestration of RimBank with .NET Aspire (specs/tech-stack.md §1, ADR 0014): PostgreSQL and RimBank.Host.
+    The SDK version is pinned here because Central Package Management cannot pin an MSBuild SDK; keep it equal to
+    $(AspireVersion) in Directory.Packages.props. The SDK brings Aspire.Hosting.AppHost itself.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RimBank.AppHost</RootNamespace>
+    <UserSecretsId>d498da3e-64e1-4648-982a-47559780a4f5</UserSecretsId>
+  </PropertyGroup>
+
+  <!--
+    ASPIRE010 is an MSBuild warning (an .editorconfig cannot change it). We keep the SDK default
+    AspireUseCliBundle=false on purpose: DCP and the dashboard then come from NuGet, pinned by packages.lock.json and
+    audited like every other package, and neither CI nor contributors need the Aspire CLI installed. The warning is
+    lowered to a message for this project only; ADR 0014 records this exception to ADR 0013.
+  -->
+  <PropertyGroup>
+    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);ASPIRE010</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.Host\RimBank.Host.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+</Project>
