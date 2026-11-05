@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.Json.Serialization;
 
 namespace RimBank.SharedKernel;
 
@@ -11,7 +12,7 @@ namespace RimBank.SharedKernel;
 /// The amount may have any sign and any scale, so balances can be negative and interest can be calculated
 /// unrounded. Rounding to the currency's minor units is always explicit: <see cref="Round()"/> uses
 /// <see cref="MidpointRounding.ToEven"/> (banker's rounding), and <see cref="Round(MidpointRounding)"/> names
-/// another mode. Money is divided with <c>Allocate</c> or <c>Split</c>, never with a division operator, so no
+/// another mode. Money is divided with <see cref="Allocate"/> or <see cref="Split"/>, never with a division operator, so no
 /// minor unit is created or lost (ADR 0009).
 /// </para>
 /// <para>
@@ -24,7 +25,8 @@ namespace RimBank.SharedKernel;
 /// operation on it throws <see cref="InvalidOperationException"/>.
 /// </para>
 /// </remarks>
-public readonly record struct Money :
+[JsonConverter(typeof(MoneyJsonConverter))]
+public readonly partial record struct Money :
     IComparable<Money>,
     IComparisonOperators<Money, Money, bool>,
     IAdditionOperators<Money, Money, Money>,

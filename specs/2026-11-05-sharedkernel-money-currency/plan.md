@@ -26,11 +26,11 @@ Each group is one commit. The solution builds and the tests pass after each one.
 - [ ] `MoneyArbitraries`: `Arbitrary<Money>` (rounded and unrounded), and same-currency pair and triple generators, with amounts bounded so the laws cannot overflow `decimal`
 
 ## 4. Allocation, parsing, formatting and JSON (test-first)
-- [ ] `tests/.../MoneyAndCurrency/MoneyAllocationTests.cs` (examples): `10.00 EUR`.`Split(3)` → `3.34, 3.33, 3.33`; `Allocate([70, 20, 10])`; `JPY` and `BHD`; negative amounts; zero; unrounded amount, empty ratios, a zero or negative ratio, or `Split(0)` throws `ArgumentException`
+- [ ] `tests/.../MoneyAndCurrency/MoneyAllocationTests.cs` (examples): `10.00 EUR`.`Split(3)` → `3.34, 3.33, 3.33`; `Allocate([70, 20, 10])`; `JPY` and `BHD`; negative amounts; zero; an unrounded amount throws `InvalidOperationException`; empty ratios or a zero or negative ratio throw `ArgumentException`; `Split(0)` throws `ArgumentOutOfRangeException`
 - [ ] `tests/.../MoneyAndCurrency/MoneyAllocationProperties.cs` (FsCheck): for any rounded money and any positive ratios, the parts sum exactly to the original, are all rounded to minor units, keep the currency, and each differs from its exact share by less than one minor unit
 - [ ] `tests/.../MoneyAndCurrency/MoneyParsingTests.cs`: `TryCreate("10.50", "EUR")` succeeds; `"10"`, `"-0.01"`, `"0"` succeed; `"10,50"`, `"1,000.00"`, `"1e3"`, `" 10"`, `""`, `null`, `"10.505"` for `EUR` and `"1.5"` for `JPY` fail with `shared.invalid-amount` (field `amount`); a bad code fails with `shared.invalid-currency` (field `currency`)
 - [ ] `tests/.../MoneyAndCurrency/MoneyFormattingTests.cs` + property: `ToString()` = `"10.50 EUR"`, `"1000 JPY"`, `"1.250 BHD"`; formatting ignores the current culture (run under `fr-FR`); `TryCreate(FormatAmount(), Code)` round-trips any rounded money
-- [ ] `tests/.../MoneyAndCurrency/MoneyJsonTests.cs` + property: `{ "amount": "10.50", "currency": "EUR" }` both ways; a JSON number amount, a missing field, too many decimals or an unknown currency throws `JsonException`; JSON round-trips any money (rounded and unrounded)
+- [ ] `tests/.../MoneyAndCurrency/MoneyJsonTests.cs` + property: `{ "amount": "10.50", "currency": "EUR" }` both ways; a JSON number amount, a missing field, a malformed amount or an unknown currency throws `JsonException`; unrounded amounts keep their decimals; unknown properties are ignored; JSON round-trips any money (rounded and unrounded)
 - [ ] `Money.Allocate`, `Money.Split`, `Money.TryCreate(string?, string?)`, `ToString`, `FormatAmount`, and `src/RimBank.SharedKernel/MoneyJsonConverter.cs` (sealed)
 
 ## 5. ADR, docs and roadmap
