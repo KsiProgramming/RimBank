@@ -27,7 +27,7 @@
 
 - One deployable host (`RimBank.Host`) composes all service domains.
 - Each service domain is a fully isolated bounded context with its own PostgreSQL schema **and database role** (it has no grants on other schemas), its own Marten store (event streams, read models and async daemon), no shared tables or views, and no project references to another context's core.
-- Each context registers itself in the host through a single module entry point, so the host composes contexts without knowing their internals.
+- Each context registers itself in the host through a single module entry point, so the host composes contexts without knowing their internals: one `IServiceDomainModule` class per context under `RimBank.Host/Modules/<BusinessDomain>/`, listed explicitly in `ServiceDomainModules.All`, which only calls the context's adapter extension methods ([ADR 0014](../docs/adr/0014-host-composition-and-module-entry-point.md)).
 - Contexts communicate **asynchronously through integration events** (Wolverine durable local queues with an outbox). Synchronous cross-context calls are allowed only through an explicit port and need an ADR.
 - Extracting a context into its own service changes only adapters and host wiring, **never the core**.
 
@@ -78,7 +78,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  └─ release14.0.0/              # BIAN v14 specs (ADR 0002)
 ├─ src/
 │  ├─ RimBank.SharedKernel/       # Money, Currency, Result, typed ids, decider abstractions (no infra)
-│  ├─ RimBank.Host/               # composition root: wires all contexts, ProblemDetails, auth, OTel
+│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, auth, OTel
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  └─ Party/
@@ -89,6 +89,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
+   ├─ RimBank.Host.Tests/             # host composition, module convention and health probes (in-process)
+   ├─ RimBank.AppHost.Tests/          # Aspire resource model and a real startup with Docker (ADR 0014)
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)

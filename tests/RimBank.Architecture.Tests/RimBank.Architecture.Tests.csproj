@@ -4,6 +4,15 @@
     <RootNamespace>RimBank.Architecture.Tests</RootNamespace>
   </PropertyGroup>
 
+  <!--
+    One lock file per build-machine runtime: Aspire.AppHost.Sdk adds the DCP and dashboard packages for the machine's
+    RID (Aspire.Hosting.Orchestration.<rid>, Aspire.Dashboard.Sdk.<rid>), so a single lock file cannot be valid on
+    both Windows and Linux. Locked restore (ADR 0013) still applies to each file. See ADR 0014.
+  -->
+  <PropertyGroup>
+    <NuGetLockFilePath>packages.$(NETCoreSdkRuntimeIdentifier).lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Shouldly" />
@@ -11,8 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\RimBank.Host\RimBank.Host.csproj" />
+    <ProjectReference Include="..\..\src\RimBank.ServiceDefaults\RimBank.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\src\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+    <ProjectReference Include="..\RimBank.AppHost.Tests\RimBank.AppHost.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Architecture.Fixtures\RimBank.Architecture.Fixtures.csproj" />
+    <ProjectReference Include="..\RimBank.Host.Tests\RimBank.Host.Tests.csproj" />
     <ProjectReference Include="..\RimBank.SharedKernel.Testing\RimBank.SharedKernel.Testing.csproj" />
     <ProjectReference Include="..\RimBank.SharedKernel.Tests\RimBank.SharedKernel.Tests.csproj" />
   </ItemGroup>

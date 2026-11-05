@@ -1,0 +1,9 @@
+# Probes of RimBank.Host. Run the AppHost (dotnet run --project src/RimBank.AppHost) and set @host to the
+# rimbank-host URL shown in the Aspire dashboard. Both probes are anonymous and return the status only.
+@host = http://localhost:5100
+
+### Readiness: every health check must pass
+GET {{host}}/health
+
+### Liveness: only checks tagged "live"
+GET {{host}}/alive
