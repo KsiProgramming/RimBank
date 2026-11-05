@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RimBank.Problems\RimBank.Problems.csproj" />
     <ProjectReference Include="..\RimBank.ServiceDefaults\RimBank.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

@@ -7,3 +7,15 @@ GET {{host}}/health
 
 ### Liveness: only checks tagged "live"
 GET {{host}}/alive
+
+### Problem Details (ADR 0015): no endpoint matches, so the host answers 404 application/problem+json:
+# {
+#   "type": "urn:rimbank:problem:shared:not-found",
+#   "title": "Not Found",
+#   "status": 404,
+#   "detail": "No resource exists at this address.",
+#   "instance": "/PartyReferenceDataDirectory/does-not-exist/Retrieve",
+#   "errorCode": "shared.not-found",
+#   "traceId": "<32 hex characters, the trace shown in the Aspire dashboard>"
+# }
+GET {{host}}/PartyReferenceDataDirectory/does-not-exist/Retrieve
