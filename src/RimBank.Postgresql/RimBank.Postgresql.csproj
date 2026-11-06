@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Marten conventions every context's .Postgresql adapter uses (ADR 0016): one store per context with its own
+    schema, database role and async daemon; inline and async views adapted from the pure IProjection; projection
+    progress and rebuild; the development-only role and schema provisioner; and one health check per store.
+    It references SharedKernel, Marten and the Microsoft.Extensions abstractions only, and holds no business logic
+    (specs/tech-stack.md §4).
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Postgresql</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Marten" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>
