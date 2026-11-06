@@ -29,7 +29,7 @@ public interface IFakeRegistryBook : IWritePort
     void Start(Guid entryId, IFakeRegistryEvent domainEvent);
 }
 
-public sealed record RegisterFakeEntry(Guid EntryId, string Name) : ICommand;
+public sealed record RegisterFakeEntry(Guid EntryId, string Name, IdempotencyKey IdempotencyKey) : ICommand;
 
 public sealed record FakeEntryAcknowledged(Guid EntryId);
 
