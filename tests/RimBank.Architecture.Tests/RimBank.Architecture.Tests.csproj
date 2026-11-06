@@ -28,6 +28,8 @@
     <ProjectReference Include="..\..\src\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
     <ProjectReference Include="..\RimBank.AppHost.Tests\RimBank.AppHost.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Architecture.Fixtures\RimBank.Architecture.Fixtures.csproj" />
+    <ProjectReference Include="..\RimBank.Conformance.Testing\RimBank.Conformance.Testing.csproj" />
+    <ProjectReference Include="..\RimBank.Conformance.Tests\RimBank.Conformance.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Host.Tests\RimBank.Host.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Http.Tests\RimBank.Http.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Postgresql.Tests\RimBank.Postgresql.Tests.csproj" />

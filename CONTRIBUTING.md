@@ -119,6 +119,21 @@ The host runs one Wolverine bus ([ADR 0017](docs/adr/0017-wolverine-wiring.md)).
 - **HTTP:** every `.Api` endpoint that dispatches a command requires the header with `RequireIdempotencyKey()` from `RimBank.Http` (on the endpoint or its route group), takes an `IdempotencyKeyHeader idempotency` parameter and passes `idempotency.Value` into the command. `Retrieve` (query) endpoints take no key.
 - **Host message store:** Wolverine keeps its own bookkeeping in schema `wolverine` (role `rimbank_wolverine`, `ConnectionStrings:Wolverine`). Without that connection string, as before the first context, messages stay in memory.
 
+### BIAN conformance
+
+Each context's `.Api.Tests` references `tests/RimBank.Conformance.Testing` and has one conformance test that checks its routes and channels against its BIAN v14 specification ([ADR 0020](docs/adr/0020-bian-conformance-harness.md)). Declare the BIAN operation ids the context implements (as the spec's `operationId`), and the channel addresses it publishes to:
+
+```csharp
+var specification = await BianSpecifications.LoadAsync("PartyReferenceDataDirectory");
+var routes = ImplementedRoute.From(factory.Services.GetRequiredService<EndpointDataSource>());
+
+routes.ShouldConformTo(specification, ["PartyReferenceDataDirectoryEntry/Register", "PartyReferenceDataDirectoryEntry/Retrieve"]);
+string[] published = ["PartyReferenceDataDirectoryEntry/Created"];
+published.ShouldBeChannelsOf(specification);
+```
+
+The test fails if a route under `/<ServiceDomain>/` is not in the spec or uses another method than the spec (BIAN uses `POST` for `Register` and `PUT` for most other commands), if a `Retrieve` is not `GET` or a command is `GET`, if a declared operation is not mapped, or if a channel is not in the AsyncAPI file. Path parameter names do not matter (`{id}` matches `{partyreferencedatadirectoryid}`). Add each new operation to the declared list in the same PR that maps it.
+
 ### Architecture rules
 
 `tests/RimBank.Architecture.Tests` checks the constitution's structural rules with ArchUnitNET. Each rule holds for the solution and is proven to bite against a bad context in `tests/RimBank.Architecture.Fixtures` ([ADR 0012](docs/adr/0012-cqrs-role-markers.md)). Run only these tests with:

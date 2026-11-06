@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The BIAN conformance harness (roadmap 0.14, ADR 0020): loads a service domain's ext-DDD OpenAPI and AsyncAPI
+    specifications from doc-0/release14.0.0/ and asserts that the routes and channels a context implements exist in
+    them, with the spec's method, and that Retrieve operations are GET queries and every other operation a command.
+    A class library that each context's .Api.Tests references; its own tests live in RimBank.Conformance.Tests.
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Conformance.Testing</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="Microsoft.OpenApi.YamlReader" />
+    <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+</Project>
