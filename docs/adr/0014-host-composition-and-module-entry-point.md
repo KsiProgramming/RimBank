@@ -59,6 +59,7 @@ The rules govern hand-written code, so types a source generator emits with `[Gen
 ## Consequences
 
 - Adding a context to the host is one new file under `RimBank.Host/Modules/<BusinessDomain>/` and one line in `ServiceDomainModules.All`. The CONTRIBUTING checklist for a new context says so.
+- Since [ADR 0021](0021-mcp-wiring-and-tool-conventions.md), `IServiceDomainModule` has a third member, `AddMcpTools(IMcpServerBuilder)`. The host calls it in list order, after every `AddServices`, so a context registers its MCP tools on the host's single `/mcp` server.
 - The host project references every context's adapters, as §4 already allows. Contexts stay unaware of the host, and the architecture rules enforce it.
 - The probes are public in production. They reveal only a status word, so this is acceptable. If a deployment needs more detail, it gets a separate, authenticated endpoint, decided in its own ADR.
 - `RimBank.AppHost.Tests` starts real containers. In CI it always runs; locally it is skipped with a clear reason when Docker is not reachable. It removes the PostgreSQL data volume, so it runs on a throwaway database and never touches a developer's data.

@@ -78,7 +78,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  └─ release14.0.0/              # BIAN v14 specs (ADR 0002)
 ├─ src/
 │  ├─ RimBank.SharedKernel/       # Money, Currency, Result, typed ids, decider abstractions (no infra)
-│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, the Wolverine bus (Messaging/, ADR 0017), authentication and the actor relay (Security/, ADR 0019), OTel
+│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, the Wolverine bus (Messaging/, ADR 0017), authentication and the actor relay (Security/, ADR 0019), the /mcp endpoint (Mcp/, ADR 0021), OTel
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration: PostgreSQL, Keycloak with the dev-only realm (Realms/, ADR 0019), the host
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
@@ -92,7 +92,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
-   ├─ RimBank.Host.Tests/             # host composition, module convention, message bus, health probes and authentication with test-signed tokens (in-process)
+   ├─ RimBank.Host.Tests/             # host composition, module convention, message bus, health probes, authentication with test-signed tokens and the /mcp endpoint with the SDK client (in-process)
    ├─ RimBank.AppHost.Tests/          # Aspire resource model and a real startup with Docker (ADR 0014)
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
@@ -186,11 +186,11 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
 ## 6. MCP (Model Context Protocol) adapter
 
 - **MCP is a driving adapter alongside `.Api`.** The `.Mcp` project sends the same core commands and queries through `IMessageBus`. It never calls the HTTP API and never contains business logic, so the HTTP and MCP channels cannot drift apart.
-- **Hosting:** all contexts' MCP tools are registered in `RimBank.Host` and exposed at a single `/mcp` endpoint over Streamable HTTP. When a context is extracted, its `.Mcp` adapter moves with it.
+- **Hosting:** all contexts' MCP tools are registered in `RimBank.Host` and exposed at a single `/mcp` endpoint over Streamable HTTP in stateless mode. Each context hands its tools to the host through its module's `AddMcpTools(IMcpServerBuilder)`, which calls the one extension its `.Mcp` adapter exposes; contexts never configure the transport or map the route, and a tool name registered twice stops the host ([ADR 0021](../docs/adr/0021-mcp-wiring-and-tool-conventions.md)). When a context is extracted, its `.Mcp` adapter moves with it.
 - **Naming:** each tool maps 1:1 to a BIAN operation, named `<service_domain>_<operation>[_<behavior_qualifier>]` in snake_case (for example `party_reference_data_directory_register` and `current_account_retrieve_payment`). Descriptions come from the BIAN operation description, and input schemas reuse the `.Api` request models.
-- **Tool annotations:** Retrieve tools dispatch queries and are marked `readOnly`; every other tool dispatches a command. Operations that move money or close facilities are marked `destructive` and are not `idempotent` unless an idempotency key is supplied.
+- **Tool annotations:** every tool sets `readOnly`, `destructive`, `idempotent` and `openWorld` explicitly (table in ADR 0021). Retrieve tools dispatch queries and are marked `readOnly`; every other tool dispatches a command. Operations that move money or close facilities are marked `destructive` and are not `idempotent` unless an idempotency key is supplied.
 - **Security:** the MCP endpoint follows the MCP authorization spec (OAuth 2.1, with Keycloak as the authorization server). Tool calls go through the same per-BIAN-operation authorisation policies as HTTP. Money-moving tools need a dedicated scope and are disabled by default, so each deployment must turn them on explicitly.
-- **Errors:** a business or validation failure returns a tool result with `isError: true` whose content is the Problem Details JSON (same `type`, `errorCode` and `traceId` as HTTP). Stack traces and internal details are never exposed.
+- **Errors:** a business or validation failure returns a tool result with `isError: true` whose content (and `structuredContent`) is the Problem Details JSON (same `type`, `errorCode` and `traceId` as HTTP, ADR 0021). Stack traces and internal details are never exposed.
 - **Audit:** every tool call records the MCP client identity and a correlation ID in event metadata, as HTTP calls do.
 
 ## 7. Domain modelling conventions

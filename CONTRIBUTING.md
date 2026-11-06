@@ -86,6 +86,15 @@ Every request needs a JWT bearer token for the audience `rimbank-api`, except th
 - **Caller:** the host turns the token's `sub` and `azp` into an `Actor` (SharedKernel) and hands the subject to the message bus. Adapters and cores never read the token.
 - **Tests** sign tokens with an in-memory key: call `builder.UseTestTokens()` and send `TestTokens.Issue()` (in `tests/RimBank.Host.Tests/Security`).
 
+### MCP
+
+The host serves one MCP server at `/mcp` (Streamable HTTP, stateless, [ADR 0021](docs/adr/0021-mcp-wiring-and-tool-conventions.md)). It needs a bearer token like every other endpoint.
+
+- **Adding tools:** a context's `.Mcp` project exposes one `IMcpServerBuilder` extension, for example `AddPartyReferenceDataDirectoryTools()`, which calls `WithTools<…>()`. The context's module calls only that extension in `AddMcpTools`. Never call `AddMcpServer`, `WithHttpTransport` or `MapMcp` from a context. A tool name registered twice stops the host.
+- **Names:** one tool per BIAN operation, `<service_domain>_<operation>[_<behavior_qualifier>]` in snake_case, set explicitly with `[McpServerTool(Name = …)]`. The description is the BIAN operation's description.
+- **Annotations:** set `ReadOnly`, `Destructive`, `Idempotent` and `OpenWorld` on every tool, following the table in ADR 0021. `Retrieve` tools are read-only queries. Every other tool is a command with an idempotency key.
+- **Tests** connect the SDK's `McpClient` in-process over `HttpClientTransport`, using the test server's `HttpClient` with a `TestTokens` bearer token (see `tests/RimBank.Host.Tests/Mcp`).
+
 ### Errors
 
 Expected business failures are returned as `Result<T>` / `Result` with an `Error`, never thrown ([ADR 0006](docs/adr/0006-result-and-error-model.md)). Error codes are stable and follow `<context>.<error-name>` in lower-case kebab-case, for example `party.party-not-found`. Pick the `ErrorKind` that matches the HTTP status the caller should see, and never rename a released code.

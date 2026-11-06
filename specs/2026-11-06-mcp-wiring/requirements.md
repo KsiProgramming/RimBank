@@ -61,5 +61,7 @@ As in 0.10–0.13 there is no real context yet, so the endpoint and the module h
 - **0021 MCP wiring and tool conventions:** the content listed under "In scope". It amends ADR 0014 (the third module member).
 
 ## Open questions
-- Does the SDK reject or silently replace a tool registered twice under the same name? If it replaces it, should the host fail at startup, like ADR 0014's duplicate service domain check? Answer during group 2. Add a startup guard only if it is cheap; otherwise list it in the ADR as a follow-up for 1.16.
-- Does a 401 from the fallback policy on `/mcp` reach the existing status-code pages (Problem Details body), or does the SDK's endpoint metadata change that? A test in group 2 settles it.
+Answered during implementation (ADR 0021):
+- **Duplicate tool names:** the SDK does not reject them. It keeps only one tool, silently. `MapRimBankMcp` now checks the registered `McpServerTool`s and stops the host at startup, naming the duplicated tools (`A_tool_name_registered_twice_stops_the_host_from_starting`).
+- **401 on `/mcp`:** the fallback policy's 401 goes through the existing status-code pages. A call without a token is `application/problem+json` `shared.unauthenticated` with `WWW-Authenticate: Bearer` and `instance = /mcp` (`Mcp_without_a_token_is_a_shared_unauthenticated_problem`).
+- **Additional finding:** the SDK announces the `tools` capability only when at least one tool is registered. A host with no tools answers `tools/list` with "method not available", which is correct MCP behaviour, so the test asserts that the capability is missing.
