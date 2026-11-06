@@ -10,6 +10,7 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.SharedKernel")]
     [InlineData("RimBank.Host")]
     [InlineData("RimBank.Problems")]
+    [InlineData("RimBank.Postgresql")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Mcp")]
@@ -68,6 +69,7 @@ public sealed class SolutionOnlyRulesTests
     {
         ArchitectureRules.NamespaceIsAllowed("RimBank.SharedKernel", _catalogue).ShouldBeTrue();
         ArchitectureRules.NamespaceIsAllowed("RimBank.Problems", _catalogue).ShouldBeTrue();
+        ArchitectureRules.NamespaceIsAllowed("RimBank.Postgresql", _catalogue).ShouldBeTrue();
         ArchitectureRules.NamespaceIsAllowed("RimBank.Party.PartyReferenceDataDirectory.Registration", _catalogue).ShouldBeTrue();
         ArchitectureRules.NamespaceIsAllowed("RimBank.Party.Directory", _catalogue).ShouldBeFalse();
         ArchitectureRules.NamespaceIsAllowed("Banking.Party", _catalogue).ShouldBeFalse();

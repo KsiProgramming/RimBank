@@ -34,3 +34,11 @@ namespace RimBank.Problems
         public static string NotFoundCode => "shared.not-found";
     }
 }
+
+namespace RimBank.Postgresql
+{
+    public static class ServiceDomainStoreRegistration
+    {
+        public static string ReadyTag => "ready";
+    }
+}

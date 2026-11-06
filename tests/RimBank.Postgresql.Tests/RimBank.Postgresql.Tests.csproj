@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Tests of the per-context Marten conventions (ADR 0016): unit tests without I/O, and Testcontainers smoke tests
+    against a real PostgreSQL with two test-only fake contexts (FakeContexts/). The fakes never ship in src/.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RimBank.Postgresql.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RimBank.Postgresql\RimBank.Postgresql.csproj" />
+    <ProjectReference Include="..\RimBank.SharedKernel.Testing\RimBank.SharedKernel.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Shouldly" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

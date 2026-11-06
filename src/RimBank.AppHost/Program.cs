@@ -2,7 +2,8 @@ namespace RimBank.AppHost;
 
 /// <summary>
 /// The Aspire AppHost: one PostgreSQL server with the <c>rimbank</c> database, and <c>RimBank.Host</c>, which waits
-/// for the database (ADR 0014). Each context gets its own schema and role inside that database in roadmap 0.10.
+/// for the database (ADR 0014). Each context gets its own schema, role and connection string inside that database
+/// (ADR 0016); the first context adds its connection string here in roadmap 1.4.
 /// </summary>
 public sealed class Program
 {

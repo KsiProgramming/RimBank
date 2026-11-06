@@ -51,3 +51,28 @@ namespace RimBank.Problems.FixtureViolations
 {
     public sealed record ProblemsUsesMarten(Marten.IDocumentSession Session);
 }
+
+// shared-postgresql-only-in-postgresql-adapters: a core reaches its store through its ports, never through the
+// Marten conventions.
+namespace RimBank.SampleBanking.CoreUsesSharedPostgresql
+{
+    public static class CoreUsesSharedPostgresqlEntry
+    {
+        public static string HealthTag() => RimBank.Postgresql.ServiceDomainStoreRegistration.ReadyTag;
+    }
+}
+
+// shared-postgresql-only-in-postgresql-adapters: an .Api never touches the store; it dispatches commands and queries.
+namespace RimBank.SampleBanking.ApiUsesSharedPostgresql.Api
+{
+    public static class ApiUsesSharedPostgresqlEndpoints
+    {
+        public static string HealthTag() => RimBank.Postgresql.ServiceDomainStoreRegistration.ReadyTag;
+    }
+}
+
+// shared-postgresql-dependencies: RimBank.Postgresql never answers an HTTP caller, so it never uses ASP.NET Core.
+namespace RimBank.Postgresql.FixtureViolations
+{
+    public sealed record SharedPostgresqlUsesAspNetCore(Microsoft.AspNetCore.Http.IResult Result);
+}
