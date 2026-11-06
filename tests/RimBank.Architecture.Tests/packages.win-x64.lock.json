@@ -1455,6 +1455,22 @@
           "xunit.v3": "[4.0.2, )"
         }
       },
+      "rimbank.http": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Problems": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.http.tests": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Mvc.Testing": "[10.0.14, )",
+          "RimBank.Http": "[0.1.0-alpha, )",
+          "Shouldly": "[4.3.0, )",
+          "xunit.v3": "[4.0.2, )"
+        }
+      },
       "rimbank.postgresql": {
         "type": "Project",
         "dependencies": {

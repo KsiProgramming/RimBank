@@ -6,7 +6,7 @@ using Wolverine;
 
 namespace RimBank.SampleBanking.SampleStatement
 {
-    public sealed record RecordKnownSampleLedger(Guid SampleLedgerEntryId) : RimBank.SharedKernel.ICommand;
+    public sealed record RecordKnownSampleLedger(Guid SampleLedgerEntryId, RimBank.SharedKernel.IdempotencyKey IdempotencyKey) : RimBank.SharedKernel.ICommand;
 }
 
 namespace RimBank.SampleBanking.SampleStatement.Subscriptions
@@ -14,6 +14,8 @@ namespace RimBank.SampleBanking.SampleStatement.Subscriptions
     public static class SampleLedgerSubscription
     {
         public static RecordKnownSampleLedger? Translate(SampleLedgerEntryOpenedV1 integrationEvent, IMessageBus bus) =>
-            integrationEvent is null || bus is null ? null : new(integrationEvent.SampleLedgerEntryId);
+            integrationEvent is null || bus is null
+                ? null
+                : new(integrationEvent.SampleLedgerEntryId, RimBank.SharedKernel.IdempotencyKey.From(integrationEvent.SampleLedgerEntryId.ToString()));
     }
 }

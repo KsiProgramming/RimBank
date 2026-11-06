@@ -61,9 +61,9 @@ public interface IFakeLedgerEnquiry : IReadPort
     Task<FakeLedgerView?> FindAsync(Guid ledgerId, CancellationToken cancellationToken);
 }
 
-public sealed record OpenFakeLedger(Guid LedgerId, string Name) : ICommand;
+public sealed record OpenFakeLedger(Guid LedgerId, string Name, IdempotencyKey IdempotencyKey) : ICommand;
 
-public sealed record PostFakeAmount(Guid LedgerId, decimal Amount) : ICommand;
+public sealed record PostFakeAmount(Guid LedgerId, decimal Amount, IdempotencyKey IdempotencyKey) : ICommand;
 
 /// <summary>The acknowledgement of a command: what was decided, never a read model (specs/tech-stack.md §8.1).</summary>
 public sealed record FakeLedgerAcknowledged(Guid LedgerId);

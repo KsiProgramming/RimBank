@@ -14,7 +14,7 @@ namespace RimBank.SampleBanking.CommandHandlerReadsView
         Task<CommandHandlerReadsViewSummary?> Find(Guid id, CancellationToken cancellationToken);
     }
 
-    public sealed record CloseCommandHandlerReadsView(Guid Id) : ICommand;
+    public sealed record CloseCommandHandlerReadsView(Guid Id, IdempotencyKey IdempotencyKey) : ICommand;
 
     public sealed class CloseCommandHandlerReadsViewHandler(ICommandHandlerReadsViewEnquiry enquiry)
     {

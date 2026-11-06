@@ -1,6 +1,7 @@
 using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
+using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 
 namespace RimBank.Postgresql.Messaging.Tests;
@@ -17,7 +18,7 @@ public sealed class DispatchTests(PostgresqlServer server)
         await using var host = await RunningHost.StartAsync(server);
         var ledger = Guid.CreateVersion7();
 
-        var acknowledgement = await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation);
+        var acknowledgement = await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation);
 
         acknowledgement.IsSuccess.ShouldBeTrue();
         acknowledgement.Value.ShouldBe(new FakeLedgerAcknowledged(ledger));
@@ -30,8 +31,8 @@ public sealed class DispatchTests(PostgresqlServer server)
     {
         await using var host = await RunningHost.StartAsync(server);
         var ledger = Guid.CreateVersion7();
-        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation);
-        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 25m), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 25m, Keys.New()), Cancellation);
 
         var view = await host.Bus.InvokeAsync<Result<FakeLedgerView>>(new RetrieveFakeLedger(ledger), Cancellation);
 
@@ -57,8 +58,8 @@ public sealed class DispatchTests(PostgresqlServer server)
         var ledger = Guid.CreateVersion7();
         var entry = Guid.CreateVersion7();
 
-        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation);
-        await host.Bus.InvokeAsync<Result<FakeEntryAcknowledged>>(new RegisterFakeEntry(entry, "Alice"), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeEntryAcknowledged>>(new RegisterFakeEntry(entry, "Alice", Keys.New()), Cancellation);
 
         (await CountEventsAsync(host, "fake_ledger", ledger)).ShouldBe(1);
         (await CountEventsAsync(host, "fake_registry", ledger)).ShouldBe(0);
@@ -71,10 +72,10 @@ public sealed class DispatchTests(PostgresqlServer server)
     {
         await using var host = await RunningHost.StartAsync(server);
         var ledger = Guid.CreateVersion7();
-        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation);
 
-        var rejected = await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 0m), Cancellation);
-        var unknown = await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(Guid.CreateVersion7(), 10m), Cancellation);
+        var rejected = await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 0m, Keys.New()), Cancellation);
+        var unknown = await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(Guid.CreateVersion7(), 10m, Keys.New()), Cancellation);
 
         rejected.Error.Code.ShouldBe("fake-ledger.amount-not-positive");
         unknown.Error.Kind.ShouldBe(ErrorKind.NotFound);

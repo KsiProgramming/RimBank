@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RimBank.Host\RimBank.Host.csproj" />
+    <ProjectReference Include="..\..\src\RimBank.Http\RimBank.Http.csproj" />
     <ProjectReference Include="..\..\src\RimBank.Postgresql\RimBank.Postgresql.csproj" />
     <ProjectReference Include="..\..\src\RimBank.Problems\RimBank.Problems.csproj" />
     <ProjectReference Include="..\..\src\RimBank.ServiceDefaults\RimBank.ServiceDefaults.csproj" />
@@ -28,6 +29,7 @@
     <ProjectReference Include="..\RimBank.AppHost.Tests\RimBank.AppHost.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Architecture.Fixtures\RimBank.Architecture.Fixtures.csproj" />
     <ProjectReference Include="..\RimBank.Host.Tests\RimBank.Host.Tests.csproj" />
+    <ProjectReference Include="..\RimBank.Http.Tests\RimBank.Http.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Postgresql.Tests\RimBank.Postgresql.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Problems.Tests\RimBank.Problems.Tests.csproj" />
     <ProjectReference Include="..\RimBank.SharedKernel.Testing\RimBank.SharedKernel.Testing.csproj" />

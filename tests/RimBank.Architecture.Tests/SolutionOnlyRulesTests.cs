@@ -10,6 +10,7 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.SharedKernel")]
     [InlineData("RimBank.Host")]
     [InlineData("RimBank.Problems")]
+    [InlineData("RimBank.Http")]
     [InlineData("RimBank.Postgresql")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]

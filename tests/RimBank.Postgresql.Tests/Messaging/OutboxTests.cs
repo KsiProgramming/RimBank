@@ -1,5 +1,6 @@
 using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 using Wolverine;
 
@@ -19,8 +20,8 @@ public sealed class OutboxTests(PostgresqlServer server)
         await using var host = await RunningHost.StartAsync(server);
         var ledger = Guid.CreateVersion7();
 
-        (await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation)).IsSuccess.ShouldBeTrue();
-        (await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 40m), Cancellation)).IsSuccess.ShouldBeTrue();
+        (await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation)).IsSuccess.ShouldBeTrue();
+        (await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 40m, Keys.New()), Cancellation)).IsSuccess.ShouldBeTrue();
         var view = await host.Bus.InvokeAsync<Result<FakeLedgerView>>(new RetrieveFakeLedger(ledger), Cancellation);
         var events = await RunningHost.WaitForEventAsync<FakeAmountConfirmed>(host.Ledger, ledger);
 
@@ -33,8 +34,8 @@ public sealed class OutboxTests(PostgresqlServer server)
     {
         await using var host = await RunningHost.StartAsync(server);
         var ledger = Guid.CreateVersion7();
-        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation);
-        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 40m), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation);
+        await host.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledger, 40m, Keys.New()), Cancellation);
         await RunningHost.WaitForEventAsync<FakeAmountConfirmed>(host.Ledger, ledger);
 
         (await CountAsync(host, $"SELECT count(*) FROM fake_ledger.{NotedEnvelopes}")).ShouldBe(1);
@@ -50,7 +51,7 @@ public sealed class OutboxTests(PostgresqlServer server)
         await using (var first = await RunningHost.StartAsync(server))
         {
             database = first.Database;
-            await first.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash"), Cancellation);
+            await first.Bus.InvokeAsync<Result<FakeLedgerAcknowledged>>(new OpenFakeLedger(ledger, "Cash", Keys.New()), Cancellation);
             await first.Bus.ScheduleAsync(new FakeAmountNoted(ledger, 7m), TimeSpan.FromSeconds(8));
 
             (await CountAsync(first, $"SELECT count(*) FROM fake_ledger.{NotedEnvelopes}")).ShouldBe(1);

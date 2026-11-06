@@ -35,6 +35,14 @@ namespace RimBank.Problems
     }
 }
 
+namespace RimBank.Http
+{
+    public static class IdempotencyKeyHeader
+    {
+        public static string HeaderName => "Idempotency-Key";
+    }
+}
+
 namespace RimBank.Postgresql
 {
     public static class ServiceDomainStoreRegistration

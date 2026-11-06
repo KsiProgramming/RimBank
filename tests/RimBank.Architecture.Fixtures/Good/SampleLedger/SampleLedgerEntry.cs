@@ -32,9 +32,9 @@ public readonly record struct SampleLedgerEntryId : ITypedId<SampleLedgerEntryId
 
 public abstract record SampleLedgerCommand;
 
-public sealed record OpenSampleLedgerEntry(SampleLedgerEntryId Id, Currency Currency) : SampleLedgerCommand, ICommand;
+public sealed record OpenSampleLedgerEntry(SampleLedgerEntryId Id, Currency Currency, IdempotencyKey IdempotencyKey) : SampleLedgerCommand, ICommand;
 
-public sealed record PostSampleAmount(SampleLedgerEntryId Id, Money Amount) : SampleLedgerCommand, ICommand;
+public sealed record PostSampleAmount(SampleLedgerEntryId Id, Money Amount, IdempotencyKey IdempotencyKey) : SampleLedgerCommand, ICommand;
 
 public abstract record SampleLedgerEvent;
 
