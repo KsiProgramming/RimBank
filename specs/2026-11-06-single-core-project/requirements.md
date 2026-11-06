@@ -17,7 +17,7 @@ What stays the same:
 
 ## Scope
 ### In scope
-- **ADR 0023 "One core project for all service domains".** It covers the decision, the extraction path (a context's folder moves out of `RimBank.Core` into its own core project with unchanged namespaces and code), the consequences for Wolverine discovery (all core handlers are discovered once, and each is bound to its context's store by namespace), visibility (core types stay `public` for their adapters, and isolation is the architecture tests' job), and Stryker (scoped by folder with `--mutate`). It amends ADR 0011 (project names) and adds notes to ADR 0004 (enforcement now by namespace, not by project references) and ADR 0016 (the `TCore` assembly is `RimBank.Core`).
+- **ADR 0023 "One core project for all service domains".** It covers the decision, the extraction path (a context's folder moves out of `RimBank.Core` into its own core project with unchanged namespaces and code), the consequences for Wolverine discovery (all core handlers are discovered once, and each is bound to its context's store by namespace), visibility (core types stay `public` for their adapters, and isolation is the architecture tests' job), and Stryker (scoped by folder with `--mutate`). It amends ADR 0011 (project names) and adds notes to ADR 0004 (enforcement now by namespace, not by project references) and ADR 0017 (the `TCore` assembly is `RimBank.Core`).
 - **New project `src/RimBank.Core/RimBank.Core.csproj`.** `RootNamespace` is `RimBank`, so `Party/PartyReferenceDataDirectory/` maps to `RimBank.Party.PartyReferenceDataDirectory`. It references `RimBank.SharedKernel` only. It has no types yet (no service domain shells, per the "no speculative coverage" non-goal) and gets a `.PublishedLanguage` reference per context when that context is added.
 - **New project `tests/RimBank.Core.Tests/`.** It is the one test project for every core, with one folder per context (`Party/PartyReferenceDataDirectory/Registration/` → `RimBank.Party.PartyReferenceDataDirectory.Registration.Tests`). It starts with one real test, because Microsoft Testing Platform fails a run with zero tests: `RimBank.Core` references no assembly other than `RimBank.SharedKernel` and the BCL.
 - **Architecture tests:**
@@ -46,7 +46,7 @@ What stays the same:
 | Visibility | Core types `public` (adapters need commands, queries, ports and views) | `internal` cannot express "visible to my own adapters only" across assemblies without `InternalsVisibleTo` sprawl |
 
 ## ADRs to write
-- **0023 One core project for all service domains** (amends ADR 0011; notes on ADR 0004 and ADR 0016).
+- **0023 One core project for all service domains** (amends ADR 0011; notes on ADR 0004 and ADR 0017).
 
 ## Open questions
 - None.

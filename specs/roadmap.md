@@ -37,7 +37,7 @@
 - [x] **0.14 BIAN conformance harness:** a test utility that loads an ext-DDD OpenAPI/AsyncAPI YAML from `doc-0/release14.0.0/` and asserts that the implemented routes and channels exist, and that `Retrieve` operations are `GET` (queries) and the rest are commands.
 - [x] **0.15 MCP wiring:** `/mcp` Streamable HTTP endpoint in `RimBank.Host` using the MCP C# SDK, with a `ping`-style smoke tool and an in-process MCP client test. ADR on tool naming, annotations (query tools `readOnly`) and error mapping.
 - [x] **0.16 MCP security & errors:** MCP authorization through Keycloak, the `Error` → Problem Details mapping as an `isError` tool result, and a test that an unauthenticated call is rejected.
-- [ ] **0.17 Single core project:** one `RimBank.Core` project holds the domain and application logic of every service domain, one folder per context (namespaces `RimBank.<BusinessDomain>.<ServiceDomain>`), with one `RimBank.Core.Tests`; adapters and `.PublishedLanguage` stay per context and reference it. ADR on the layout (ADR 0023); architecture rules updated so core code can live only in `RimBank.Core` and contexts stay isolated inside it.
+- [x] **0.17 Single core project:** one `RimBank.Core` project holds the domain and application logic of every service domain, one folder per context (namespaces `RimBank.<BusinessDomain>.<ServiceDomain>`), with one `RimBank.Core.Tests`; adapters and `.PublishedLanguage` stay per context and reference it. ADR on the layout (ADR 0023); architecture rules updated so core code can live only in `RimBank.Core` and contexts stay isolated inside it.
 
 ## Stage 1: Party Reference Data Directory (first vertical slice)
 

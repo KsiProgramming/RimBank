@@ -1534,6 +1534,21 @@
           "xunit.v3": "[4.0.2, )"
         }
       },
+      "rimbank.core": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.core.tests": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Core": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel.Testing": "[0.1.0-alpha, )",
+          "Shouldly": "[4.3.0, )",
+          "xunit.v3": "[4.0.2, )"
+        }
+      },
       "rimbank.host": {
         "type": "Project",
         "dependencies": {

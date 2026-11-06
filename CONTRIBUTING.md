@@ -24,7 +24,7 @@ Work outside the roadmap (bug fixes, docs) is welcome as small, focused PRs. Ope
 
 ## Rules that reviewers check
 
-- **Business language only.** Namespaces follow `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]`. Core code is organised by aggregate, Behavior Qualifier and business flow. Folders such as `Services`, `Repositories`, `Helpers`, `Managers`, `Utils` or `Dtos` are not allowed.
+- **Business language only.** Namespaces follow `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]`. All core code (domain and application logic) lives in the one `src/RimBank.Core` project, in the folder `<BusinessDomain>/<ServiceDomain>/`, and is organised by aggregate, Behavior Qualifier and business flow ([ADR 0023](docs/adr/0023-one-core-project.md)). Folders such as `Services`, `Repositories`, `Helpers`, `Managers`, `Utils` or `Dtos` are not allowed.
 - **Hexagonal dependencies.** The core depends on nothing technical. Adapters depend on the core, never the other way round (enforced by architecture tests, see [Architecture rules](#architecture-rules)).
 - **Pure decisions, failures as values.** `decide(command, state) → events`, `evolve(state, event) → state`, and `Result`/`Error` for business rules.
 - **Commands and queries are separate.** Commands go through a decision and return an acknowledgement; queries read only from read models. Money rules are never checked against a read model ([ADR 0003](docs/adr/0003-separate-commands-and-queries.md)).
@@ -184,7 +184,8 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `projections-are-pure` | A projection has no instance fields and never uses ports, handlers or `TimeProvider` | tech-stack §4, §8.2 |
 | `aggregates-implement-decider` | A type with a static `Evolve` implements `IDecider`; every `IDecider` is a sealed record in a core | tech-stack §7, ADR 0010 |
 | `namespace-rule` | `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]` with a catalogued service domain, or a composition project | tech-stack §3.1–3.2, ADR 0011 |
-| `assembly-names` | A project is named after its root namespace, with an allowed adapter suffix | tech-stack §3.1, ADR 0011 |
+| `assembly-names` | A project is a composition project, `RimBank.Core` (holding only catalogued core namespaces), or a context adapter named after its root namespace with an allowed suffix | tech-stack §3.1, ADR 0011, ADR 0023 |
+| `cores-live-in-rimbank-core` | Every type in a context's core namespace lives in the `RimBank.Core` assembly | tech-stack §3.1, ADR 0023 |
 | `business-folder-names` | No `Services`, `Repositories`, `Helpers`, `Managers`, `Utils`, `Dtos`, `Commands` or `Queries` namespace segment | mission principle 1, tech-stack §3.4 |
 | `typed-ids-are-readonly-record-structs` | Every `ITypedId<T>` is a `readonly record struct` | tech-stack §7, ADR 0008 |
 | `no-binary-floating-point` | No `double` or `float` (also nullable or as a generic argument) in cores, SharedKernel or `.PublishedLanguage` | quality bar, ADR 0009 |
@@ -193,9 +194,10 @@ dotnet test --project tests/RimBank.Architecture.Tests
 **Adding a context or project:**
 
 1. Add its row to `ServiceDomainCatalogue.Solution` in the same PR as its BIAN mapping ADR ([ADR 0011](docs/adr/0011-namespace-rule.md)).
-2. Add a `ProjectReference` to it from `tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj`. The rules only see projects referenced there, and `The_solution_loads_every_project_and_never_the_fixtures` lists them.
-3. Mark the CQRS roles: commands implement `ICommand`, queries `IQuery<TView>`, the write port `IWritePort` and the read port `IReadPort`. An unmarked type escapes the CQRS rules.
-4. Register the context in the host: add `src/RimBank.Host/Modules/<BusinessDomain>/<ServiceDomain>Module.cs` implementing `IServiceDomainModule`, which only calls the adapters' own `Add…` / `Map…` extension methods, and append it to `ServiceDomainModules.All` ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)).
+2. Put its core in `src/RimBank.Core/<BusinessDomain>/<ServiceDomain>/` and its core tests in `tests/RimBank.Core.Tests/<BusinessDomain>/<ServiceDomain>/`; never create a per-context core project ([ADR 0023](docs/adr/0023-one-core-project.md)). Its adapter projects (`.PublishedLanguage`, `.Api`, `.Mcp`, `.Postgresql`, `.Subscriptions`) go under `src/<BusinessDomain>/` and reference `RimBank.Core`.
+3. Add a `ProjectReference` to each new project from `tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj`. The rules only see projects referenced there, and `The_solution_loads_every_project_and_never_the_fixtures` lists them.
+4. Mark the CQRS roles: commands implement `ICommand`, queries `IQuery<TView>`, the write port `IWritePort` and the read port `IReadPort`. An unmarked type escapes the CQRS rules.
+5. Register the context in the host: add `src/RimBank.Host/Modules/<BusinessDomain>/<ServiceDomain>Module.cs` implementing `IServiceDomainModule`, which only calls the adapters' own `Add…` / `Map…` extension methods, and append it to `ServiceDomainModules.All` ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)).
 
 **Adding a rule:** write it in `ArchitectureRules`, add a bad context that breaks only that rule to the fixtures, list it in `FixtureContexts.Bad`, and add a row to the table above.
 

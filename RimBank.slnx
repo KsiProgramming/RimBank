@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/RimBank.AppHost/RimBank.AppHost.csproj" />
+    <Project Path="src/RimBank.Core/RimBank.Core.csproj" />
     <Project Path="src/RimBank.Host/RimBank.Host.csproj" />
     <Project Path="src/RimBank.Http/RimBank.Http.csproj" />
     <Project Path="src/RimBank.Mcp/RimBank.Mcp.csproj" />
@@ -22,6 +23,7 @@
     <Project Path="tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj" />
     <Project Path="tests/RimBank.Conformance.Testing/RimBank.Conformance.Testing.csproj" />
     <Project Path="tests/RimBank.Conformance.Tests/RimBank.Conformance.Tests.csproj" />
+    <Project Path="tests/RimBank.Core.Tests/RimBank.Core.Tests.csproj" />
     <Project Path="tests/RimBank.Host.Tests/RimBank.Host.Tests.csproj" />
     <Project Path="tests/RimBank.Http.Tests/RimBank.Http.Tests.csproj" />
     <Project Path="tests/RimBank.Mcp.Tests/RimBank.Mcp.Tests.csproj" />
