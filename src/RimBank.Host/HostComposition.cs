@@ -1,12 +1,13 @@
 using RimBank.Host.Errors;
+using RimBank.Host.Messaging;
 using RimBank.Host.Modules;
 using RimBank.ServiceDefaults;
 
 namespace RimBank.Host;
 
 /// <summary>
-/// The composition of <c>RimBank.Host</c>: service defaults, Problem Details, then each context's module
-/// (ADR 0014, ADR 0015).
+/// The composition of <c>RimBank.Host</c>: service defaults, Problem Details, the message bus, then each context's
+/// module (ADR 0014, ADR 0015, ADR 0017).
 /// </summary>
 public static class HostComposition
 {
@@ -24,6 +25,7 @@ public static class HostComposition
 
         builder.AddServiceDefaults();
         builder.Services.AddRimBankProblemDetails();
+        builder.AddRimBankMessaging();
         builder.AddServiceDomainModules(modules);
 
         var app = builder.Build();

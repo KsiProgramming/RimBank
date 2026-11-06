@@ -41,6 +41,22 @@
           "Microsoft.Extensions.Logging.Abstractions": "10.0.14"
         }
       },
+      "WolverineFx.Marten": {
+        "type": "Direct",
+        "requested": "[6.62.0, )",
+        "resolved": "6.62.0",
+        "contentHash": "eaPfxqsm1VSOuvdWa164qwWoy3acJHhWOUOUCWQEGKdJ28F41fsTzasd1VNzC0Q19w7Y08f94JJ0F7w7nl2kLA==",
+        "dependencies": {
+          "Marten": "9.58.0",
+          "Weasel.Storage": "9.49.0",
+          "WolverineFx.Postgresql": "6.62.0"
+        }
+      },
+      "Cronos": {
+        "type": "Transitive",
+        "resolved": "0.11.0",
+        "contentHash": "ovNrFIuKTbeNYx+1Tne8DkY/nJ+bRoS0/bTrCBzeAuMvLbX2nJprwcdRqZIwwLRsaghqBU932QvJ6mryTycc/A=="
+      },
       "FastExpressionCompiler": {
         "type": "Transitive",
         "resolved": "5.4.1",
@@ -53,8 +69,8 @@
       },
       "JasperFx": {
         "type": "Transitive",
-        "resolved": "2.100.0",
-        "contentHash": "lHVjo5MGJJPWm/t9SA+EqpuPKh9yAgaUpdE1606iERoEP8VfNtqjEFb5gw4gfrdkr2BDd8oaTPI6kzSwDe3eBg==",
+        "resolved": "2.100.1",
+        "contentHash": "w/+2y30g2dcqWLz4666RtxSRQEMCieQprOZAoaJoFUKfC3GPehbYElzgNbqzZomKkcw7w70mgyg1QoiYy8SaAQ==",
         "dependencies": {
           "FastExpressionCompiler": "5.4.1",
           "ImTools": "4.0.0",
@@ -70,16 +86,41 @@
       },
       "JasperFx.Events": {
         "type": "Transitive",
-        "resolved": "2.100.0",
-        "contentHash": "qArIZzQON692KDrhM+heHsyzNdJTq2OetyKaKfMAKCoTBpCoDK5H3tcVLEt3Uv+dGCKlyeItauODZfrAzRD/Fw==",
+        "resolved": "2.100.1",
+        "contentHash": "b0N1bnZmRqlIOKsct6dIqN5AqR7K1fpviFQpt+Pq/bptVLq9ev16bAnb6KvX5PQ7N++dXOBvV2X4yRUK7tW3Rw==",
         "dependencies": {
-          "JasperFx": "2.100.0"
+          "JasperFx": "2.100.1"
         }
+      },
+      "JasperFx.SourceGenerator": {
+        "type": "Transitive",
+        "resolved": "2.100.1",
+        "contentHash": "m8k2mdJfJcQ+Xvbtkh/oxf/fFmC6lNfyBSbb3SPN5bqO4cxEL6S6P6MVMAwoYjHcnlN1AgzjzgTlgznFPG3IPw=="
       },
       "Microsoft.Bcl.TimeProvider": {
         "type": "Transitive",
         "resolved": "10.0.0",
         "contentHash": "bUubrBD6tRJE3V1kvRloYc6NymH3R5oFKjAS9e0ELNx6u0ZR+zjps9dDQyjgqN/rArzl7f+21KGszj3YRN7F2Q=="
+      },
+      "Microsoft.Extensions.Caching.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.0.0",
+        "contentHash": "Zcoy6H9mSoGyvr7UvlGokEZrlZkcPCICPZr8mCsSt9U/N8eeCwCXwKF5bShdA66R0obxBCwP4AxomQHvVkC/uA==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "10.0.0"
+        }
+      },
+      "Microsoft.Extensions.Caching.Memory": {
+        "type": "Transitive",
+        "resolved": "10.0.0",
+        "contentHash": "krK19MKp0BNiR9rpBDW7PKSrTMLVlifS9am3CVc4O1Jq6GWz0o4F+sw5OSL4L3mVd56W8l6JRgghUa2KB51vOw==",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Options": "10.0.0",
+          "Microsoft.Extensions.Primitives": "10.0.0"
+        }
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
@@ -300,8 +341,8 @@
       },
       "Microsoft.Extensions.ObjectPool": {
         "type": "Transitive",
-        "resolved": "10.0.0",
-        "contentHash": "bpeCq0IYmVLACyEUMzFIOQX+zZUElG1t+nu1lSxthe7B+1oNYking7b91305+jNB6iwojp9fqTY9O+Nh7ULQxg=="
+        "resolved": "10.0.2",
+        "contentHash": "kpCp4m7nwJVBcRKWXYHdVK/W0dkKyyFOjCmKVdO+zKThWvUxP1V+jVEP9FGpqRu4GPl9041SEXu2f+U/l825nQ=="
       },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
@@ -346,6 +387,11 @@
         "dependencies": {
           "NetTopologySuite": "[2.0.0, 3.0.0-A)"
         }
+      },
+      "NewId": {
+        "type": "Transitive",
+        "resolved": "4.0.1",
+        "contentHash": "jegBasNndmG21G3BmT51suFDCIz/sLN81j+IxmkZ4iWoaDi8LygeHiyNnYbXz5OQh9nCRJFIx1+PJrlYi1Gc9Q=="
       },
       "Npgsql": {
         "type": "Transitive",
@@ -436,6 +482,24 @@
           "Weasel.Core": "9.49.0"
         }
       },
+      "WolverineFx.Postgresql": {
+        "type": "Transitive",
+        "resolved": "6.62.0",
+        "contentHash": "dJlLhIwcKWfFk04BXU+MT7Co+o1D5WrToLdXbS1nhVSFfY2RYPxyaiitFQrSCFvd56mu+oB6wZsdqi6g/nfgVQ==",
+        "dependencies": {
+          "Weasel.Postgresql": "9.49.0",
+          "WolverineFx.RDBMS": "6.62.0"
+        }
+      },
+      "WolverineFx.RDBMS": {
+        "type": "Transitive",
+        "resolved": "6.62.0",
+        "contentHash": "RtHmuHImLXXo5P1C1i0UWZPT35M96PKkkSrwcACv/0zBYcisa5lB4tImCa4z0PnPxMu6iE5A8R6M5Ux1VFwaEg==",
+        "dependencies": {
+          "Weasel.Core": "9.49.0",
+          "WolverineFx": "6.62.0"
+        }
+      },
       "rimbank.sharedkernel": {
         "type": "Project"
       },
@@ -467,6 +531,28 @@
           "Microsoft.Extensions.Logging.EventLog": "10.0.14",
           "Microsoft.Extensions.Logging.EventSource": "10.0.14",
           "Microsoft.Extensions.Options": "10.0.14"
+        }
+      },
+      "WolverineFx": {
+        "type": "CentralTransitive",
+        "requested": "[6.62.0, )",
+        "resolved": "6.62.0",
+        "contentHash": "0KashWEcGtbB0ugMpcupHFaeS9iq8vRA+FXAGM7O2hEGJWsMxah5B663Z1TBwHD3LhhODWiuC5mSeU0GR50YGA==",
+        "dependencies": {
+          "Cronos": "0.11.0",
+          "JasperFx": "2.100.1",
+          "JasperFx.Events": "2.100.1",
+          "JasperFx.SourceGenerator": "2.100.1",
+          "Microsoft.Extensions.Caching.Memory": "10.0.0",
+          "Microsoft.Extensions.Configuration": "10.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.0",
+          "Microsoft.Extensions.Configuration.Json": "10.0.0",
+          "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Hosting": "10.0.0",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
+          "Microsoft.Extensions.ObjectPool": "10.0.2",
+          "NewId": "4.0.1"
         }
       }
     }

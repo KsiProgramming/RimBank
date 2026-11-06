@@ -1,5 +1,6 @@
 using JasperFx.Events;
-using RimBank.Postgresql.FakeContexts.Tests;
+using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Registry.Tests;
 using RimBank.SharedKernel.Testing;
 
 namespace RimBank.Postgresql.Views.Tests;

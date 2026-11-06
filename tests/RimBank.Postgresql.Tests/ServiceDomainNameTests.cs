@@ -3,7 +3,7 @@ namespace RimBank.Postgresql.Tests;
 public sealed class ServiceDomainNameTests
 {
     [Fact]
-    public void A_service_domain_gives_its_schema_role_connection_string_and_health_check_names()
+    public void A_service_domain_gives_its_schema_role_connection_string_health_check_and_queue_names()
     {
         var name = ServiceDomainName.Parse("PartyReferenceDataDirectory");
 
@@ -11,6 +11,7 @@ public sealed class ServiceDomainNameTests
         name.RoleName.ShouldBe("rimbank_party_reference_data_directory");
         name.ConnectionStringName.ShouldBe("PartyReferenceDataDirectory");
         name.HealthCheckName.ShouldBe("postgresql-party-reference-data-directory");
+        name.QueueName.ShouldBe("party-reference-data-directory");
         name.ToString().ShouldBe("PartyReferenceDataDirectory");
     }
 

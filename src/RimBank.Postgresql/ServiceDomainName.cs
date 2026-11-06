@@ -7,7 +7,7 @@ namespace RimBank.Postgresql;
 /// A BIAN service domain name in PascalCase (for example <c>PartyReferenceDataDirectory</c>), and the database names
 /// derived from it by convention (ADR 0016): schema <c>party_reference_data_directory</c>, login role
 /// <c>rimbank_party_reference_data_directory</c>, connection string <c>ConnectionStrings:PartyReferenceDataDirectory</c>
-/// and health check <c>postgresql-party-reference-data-directory</c>.
+/// health check <c>postgresql-party-reference-data-directory</c> and local queue <c>party-reference-data-directory</c>.
 /// </summary>
 public sealed partial record ServiceDomainName
 {
@@ -22,7 +22,8 @@ public sealed partial record ServiceDomainName
         Value = value;
         SchemaName = Words(value, '_');
         RoleName = RolePrefix + SchemaName;
-        HealthCheckName = "postgresql-" + Words(value, '-');
+        QueueName = Words(value, '-');
+        HealthCheckName = "postgresql-" + QueueName;
     }
 
     /// <summary>The service domain name in PascalCase, also the connection string name.</summary>
@@ -36,6 +37,9 @@ public sealed partial record ServiceDomainName
 
     /// <summary>The name of the connection string the context's store uses (<c>ConnectionStrings:&lt;ServiceDomain&gt;</c>).</summary>
     public string ConnectionStringName => Value;
+
+    /// <summary>The name of the context's durable local Wolverine queue, in kebab case (ADR 0017).</summary>
+    public string QueueName { get; }
 
     /// <summary>The name of the store's health check, tagged <c>ready</c>.</summary>
     public string HealthCheckName { get; }

@@ -1,7 +1,10 @@
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RimBank.Postgresql.FakeContexts.Tests;
+using Npgsql;
+using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Registry.Tests;
+using Wolverine;
 
 namespace RimBank.Postgresql.Database.Tests;
 
@@ -16,12 +19,47 @@ public sealed class RunningHost(IHost host, string database) : IAsyncDisposable
 
     public IFakeRegistryStore Registry => Services.GetRequiredService<IFakeRegistryStore>();
 
-    public static async Task<RunningHost> StartAsync(PostgresqlServer server)
+    /// <summary>The host's message bus, as an <c>.Api</c> or <c>.Mcp</c> adapter uses it.</summary>
+    public IMessageBus Bus => Services.GetRequiredService<IMessageBus>();
+
+    public static async Task<RunningHost> StartAsync(PostgresqlServer server) =>
+        await StartAsync(server, await server.CreateDatabaseAsync());
+
+    /// <summary>Starts a host on an existing database, for example to restart after another host stopped.</summary>
+    public static async Task<RunningHost> StartAsync(PostgresqlServer server, string database)
     {
-        var database = await server.CreateDatabaseAsync();
+        ArgumentNullException.ThrowIfNull(server);
         var host = server.BuildHost(database);
         await PostgresqlServer.StartAsync(host);
         return new RunningHost(host, database);
+    }
+
+    /// <summary>Runs a <c>count(*)</c> query as the administrator.</summary>
+    public static async Task<long> CountAsync(PostgresqlServer server, string database, string sql)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        await using var dataSource = NpgsqlDataSource.Create(server.AdministratorConnectionString(database));
+        await using var command = dataSource.CreateCommand(sql);
+        return (long)(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
+    }
+
+    /// <summary>Waits until the stream holds an event of type <typeparamref name="TEvent"/>, and returns its events.</summary>
+    public static async Task<IReadOnlyList<object>> WaitForEventAsync<TEvent>(IDocumentStore store, Guid stream)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(60));
+        while (true)
+        {
+            await using var query = store.QuerySession();
+            var events = (await query.Events.FetchStreamAsync(stream, token: timeout.Token)).Select(stored => stored.Data).ToList();
+            if (events.OfType<TEvent>().Any())
+            {
+                return events;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100), timeout.Token);
+        }
     }
 
     /// <summary>Appends events to a new stream in <paramref name="store"/> and returns the sequence of the last one.</summary>

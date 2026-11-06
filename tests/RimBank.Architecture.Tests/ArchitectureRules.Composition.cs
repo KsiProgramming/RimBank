@@ -1,8 +1,8 @@
 namespace RimBank.Architecture.Tests;
 
-// The composition projects (tech-stack §2–§4, ADR 0014–0016): RimBank.Host composes, RimBank.AppHost orchestrates,
+// The composition projects (tech-stack §2–§4, ADR 0014–0017): RimBank.Host composes, RimBank.AppHost orchestrates,
 // RimBank.ServiceDefaults is applied by the host, RimBank.Problems maps errors for the adapters that answer callers,
-// and RimBank.Postgresql holds the Marten conventions every .Postgresql adapter follows.
+// and RimBank.Postgresql holds the Marten and Wolverine conventions every .Postgresql adapter follows.
 // Contexts and SharedKernel never reach up to any of them.
 public static partial class ArchitectureRules
 {
@@ -14,10 +14,11 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule SharedPostgresqlOnlyInPostgresqlAdapters { get; } = new(
         "shared-postgresql-only-in-postgresql-adapters",
-        "tech-stack §4 and ADR 0016: only a context's .Postgresql adapter uses RimBank.Postgresql; a core reaches its store through its ports, and the host through the adapter's own extension methods",
+        "tech-stack §4, ADR 0016 and ADR 0017: only a context's .Postgresql adapter and the host (for its own message store) use RimBank.Postgresql; a core reaches its store through its ports, and the host reaches a context's store through the adapter's own extension methods",
         code =>
             from type in code.Types
             where !Namespaces.IsWithin(type.NamespaceName(), SharedPostgresqlRoot)
+                && !Namespaces.IsWithin(type.NamespaceName(), HostRoot)
                 && ContextAddress.Parse(type.NamespaceName())?.Part is not ContextPart.Postgresql
             from target in code.Targets(type)
             where Namespaces.IsWithin(target.NamespaceName(), SharedPostgresqlRoot)
@@ -25,15 +26,15 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule SharedPostgresqlDependencies { get; } = new(
         "shared-postgresql-dependencies",
-        "tech-stack §4 and ADR 0016: RimBank.Postgresql references SharedKernel, Marten (with JasperFx, Weasel and Npgsql) and the Microsoft.Extensions abstractions only, never a context, a composition project or ASP.NET Core",
+        "tech-stack §4, ADR 0016 and ADR 0017: RimBank.Postgresql references SharedKernel, Marten (with JasperFx, Weasel and Npgsql), Wolverine (its Marten and PostgreSQL integration) and the Microsoft.Extensions abstractions only, never a context, a composition project or ASP.NET Core",
         code =>
             from type in code.Types
             where Namespaces.IsWithin(type.NamespaceName(), SharedPostgresqlRoot)
             from target in code.Targets(type)
             where !IsBcl(target)
-                && !new[] { "RimBank.SharedKernel", SharedPostgresqlRoot, Marten, "JasperFx", "Weasel", Npgsql, "Microsoft.Extensions" }
+                && !new[] { "RimBank.SharedKernel", SharedPostgresqlRoot, Marten, "JasperFx", "Weasel", Npgsql, Wolverine, "Microsoft.Extensions" }
                     .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
-            select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, Marten, JasperFx, Weasel, Npgsql, Microsoft.Extensions or the BCL"));
+            select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, Marten, JasperFx, Weasel, Npgsql, Wolverine, Microsoft.Extensions or the BCL"));
 
     public static ArchitectureRule ServiceDefaultsOnlyInHost { get; } = new(
         "service-defaults-only-in-host",

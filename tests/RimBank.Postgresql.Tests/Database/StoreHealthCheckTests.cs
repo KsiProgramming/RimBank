@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
-using RimBank.Postgresql.FakeContexts.Tests;
+using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
 namespace RimBank.Postgresql.Database.Tests;
 
@@ -19,7 +20,7 @@ public sealed class StoreHealthCheckTests(PostgresqlServer server)
             .CheckHealthAsync(check => check.Tags.Contains(ServiceDomainStoreRegistration.ReadyTag), Cancellation);
 
         report.Status.ShouldBe(HealthStatus.Healthy);
-        report.Entries.Keys.ShouldBe(["postgresql-fake-ledger", "postgresql-fake-registry"], ignoreOrder: true);
+        report.Entries.Keys.ShouldBe(["postgresql-fake-ledger", "postgresql-fake-registry", "postgresql-wolverine"], ignoreOrder: true);
     }
 
     [Fact]

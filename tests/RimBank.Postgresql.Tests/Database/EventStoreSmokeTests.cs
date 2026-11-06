@@ -1,5 +1,6 @@
 using Npgsql;
-using RimBank.Postgresql.FakeContexts.Tests;
+using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
 namespace RimBank.Postgresql.Database.Tests;
 
