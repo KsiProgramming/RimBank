@@ -41,9 +41,9 @@
 
 ## Stage 1: Party Reference Data Directory (first vertical slice)
 
-`RimBank.Party.PartyReferenceDataDirectory`. Control Record: *PartyReferenceDataDirectoryEntry*. BQs: Demographics, Reference, Associations, BankRelations.
+`RimBank.Party.PartyReferenceDataDirectory`. Control Record: *PartyReferenceDataDirectoryEntry*. BQs: Demographics, Reference, Associations, BankRelations. The mapping of every BIAN operation and channel is in [ADR 0024](../docs/adr/0024-party-reference-data-directory-mapping.md). The CR Control, Request, Execute and Exchange operations and the eight BQ channels are deferred (not in Stage 1).
 
-- [ ] **1.1 ADR:** BIAN → DDD mapping for this domain: aggregate boundaries, BQs as entities, the command/query split of its operations, and its read models (which views, inline or async).
+- [x] **1.1 ADR:** BIAN → DDD mapping for this domain: aggregate boundaries, BQs as entities, the command/query split of its operations, and its read models (which views, inline or async).
 - [ ] **1.2 Aggregate:** `PartyReferenceDataDirectoryEntry` state, `Register` decision, `PartyRegistered` event, invariants, unit tests.
 - [ ] **1.3 Register flow (command side):** `RegisterParty` command and handler, `PartyDirectory` write port, in-memory test adapter.
 - [ ] **1.4 PostgreSQL adapter (write side):** Marten event-stream implementation of `PartyDirectory`, with integration tests.
@@ -53,7 +53,7 @@
 - [ ] **1.8 Update:** `Update` decision, event and command endpoint, with optimistic concurrency through `If-Match` (409 Problem Details); the view is updated by the projection.
 - [ ] **1.9 Demographics BQ:** model, decisions, Update/Exchange commands, view fields and Retrieve query.
 - [ ] **1.10 Reference BQ:** party identifiers (national ID, tax ID, LEI) as value objects; Update command and Retrieve query.
-- [ ] **1.11 Associations BQ:** party-to-party relationships; Register/Update commands and Retrieve query.
+- [ ] **1.11 Associations BQ:** party-to-party relationships as their own aggregate `PartyAssociation` (ADR 0024), with its own stream and inline view; Register/Update commands (owner and associate checked on the write side) and Retrieve query.
 - [ ] **1.12 BankRelations BQ:** the party's relationships with the bank; Update command and Retrieve query.
 - [ ] **1.13 Published language:** `PartyReferenceDataDirectoryEntryCreated/Updated` integration events, mapped from domain events (not from read models), carrying the state consumers need, versioned, published through the outbox, and pinned by a schema contract test.
 - [ ] **1.14 Conformance:** OpenAPI and AsyncAPI conformance tests green for the implemented subset.
