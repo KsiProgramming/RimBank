@@ -82,7 +82,7 @@ public static class IdempotencyGate
         }
 
         Result<TAcknowledgement> replay = earlier.Fingerprint == fingerprint
-            ? JsonSerializer.Deserialize<TAcknowledgement>(earlier.Acknowledgement)
+            ? JsonSerializer.Deserialize<TAcknowledgement>(earlier.Acknowledgement, StoredJson.Options)
                 ?? throw new InvalidOperationException($"The stored acknowledgement of {id} is empty.")
             : IdempotencyKey.Reused;
         return await StopAsync(context, replay);
@@ -107,7 +107,7 @@ public static class IdempotencyGate
             {
                 Id = ticket.OutcomeId,
                 Fingerprint = ticket.Fingerprint,
-                Acknowledgement = JsonSerializer.Serialize(result.Value),
+                Acknowledgement = JsonSerializer.Serialize(result.Value, StoredJson.Options),
             });
         }
     }
@@ -121,7 +121,7 @@ public static class IdempotencyGate
     public static string Fingerprint(ICommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        var payload = JsonSerializer.SerializeToNode(command, command.GetType()) as JsonObject
+        var payload = JsonSerializer.SerializeToNode(command, command.GetType(), StoredJson.Options) as JsonObject
             ?? throw new InvalidOperationException($"{command.GetType().Name} must serialize to a JSON object.");
         payload.Remove(KeyProperty);
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(payload.ToJsonString())));

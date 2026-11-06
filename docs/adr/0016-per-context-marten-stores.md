@@ -57,12 +57,14 @@ A hosted service runs the provisioner before Marten creates its schema objects. 
 
 **Event type names.** Each context maps every event to an explicit, stable name with `options.Events.MapEventType<TEvent>("snake_case_name")`, so renaming or moving a C# type never breaks a stored stream. The fake contexts show the pattern, and a reviewer checks it in each `.Postgresql`.
 
+**Serialization (amended in roadmap 1.4).** Every store uses System.Text.Json with `EnumStorage.AsString` and `TypedIdJsonConverterFactory` ([ADR 0008](0008-typed-identifier-pattern.md)), so a typed id is stored as a plain GUID string and an enum as its name, never as its position. The idempotency gate stores and replays acknowledgements with the same rules (`StoredJson.Options`, [ADR 0018](0018-idempotency-keys-for-commands.md)), so a replayed acknowledgement keeps its typed ids. A Testcontainers test proves both on a stored document.
+
 **Telemetry.** `RimBank.ServiceDefaults` subscribes to Marten's `Marten` activity source and meter (by name, with no package reference), so every context's store is traced and measured.
 
 ## Consequences
 
 - A context's `.Postgresql` adapter needs a marker interface, one `AddServiceDomainStore` call with its event names and views, and its ports. Everything else is the same for every context.
-- Each context needs its own connection string and role password: user secrets locally and a vault elsewhere. The first real context (1.4) adds its connection string parameter to the AppHost.
+- Each context needs its own connection string and role password: user secrets locally and a vault elsewhere. The AppHost gives the host one connection string per role (`Program.RoleConnectionStrings`), each with a generated password kept in user secrets; the first real context added its own in roadmap 1.4.
 - Production needs its roles and schemas provisioned, and its schema objects migrated, outside the application. The script and the migration step are part of roadmap 7.5.
 - `RimBank.Postgresql` is a new composition project root in the architecture tests (namespace and assembly-name rules), with two new rules and their bad fixtures. tech-stack §2, §3.3, §4 and §8.3 list it.
 - The convention is proven by `tests/RimBank.Postgresql.Tests`: unit tests, and Testcontainers smoke tests with two test-only fake contexts (append, inline read-your-write, async catch-up with progress, rebuild, role isolation and health). The fakes never ship in `src/`.

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using RimBank.Host.Errors;
 using RimBank.Host.Mcp;
 using RimBank.Host.Messaging;
@@ -27,6 +28,9 @@ public static class HostComposition
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.AddServiceDefaults();
+
+        // Command handlers take the time through TimeProvider (specs/tech-stack.md §7); a test host may supply its own.
+        builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddRimBankProblemDetails();
         builder.AddRimBankAuthentication();
         builder.AddRimBankMessaging();

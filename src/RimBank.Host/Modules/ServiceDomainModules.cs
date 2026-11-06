@@ -1,3 +1,5 @@
+using RimBank.Host.Modules.Party;
+
 namespace RimBank.Host.Modules;
 
 /// <summary>
@@ -6,9 +8,9 @@ namespace RimBank.Host.Modules;
 /// </summary>
 public static class ServiceDomainModules
 {
-    /// <summary>
-    /// Every module, registered and mapped in this order. It is empty until Stage 1 adds the first context
-    /// (<c>new PartyReferenceDataDirectoryModule()</c>).
-    /// </summary>
-    public static IReadOnlyList<IServiceDomainModule> All { get; } = [];
+    /// <summary>Every module, registered and mapped in this order.</summary>
+    public static IReadOnlyList<IServiceDomainModule> All { get; } =
+    [
+        new PartyReferenceDataDirectoryModule(),
+    ];
 }

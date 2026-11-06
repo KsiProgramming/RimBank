@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using RimBank.Host.Tests;
 using RimBank.ServiceDefaults;
 
 namespace RimBank.Host.Observability.Tests;
@@ -13,17 +13,17 @@ public sealed class OpenTelemetryRegistrationTests
     [Fact]
     public async Task Host_registers_a_tracer_provider_and_a_meter_provider()
     {
-        await using var factory = new WebApplicationFactory<Program>();
+        await using var app = await HostWithoutContexts.StartAsync();
 
-        factory.Services.GetService<TracerProvider>().ShouldNotBeNull();
-        factory.Services.GetService<MeterProvider>().ShouldNotBeNull();
+        app.Services.GetService<TracerProvider>().ShouldNotBeNull();
+        app.Services.GetService<MeterProvider>().ShouldNotBeNull();
     }
 
     [Fact]
     public async Task Host_traces_the_activities_every_context_store_reports_through_Marten()
     {
-        await using var factory = new WebApplicationFactory<Program>();
-        _ = factory.Services.GetRequiredService<TracerProvider>();
+        await using var app = await HostWithoutContexts.StartAsync();
+        _ = app.Services.GetRequiredService<TracerProvider>();
         using var marten = new ActivitySource(ServiceDefaultsExtensions.MartenTelemetry);
 
         marten.HasListeners().ShouldBeTrue();

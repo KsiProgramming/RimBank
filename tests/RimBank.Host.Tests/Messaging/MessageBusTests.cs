@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using RimBank.Host.Tests;
 using Wolverine;
 using Wolverine.Runtime;
 
@@ -12,29 +12,29 @@ public sealed class MessageBusTests
     [Fact]
     public async Task The_host_runs_one_message_bus()
     {
-        await using var factory = new WebApplicationFactory<Program>();
+        await using var app = await HostWithoutContexts.StartAsync();
 
-        using var scope = factory.Services.CreateScope();
+        using var scope = app.Services.CreateScope();
         scope.ServiceProvider.GetService<IMessageBus>().ShouldNotBeNull();
-        factory.Services.GetServices<IWolverineRuntime>().ShouldHaveSingleItem();
+        app.Services.GetServices<IWolverineRuntime>().ShouldHaveSingleItem();
     }
 
     [Fact]
     public async Task No_handler_is_found_unless_a_context_includes_its_own_assembly()
     {
-        await using var factory = new WebApplicationFactory<Program>();
+        await using var app = await HostWithoutContexts.StartAsync();
 
-        var runtime = factory.Services.GetRequiredService<IWolverineRuntime>();
+        var runtime = app.Services.GetRequiredService<IWolverineRuntime>();
 
         runtime.Options.ApplicationAssembly.ShouldBe(typeof(Program).Assembly);
-        ((Wolverine.Runtime.WolverineRuntime)runtime).Handlers.Chains.ShouldBeEmpty();
+        ((WolverineRuntime)runtime).Handlers.Chains.ShouldBeEmpty();
     }
 
     [Fact]
     public async Task The_bus_is_safe_to_run_on_several_host_instances()
     {
-        await using var factory = new WebApplicationFactory<Program>();
+        await using var app = await HostWithoutContexts.StartAsync();
 
-        factory.Services.GetRequiredService<IWolverineRuntime>().Options.Durability.Mode.ShouldBe(DurabilityMode.Balanced);
+        app.Services.GetRequiredService<IWolverineRuntime>().Options.Durability.Mode.ShouldBe(DurabilityMode.Balanced);
     }
 }

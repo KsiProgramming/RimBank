@@ -46,6 +46,10 @@ public static class WritePortRegistration
 
         builder.Services.ConfigureWolverine(options =>
         {
+            // The generated handler code names the implementation, which lives in the context's own .Postgresql
+            // assembly: Wolverine compiles against it only when told to.
+            options.CodeGeneration.ReferenceAssembly(typeof(TPort).Assembly);
+            options.CodeGeneration.ReferenceAssembly(typeof(TImplementation).Assembly);
             options.CodeGeneration.Sources.Add(new WritePortSource(typeof(TPort), typeof(TImplementation)));
             options.Policies.Add(new WritePortTransactionPolicy(typeof(TPort)));
         });

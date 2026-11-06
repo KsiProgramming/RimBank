@@ -4,10 +4,20 @@ namespace RimBank.AppHost;
 /// The Aspire AppHost: one PostgreSQL server with the <c>rimbank</c> database, a Keycloak server with the dev-only
 /// <c>rimbank</c> realm (ADR 0019), and <c>RimBank.Host</c>, which waits for both (ADR 0014) and tells MCP clients
 /// where Keycloak is (ADR 0022). Each context gets its own schema, role and connection string inside that database
-/// (ADR 0016); the first context adds its connection string here in roadmap 1.4.
+/// (ADR 0016), and the host's message store gets the <c>Wolverine</c> one (ADR 0017).
 /// </summary>
 public sealed class Program
 {
+    /// <summary>
+    /// The connection strings the host logs in with, one per role: the message store's and each context's. The host
+    /// provisions each role from its own connection string in Development (ADR 0016).
+    /// </summary>
+    public static readonly IReadOnlyList<(string Name, string Role)> RoleConnectionStrings =
+    [
+        ("Wolverine", "rimbank_wolverine"),
+        ("PartyReferenceDataDirectory", "rimbank_party_reference_data_directory"),
+    ];
+
     /// <summary>The PostgreSQL server resource.</summary>
     public const string PostgresResource = "postgres";
 
@@ -56,8 +66,13 @@ public sealed class Program
             .WithDataVolume(KeycloakVolume)
             .WithRealmImport(RealmFile);
 
-        builder.AddProject<Projects.RimBank_Host>(HostResource)
-            .WithReference(database)
+        var host = builder.AddProject<Projects.RimBank_Host>(HostResource);
+        foreach (var (name, role) in RoleConnectionStrings)
+        {
+            host.WithReference(AddRoleConnectionString(builder, postgres, name, role));
+        }
+
+        host.WithReference(database)
             .WithReference(keycloak)
             .WaitFor(database)
             .WaitFor(keycloak)
@@ -65,5 +80,23 @@ public sealed class Program
             .WithHttpHealthCheck("/health");
 
         builder.Build().Run();
+    }
+
+    // A login as one role on the rimbank database. Its password is generated once and kept in user secrets, never in
+    // source; it has no special characters, so it never breaks the connection string's syntax.
+    private static IResourceBuilder<IResourceWithConnectionString> AddRoleConnectionString(
+        IDistributedApplicationBuilder builder,
+        IResourceBuilder<PostgresServerResource> postgres,
+        string name,
+        string role)
+    {
+        var password = builder.AddParameter(
+            $"{name.ToLowerInvariant()}-password",
+            new GenerateParameterDefault { MinLength = 32, Special = false },
+            secret: true,
+            persist: true);
+        var endpoint = postgres.Resource.PrimaryEndpoint;
+        return builder.AddConnectionString(name, ReferenceExpression.Create(
+            $"Host={endpoint.Property(EndpointProperty.Host)};Port={endpoint.Property(EndpointProperty.Port)};Database={DatabaseResource};Username={role};Password={password.Resource}"));
     }
 }

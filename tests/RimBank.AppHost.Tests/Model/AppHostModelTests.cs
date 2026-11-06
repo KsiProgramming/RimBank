@@ -23,6 +23,25 @@ public sealed class AppHostModelTests
     }
 
     [Fact]
+    public async Task Host_receives_a_role_connection_string_for_its_message_store_and_each_context()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(ct);
+        var host = builder.CreateResourceBuilder<ProjectResource>(Program.HostResource);
+
+        var configuration = await ExecutionConfigurationBuilder.Create(host.Resource)
+            .WithEnvironmentVariablesConfig()
+            .BuildAsync(new(DistributedApplicationOperation.Publish), NullLogger.Instance, ct);
+
+        Program.RoleConnectionStrings.Select(login => login.Name).ShouldBe(["Wolverine", "PartyReferenceDataDirectory"]);
+        var variables = configuration.EnvironmentVariables.ToDictionary();
+        foreach (var (name, _) in Program.RoleConnectionStrings)
+        {
+            variables.ShouldContainKey($"ConnectionStrings__{name}");
+        }
+    }
+
+    [Fact]
     public async Task Host_waits_for_the_database_and_is_probed_on_health()
     {
         await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(TestContext.Current.CancellationToken);

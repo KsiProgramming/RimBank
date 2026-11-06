@@ -1,8 +1,6 @@
 using System.Net;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using RimBank.Host.Security;
-using RimBank.Host.Security.Tests;
+using Microsoft.AspNetCore.TestHost;
+using RimBank.Host.Tests;
 
 namespace RimBank.Host.Health.Tests;
 
@@ -21,9 +19,8 @@ public sealed class HealthEndpointTests
     [MemberData(nameof(ProbesByEnvironment))]
     public async Task Probe_returns_healthy_without_credentials(string path, string environment)
     {
-        await using var factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(host => host.UseEnvironment(environment).UseSetting(AuthenticationComposition.AuthorityKey, TestTokens.Issuer));
-        using var client = factory.CreateClient();
+        await using var app = await HostWithoutContexts.StartAsync(environment);
+        using var client = app.GetTestClient();
 
         using var response = await client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
 
@@ -34,9 +31,8 @@ public sealed class HealthEndpointTests
     [Fact]
     public async Task Health_body_exposes_no_check_names_or_details()
     {
-        await using var factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(host => host.UseEnvironment("Production").UseSetting(AuthenticationComposition.AuthorityKey, TestTokens.Issuer));
-        using var client = factory.CreateClient();
+        await using var app = await HostWithoutContexts.StartAsync();
+        using var client = app.GetTestClient();
 
         using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), TestContext.Current.CancellationToken);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
