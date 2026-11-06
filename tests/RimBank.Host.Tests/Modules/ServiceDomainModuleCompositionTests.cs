@@ -2,7 +2,6 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Modules.Tests;
 

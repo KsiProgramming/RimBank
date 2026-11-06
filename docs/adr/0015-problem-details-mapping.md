@@ -40,11 +40,12 @@ Option 3, and RFC 9457 only.
 
   | Code | Status | When |
   |---|---|---|
+  | `shared.request-malformed` | 400 | The framework cannot read the request into the endpoint's parameters, for example a body that is missing, is not JSON, or has the wrong shape (added in roadmap 1.5) |
   | `shared.not-found` | 404 | No endpoint matches the request |
   | `shared.unexpected` | 500 | An exception reached the host |
 
   Later phases add their own `shared.*` codes (401/403 in 0.13, 409 in 0.12, 429 in 7.1). Other bodiless 4xx/5xx responses (for example 405) are still `application/problem+json`, with the framework's default `type`, until a phase gives them a code.
-- **Unhandled exceptions** are logged, with the trace ID, by a global `IExceptionHandler`. The response is the generic `shared.unexpected` 500 **in every environment, Development included**: the exception's message, type and stack trace are never in a response body. Developers find them in the logs and the trace, through `traceId`.
+- **Unhandled exceptions** are logged, with the trace ID, by a global `IExceptionHandler`. The response is the generic `shared.unexpected` 500 **in every environment, Development included**: the exception's message, type and stack trace are never in a response body. Developers find them in the logs and the trace, through `traceId`. The one exception is `BadHttpRequestException`, which Minimal APIs throw in Development (and turn into a bodiless status elsewhere) when they cannot read a request: it is the caller's fault, so it gets its own status, and a 400 is `shared.request-malformed` in every environment. It is logged at Information without its message, which can quote the request (roadmap 1.5).
 - **`traceId`** is the W3C trace ID of the current activity (32 hex characters, the ID the Aspire dashboard and OTLP backends show), falling back to `HttpContext.TraceIdentifier` when there is no activity. **`instance`** is the request path unless the mapping already set one. Both are added centrally in `CustomizeProblemDetails`, so every Problem Details response gets them, whatever produced it (an endpoint's `Error`, the exception handler or status-code pages).
 
 Example (`GET /PartyReferenceDataDirectory/does-not-exist/Retrieve`):

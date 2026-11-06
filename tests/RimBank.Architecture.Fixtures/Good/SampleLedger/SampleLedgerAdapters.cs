@@ -20,6 +20,9 @@ namespace RimBank.SampleBanking.SampleLedger.Api
     {
         public static IResult? Post(PostSampleAmountRequest request, IMessageBus bus) => request is null || bus is null ? null : default;
 
+        // bus.InvokeAsync<T>(…) compiles to a call on ICommandBus, an interface IMessageBus inherits.
+        public static bool Dispatches(IMessageBus bus) => bus is ICommandBus;
+
         // An endpoint may narrow who can call it (per-operation policies, roadmap 1.15), never open it to anonymous callers.
         public static string Map(string endpoint) =>
             Microsoft.AspNetCore.Builder.AuthorizationEndpointConventionBuilderExtensions.RequireAuthorization(endpoint);

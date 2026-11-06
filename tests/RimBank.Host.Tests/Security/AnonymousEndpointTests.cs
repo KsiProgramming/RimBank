@@ -18,13 +18,25 @@ public sealed class AnonymousEndpointTests
     {
         await using var app = await StartAsync();
 
-        var anonymous = app.Services.GetRequiredService<EndpointDataSource>().Endpoints
-            .OfType<RouteEndpoint>()
-            .Where(endpoint => endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null)
-            .Select(endpoint => endpoint.RoutePattern.RawText)
-            .ToList();
+        AnonymousRoutes(app).ShouldBe([ServiceDefaultsExtensions.HealthEndpointPath, ServiceDefaultsExtensions.AlivenessEndpointPath], ignoreOrder: true);
+    }
 
-        anonymous.ShouldBe([ServiceDefaultsExtensions.HealthEndpointPath, ServiceDefaultsExtensions.AlivenessEndpointPath], ignoreOrder: true);
+    // Roadmap 1.5: in Development a developer can also read the OpenAPI document and the Scalar UI before signing in.
+    [Fact]
+    public async Task In_Development_the_API_description_is_also_open()
+    {
+        await using var app = await StartAsync("Development");
+
+        // Scalar also serves its own script and icon files under /scalar/.
+        var anonymous = AnonymousRoutes(app);
+        anonymous.Where(route => route?.StartsWith(ServiceDefaultsExtensions.ApiReferencePath + "/", StringComparison.Ordinal) != true).ShouldBe(
+        [
+            ServiceDefaultsExtensions.HealthEndpointPath,
+            ServiceDefaultsExtensions.AlivenessEndpointPath,
+            "/openapi/{documentName}.json",
+        ],
+        ignoreOrder: true);
+        anonymous.ShouldContain("/scalar/{documentName?}");
     }
 
     [Fact]
@@ -37,13 +49,21 @@ public sealed class AnonymousEndpointTests
             .Where(endpoint => endpoint.RoutePattern.RawText is { } route && (route.StartsWith("/secured/", StringComparison.Ordinal) || route.StartsWith("/faulty/", StringComparison.Ordinal)))
             .ToList();
 
-        moduleEndpoints.Count.ShouldBe(6);
+        moduleEndpoints.Count.ShouldBe(7);
         moduleEndpoints.ShouldAllBe(endpoint => endpoint.Metadata.GetMetadata<IAllowAnonymous>() == null);
     }
 
-    private static async Task<WebApplication> StartAsync()
+    private static List<string?> AnonymousRoutes(WebApplication app) =>
+        [
+            .. app.Services.GetRequiredService<EndpointDataSource>().Endpoints
+                .OfType<RouteEndpoint>()
+                .Where(endpoint => endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+                .Select(endpoint => endpoint.RoutePattern.RawText),
+        ];
+
+    private static async Task<WebApplication> StartAsync(string environment = "Production")
     {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
         builder.UseTestTokens();
         var app = HostComposition.Build(builder, [new SecuredServiceDomainModule(), new FaultyServiceDomainModule()]);

@@ -63,6 +63,8 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 | `PartyReferenceDataDirectoryEntry/Execute` | Command | — | deferred | — |
 | `PartyReferenceDataDirectoryEntry/Exchange` | Command | — | deferred | — |
 
+**Register request (1.5).** BIAN's Register body has `PartyReference`, `DirectoryEntryDateType`, `DirectoryEntryDate` and `PartyType`. Only `PartyType` is used. The other three are accepted and ignored: the directory records the time of registration as the entry's `OpenDate` (`TimeProvider`, tech-stack §7), and the party's details are Demographics and Reference data, recorded by their own updates (1.9, 1.10). BIAN's generated enum wrappers (`{"Partytypevalues": "Person"}`) are flattened to plain strings (`"Person"`), in the request and the response. Register answers `200` (BIAN's declared status) with the BIAN Register fields and the ids of the entry and its three singleton BQs, and the entry's version as `ETag`.
+
 **Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its exact semantics are decided in 1.9.
 
 ### Domain events
@@ -126,7 +128,8 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | Code | Kind | When |
 |---|---|---|
 | `party.party-already-registered` | Conflict (409) | Register on an entry that is already registered (1.2) |
-| `party.party-type-invalid` | Validation (400) | A `PartyType` that is neither `Person` nor `Organisation` (1.2) |
+| `party.party-type-invalid` | Validation (400) | A `PartyType` that is neither `Person` nor `Organisation` (1.2); over HTTP, any other string, including another case (1.5) |
+| `party.party-type-required` | Validation (400) | The Register request has no `PartyType`, or an empty one (1.5) |
 | `party.party-not-found` | NotFound (404) | The path's entry does not exist (any command or query on an entry, including `Associations/Register`) |
 | `party.behavior-qualifier-not-found` | NotFound (404) | The path's Demographics, Reference or BankRelations id does not belong to the entry |
 | `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner |

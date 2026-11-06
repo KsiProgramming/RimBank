@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
-using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Errors.Tests;
 
@@ -70,6 +69,35 @@ public sealed class ProblemDetailsEndpointTests
 
         problem.GetProperty("errorCode").GetString().ShouldBe("sample.invalid-sample");
         problem.GetProperty("errors").GetProperty("name")[0].GetString().ShouldBe("The name is required.");
+    }
+
+    public static TheoryData<string, string> UnreadableBodies => new()
+    {
+        { "Development", """{ "Size": """ },
+        { "Development", """{ "Size": "large" }""" },
+        { "Development", "" },
+        { "Production", """{ "Size": """ },
+        { "Production", """{ "Size": "large" }""" },
+        { "Production", "" },
+    };
+
+    // Minimal APIs answer a body they cannot read with a bodiless 400 in Production, and throw BadHttpRequestException
+    // in Development; both are the same shared.request-malformed problem, never a 500.
+    [Theory]
+    [MemberData(nameof(UnreadableBodies))]
+    public async Task A_request_the_framework_cannot_read_is_a_shared_request_malformed_problem(string environment, string body)
+    {
+        await using var app = await StartAsync(environment);
+        using var client = TestTokens.Authenticated(app.GetTestClient());
+        using var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+
+        using var response = await client.PostAsync(new Uri("/faulty/samples", UriKind.Relative), content, TestContext.Current.CancellationToken);
+        var problem = await ProblemOf(response, HttpStatusCode.BadRequest);
+
+        problem.GetProperty("type").GetString().ShouldBe("urn:rimbank:problem:shared:request-malformed");
+        problem.GetProperty("errorCode").GetString().ShouldBe("shared.request-malformed");
+        problem.GetProperty("instance").GetString().ShouldBe("/faulty/samples");
+        problem.GetProperty("traceId").GetString().ShouldNotBeNullOrWhiteSpace();
     }
 
     [Fact]

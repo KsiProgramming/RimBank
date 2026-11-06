@@ -27,11 +27,14 @@ public sealed class SolutionRulesTests
                 "RimBank.Core",
                 "RimBank.Core.Tests",
                 "RimBank.Host",
+                "RimBank.Host.Testing",
                 "RimBank.Host.Tests",
                 "RimBank.Http",
                 "RimBank.Http.Tests",
                 "RimBank.Mcp",
                 "RimBank.Mcp.Tests",
+                "RimBank.Party.PartyReferenceDataDirectory.Api",
+                "RimBank.Party.PartyReferenceDataDirectory.Api.Tests",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests",
                 "RimBank.Problems",
@@ -62,6 +65,17 @@ public sealed class SolutionRulesTests
         solution.IsReadPort(directory).ShouldBeFalse();
     }
 
+    // The .Api dependency rules only bite on types they place in a context's .Api part.
+    [Fact]
+    public void The_party_api_adapter_is_recognised_as_the_party_context_api_part()
+    {
+        var address = ContextAddress.Parse("RimBank.Party.PartyReferenceDataDirectory.Api.Registration");
+
+        address.ShouldNotBeNull();
+        address.Part.ShouldBe(ContextPart.Api);
+        CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Api.Registration.RegisterPartyRequest");
+    }
+
     // The .Postgresql dependency rules only bite on types they place in a context's .Postgresql part.
     [Fact]
     public void The_party_postgresql_adapter_is_recognised_as_the_party_context_postgresql_part()
@@ -78,6 +92,6 @@ public sealed class SolutionRulesTests
     {
         CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.SharedKernel.Money");
         CodeBases.Solution.TestAssemblies.Select(assembly => assembly.Assembly)
-            .ShouldBe(["RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Conformance.Tests", "RimBank.Core.Tests", "RimBank.Host.Tests", "RimBank.Http.Tests", "RimBank.Mcp.Tests", "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
+            .ShouldBe(["RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Conformance.Tests", "RimBank.Core.Tests", "RimBank.Host.Tests", "RimBank.Http.Tests", "RimBank.Mcp.Tests", "RimBank.Party.PartyReferenceDataDirectory.Api.Tests", "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
     }
 }

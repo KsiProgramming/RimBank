@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Party Reference Data Directory's HTTP adapter (specs/tech-stack.md §3.1, §4, §5): the BIAN routes of this
+    service domain as Minimal API endpoints. Each endpoint maps its request to a core command or query, dispatches it
+    through Wolverine's IMessageBus, and maps the outcome to a response or to Problem Details (RimBank.Problems). It
+    holds no business logic and never references the .Postgresql adapter.
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Party.PartyReferenceDataDirectory.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WolverineFx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\RimBank.Core\RimBank.Core.csproj" />
+    <ProjectReference Include="..\..\RimBank.Http\RimBank.Http.csproj" />
+    <ProjectReference Include="..\..\RimBank.Problems\RimBank.Problems.csproj" />
+  </ItemGroup>
+</Project>

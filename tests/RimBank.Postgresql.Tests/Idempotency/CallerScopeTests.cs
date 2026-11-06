@@ -92,23 +92,34 @@ public sealed class CallerScopeTests(PostgresqlServer server)
         (await StreamAsync(host, ledger)).OfType<FakeAmountPosted>().Count().ShouldBe(2);
     }
 
+    // Each caller posts to its own ledger with the same key. The two callers' commands run at the same time by design
+    // (their keys do not share a lock), so on one ledger their appends would race for the stream's next version and one
+    // would fail with Marten's optimistic concurrency error: a stream conflict, not what this test is about.
     [Fact]
     public async Task Concurrent_calls_with_the_same_key_commit_once_per_caller()
     {
         await using var host = await RunningHost.StartAsync(server);
-        var ledger = await OpenLedgerAsync(host);
-        var post = new PostFakeAmount(ledger, 10m, Keys.New());
+        var key = Keys.New();
+        var ledgers = new Dictionary<string, Guid>
+        {
+            [Alice] = await OpenLedgerAsync(host),
+            [Bob] = await OpenLedgerAsync(host),
+        };
 
-        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(index =>
+        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => index % 2 == 0 ? Alice : Bob).Select(caller =>
             Task.Run(
-                async () => (Caller: index % 2 == 0 ? Alice : Bob, Result: await host.BusOf(index % 2 == 0 ? Alice : Bob).InvokeAsync<Result<FakeLedgerAcknowledged>>(post, Cancellation)),
+                async () => (Caller: caller, Result: await host.BusOf(caller).InvokeAsync<Result<FakeLedgerAcknowledged>>(new PostFakeAmount(ledgers[caller], 10m, key), Cancellation)),
                 Cancellation)));
 
         results.Where(call => call.Caller == Alice).ShouldContain(call => call.Result.IsSuccess);
         results.Where(call => call.Caller == Bob).ShouldContain(call => call.Result.IsSuccess);
         results.ShouldAllBe(call => call.Result.IsSuccess || call.Result.Error == IdempotencyKey.InUse);
-        (await StreamAsync(host, ledger)).OfType<FakeAmountPosted>().Count().ShouldBe(2);
-        (await RunningHost.CountAsync(server, host.Database, Outcomes)).ShouldBe(3); // the opening and one posting per caller
+        foreach (var ledger in ledgers.Values)
+        {
+            (await StreamAsync(host, ledger)).OfType<FakeAmountPosted>().ShouldHaveSingleItem();
+        }
+
+        (await RunningHost.CountAsync(server, host.Database, Outcomes)).ShouldBe(4); // two openings and one posting per caller
     }
 
     private static async Task<Guid> OpenLedgerAsync(RunningHost host)

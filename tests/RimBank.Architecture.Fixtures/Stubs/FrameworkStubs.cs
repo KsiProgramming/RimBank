@@ -9,7 +9,9 @@ namespace Marten
 
 namespace Wolverine
 {
-    public interface IMessageBus;
+    public interface ICommandBus;
+
+    public interface IMessageBus : ICommandBus;
 
     public sealed class WolverineOptions;
 }

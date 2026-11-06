@@ -5,6 +5,14 @@ namespace RimBank.Problems;
 /// <summary>The errors the host reports itself, in the <c>shared</c> context of ADR 0006 (ADR 0015).</summary>
 public static class SharedProblems
 {
+    /// <summary>
+    /// The framework could not read the request into the endpoint's parameters, most often a body that is missing, is
+    /// not JSON, or does not have the expected shape (400).
+    /// </summary>
+    public static Error RequestMalformed { get; } = Error.Validation(
+        "shared.request-malformed",
+        "The request could not be read. Check that its body is JSON of the expected shape, and its route values and headers.");
+
     /// <summary>No endpoint matches the request (404).</summary>
     public static Error NotFound { get; } = Error.NotFound("shared.not-found", "No resource exists at this address.");
 
