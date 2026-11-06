@@ -1,7 +1,7 @@
 using RimBank.Postgresql.Database.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
+using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 
 namespace RimBank.Postgresql.Messaging.Tests;
