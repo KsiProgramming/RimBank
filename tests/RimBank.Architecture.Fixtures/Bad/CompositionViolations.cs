@@ -52,6 +52,30 @@ namespace RimBank.Problems.FixtureViolations
     public sealed record ProblemsUsesMarten(Marten.IDocumentSession Session);
 }
 
+// http-only-in-api-and-host: a core receives the idempotency key on its command; it never reads HTTP headers.
+namespace RimBank.SampleBanking.CoreUsesHttp
+{
+    public static class CoreUsesHttpEntry
+    {
+        public static string Header() => RimBank.Http.IdempotencyKeyHeader.HeaderName;
+    }
+}
+
+// http-only-in-api-and-host: an .Mcp adapter takes the key as a tool argument, never through the HTTP conventions.
+namespace RimBank.SampleBanking.McpUsesHttp.Mcp
+{
+    public static class McpUsesHttpTools
+    {
+        public static string Header() => RimBank.Http.IdempotencyKeyHeader.HeaderName;
+    }
+}
+
+// http-dependencies: RimBank.Http reads requests; it never touches a store.
+namespace RimBank.Http.FixtureViolations
+{
+    public sealed record HttpUsesMarten(Marten.IDocumentSession Session);
+}
+
 // shared-postgresql-only-in-postgresql-adapters: a core reaches its store through its ports, never through the
 // Marten conventions.
 namespace RimBank.SampleBanking.CoreUsesSharedPostgresql

@@ -1,8 +1,9 @@
 namespace RimBank.Architecture.Tests;
 
-// The composition projects (tech-stack §2–§4, ADR 0014–0017): RimBank.Host composes, RimBank.AppHost orchestrates,
+// The composition projects (tech-stack §2–§4, ADR 0014–0018): RimBank.Host composes, RimBank.AppHost orchestrates,
 // RimBank.ServiceDefaults is applied by the host, RimBank.Problems maps errors for the adapters that answer callers,
-// and RimBank.Postgresql holds the Marten and Wolverine conventions every .Postgresql adapter follows.
+// RimBank.Http holds the HTTP conventions every .Api follows, and RimBank.Postgresql holds the Marten and Wolverine
+// conventions every .Postgresql adapter follows.
 // Contexts and SharedKernel never reach up to any of them.
 public static partial class ArchitectureRules
 {
@@ -10,6 +11,7 @@ public static partial class ArchitectureRules
     private const string AppHostRoot = "RimBank.AppHost";
     private const string ServiceDefaultsRoot = "RimBank.ServiceDefaults";
     private const string ProblemsRoot = "RimBank.Problems";
+    private const string HttpRoot = "RimBank.Http";
     private const string SharedPostgresqlRoot = "RimBank.Postgresql";
 
     public static ArchitectureRule SharedPostgresqlOnlyInPostgresqlAdapters { get; } = new(
@@ -76,6 +78,30 @@ public static partial class ArchitectureRules
                 && !Namespaces.IsWithin(target.NamespaceName(), "RimBank.SharedKernel")
                 && !Namespaces.IsWithin(target.NamespaceName(), ProblemsRoot)
             select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, ASP.NET Core or the BCL"));
+
+    public static ArchitectureRule HttpOnlyInApiAndHost { get; } = new(
+        "http-only-in-api-and-host",
+        "tech-stack §4 and ADR 0018: only .Api and RimBank.Host use the HTTP conventions; a core receives the idempotency key on its command, and .Mcp has its own transport",
+        code =>
+            from type in code.Types
+            where !Namespaces.IsWithin(type.NamespaceName(), HostRoot)
+                && !Namespaces.IsWithin(type.NamespaceName(), HttpRoot)
+                && ContextAddress.Parse(type.NamespaceName())?.Part is not ContextPart.Api
+            from target in code.Targets(type)
+            where Namespaces.IsWithin(target.NamespaceName(), HttpRoot)
+            select new Violation(type.Display(), $"depends on {target.Display()} ({HttpRoot})"));
+
+    public static ArchitectureRule HttpDependencies { get; } = new(
+        "http-dependencies",
+        "tech-stack §4 and ADR 0018: RimBank.Http references SharedKernel, RimBank.Problems and ASP.NET Core only, never a context, Marten or Wolverine",
+        code =>
+            from type in code.Types
+            where Namespaces.IsWithin(type.NamespaceName(), HttpRoot)
+            from target in code.Targets(type)
+            where !IsBcl(target)
+                && !new[] { AspNetCore, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
+                    .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
+            select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, RimBank.Problems, ASP.NET Core or the BCL"));
 
     private static IEnumerable<Violation> DependenciesOn(CodeBase code, string root, IReadOnlyList<string> allowedFrom) =>
         from type in code.Types
