@@ -37,7 +37,7 @@ How contexts register tools:
 - The server announces itself as `RimBank`, with the product version without the source revision suffix.
 - The transport is Streamable HTTP in **stateless** mode (option 1 of the session mode list is rejected). RimBank's tools are request/response calls over the message bus and need no sampling or elicitation, and the host stays horizontally scalable with no sticky sessions (§2). If a later tool needs server-to-client requests, a new ADR revisits this.
 
-**Security.** `/mcp` is not anonymous. The deny-by-default fallback policy of [ADR 0019](0019-authentication-baseline.md) covers it, so a call without a valid token gets a 401 `shared.unauthenticated` Problem Details response with `WWW-Authenticate: Bearer`. The anonymous allow-list is still only the two health probes. Roadmap 0.16 adds the MCP authorization discovery (OAuth 2.1 protected-resource metadata) on top.
+**Security.** `/mcp` is not anonymous. The deny-by-default fallback policy of [ADR 0019](0019-authentication-baseline.md) covers it, so a call without a valid token gets a 401 `shared.unauthenticated` Problem Details response with `WWW-Authenticate: Bearer`. The anonymous allow-list is still only the two health probes. Roadmap 0.16 adds the MCP authorization discovery (OAuth 2.1 protected-resource metadata) on top ([ADR 0022](0022-mcp-authorization-and-tool-errors.md)).
 
 **Logging.** Some of the SDK's log messages include whole JSON-RPC messages, and so tool arguments, which can carry PII. `appsettings.json` sets the `ModelContextProtocol` log category to `Warning`, so neither those messages nor a per-call Information line reach the logs (§10). Tool calls are audited through event metadata (tech-stack §6) and the audit query (7.3, 7.9), not through logs.
 
@@ -71,7 +71,7 @@ The name is set explicitly with `[McpServerTool(Name = …)]`. The description i
 
 Tools act only inside RimBank, so `OpenWorld` is always `false`. A `Retrieve` tool dispatches a query (`IMessageBus.InvokeAsync<Result<TView>>`). Every other tool dispatches a command and takes an idempotency key argument. Money-moving tools also need their own scope and are off by default (tech-stack §6, roadmap 4.14).
 
-**Error contract.** Roadmap 0.16 builds this contract, and every `.Mcp` adapter follows it:
+**Error contract.** Roadmap 0.16 builds this contract in `RimBank.Mcp` ([ADR 0022](0022-mcp-authorization-and-tool-errors.md)), and every `.Mcp` adapter follows it:
 
 - A failed `Result` (business, validation, not found, conflict) is a tool result with `isError: true`. Its `structuredContent` is the RFC 9457 Problem Details object that `RimBank.Problems` builds for HTTP: same `type`, `title`, `status`, `errorCode`, `errors` and `traceId`. Its `content` is one text block with the same JSON, for clients that read only text.
 - An unexpected exception becomes `shared.unexpected` in the same shape, with no exception message or stack trace. The SDK's default handling of tool exceptions is replaced in 0.16, and a test pins it.
@@ -87,7 +87,7 @@ Tools act only inside RimBank, so `OpenWorld` is always `false`. A `Retrieve` to
 - Only `RimBank.Host` and its tests reference the MCP SDK in this phase. Each `.Mcp` adapter will reference it as §4 allows.
 - Stateless mode rules out server-to-client requests (sampling, elicitation, progress notifications over a standalone stream). Revisiting that needs a new ADR, and sticky sessions or a distributed session store.
 - Follow-ups:
-  - **0.16:** OAuth 2.1 protected-resource metadata and Keycloak as the MCP authorization server; the `isError` mapping and exception handling above, with tests; a check that the actor relay (ADR 0019) reaches the message context of a tool call, for audit (§6).
+  - **0.16 (done, [ADR 0022](0022-mcp-authorization-and-tool-errors.md)):** OAuth 2.1 protected-resource metadata and Keycloak as the MCP authorization server; the `isError` mapping and exception handling above, with tests; a check that the actor relay (ADR 0019) reaches the message context of a tool call, for audit (§6).
   - **1.16/1.17:** the first `.Mcp` adapter, HTTP/MCP parity tests, and a test that the tool list matches the implemented BIAN operations. If reviews show they are needed, also a shared `RimBank.Mcp` library and architecture rules for tool names and annotations.
   - **4.14:** the money-moving scope and the default-off switch.
   - **7.9:** per-client rate limiting and the tool-call audit query.

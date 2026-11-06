@@ -93,6 +93,30 @@ namespace RimBank.SampleBanking.McpAllowsAnonymous.Mcp
     public static class McpAllowsAnonymousTools;
 }
 
+// shared-mcp-only-in-mcp-and-host: a core returns its Error; turning it into a tool result is the adapter's job.
+namespace RimBank.SampleBanking.CoreUsesSharedMcp
+{
+    public static class CoreUsesSharedMcpEntry
+    {
+        public static string Code() => RimBank.Mcp.Errors.ToolErrors.ArgumentsInvalidCode;
+    }
+}
+
+// shared-mcp-only-in-mcp-and-host: an .Api answers HTTP callers with RimBank.Problems, never with MCP tool results.
+namespace RimBank.SampleBanking.ApiUsesSharedMcp.Api
+{
+    public static class ApiUsesSharedMcpEndpoints
+    {
+        public static string Code() => RimBank.Mcp.Errors.ToolErrors.ArgumentsInvalidCode;
+    }
+}
+
+// shared-mcp-dependencies: RimBank.Mcp maps errors; it never touches a store or the message bus.
+namespace RimBank.Mcp.FixtureViolations
+{
+    public sealed record SharedMcpUsesWolverine(Wolverine.IMessageBus Bus);
+}
+
 // shared-postgresql-only-in-postgresql-adapters: a core reaches its store through its ports, never through the
 // Marten conventions.
 namespace RimBank.SampleBanking.CoreUsesSharedPostgresql

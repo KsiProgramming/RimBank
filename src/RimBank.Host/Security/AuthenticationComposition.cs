@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using ModelContextProtocol.AspNetCore.Authentication;
+using ModelContextProtocol.Authentication;
 
 namespace RimBank.Host.Security;
 
@@ -17,6 +19,11 @@ namespace RimBank.Host.Security;
 /// A missing or invalid token gets the bodiless 401 of the JWT bearer handler (with <c>WWW-Authenticate: Bearer</c>),
 /// and a refused policy a bodiless 403; the status-code pages of the Problem Details baseline turn them into
 /// <c>shared.unauthenticated</c> and <c>shared.forbidden</c> (ADR 0015).
+/// </para>
+/// <para>
+/// The MCP endpoint is challenged by the MCP authentication scheme instead (<see cref="McpPolicy"/>): its 401 says
+/// <c>WWW-Authenticate: Bearer resource_metadata="…"</c>, pointing to the RFC 9728 protected-resource metadata that
+/// names the Keycloak realm, so an MCP client can find where to sign in (ADR 0022).
 /// </para>
 /// </remarks>
 public static class AuthenticationComposition
@@ -44,6 +51,20 @@ public static class AuthenticationComposition
     public const string AuthorityKey = "Authentication:Authority";
 
     /// <summary>
+    /// The configuration key of the authorization server MCP clients are sent to (RFC 9728 <c>authorization_servers</c>),
+    /// when it differs from <see cref="AuthorityKey"/>: in Development the AppHost sets it to the Keycloak address that
+    /// clients outside the AppHost can reach. Defaults to <see cref="AuthorityKey"/>; outside Development it must use
+    /// HTTPS (ADR 0022).
+    /// </summary>
+    public const string AuthorizationServerKey = "Mcp:AuthorizationServer";
+
+    /// <summary>
+    /// The policy of the MCP endpoint: an authenticated caller, challenged by the MCP authentication scheme so that a
+    /// 401 tells the client where to find the protected-resource metadata (ADR 0022).
+    /// </summary>
+    public const string McpPolicy = "Mcp";
+
+    /// <summary>
     /// Adds JWT bearer authentication against the Keycloak realm <see cref="Realm"/> for the audience
     /// <see cref="Audience"/>, and the fallback policy that requires an authenticated user.
     /// </summary>
@@ -66,6 +87,8 @@ public static class AuthenticationComposition
                 "Outside Development, RimBank only trusts signing keys fetched over HTTPS (ADR 0019).");
         }
 
+        var authorizationServers = AuthorizationServers(builder.Configuration, development);
+
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddKeycloakJwtBearer(KeycloakResource, Realm, options =>
             {
@@ -82,10 +105,21 @@ public static class AuthenticationComposition
                 // The local Keycloak of the AppHost is found through service discovery and serves HTTP; every other
                 // environment fetches its metadata over HTTPS from the configured authority.
                 options.RequireHttpsMetadata = !development;
+            })
+            // MCP authorization (RFC 9728): validates through the JWT bearer above, and its challenge points MCP clients
+            // to the protected-resource metadata, which it serves itself. The resource is the requested /mcp address.
+            .AddMcp(options => options.ResourceMetadata = new ProtectedResourceMetadata
+            {
+                ResourceName = Mcp.McpComposition.ServerName,
+                AuthorizationServers = authorizationServers,
+                BearerMethodsSupported = ["header"],
             });
 
         builder.Services.AddAuthorizationBuilder()
-            .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+            .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
+            .AddPolicy(McpPolicy, policy => policy
+                .AddAuthenticationSchemes(McpAuthenticationDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser());
 
         return builder;
     }
@@ -105,6 +139,28 @@ public static class AuthenticationComposition
         app.UseMiddleware<ActorRelay>();
 
         return app;
+    }
+
+    // The realm MCP clients sign in to. Outside Development it is required and uses HTTPS. In Development the AppHost
+    // sets it; a host started on its own without it (it then finds Keycloak through service discovery, which a client
+    // cannot use) announces no authorization server.
+    private static string[] AuthorizationServers(ConfigurationManager configuration, bool development)
+    {
+        var configured = configuration[AuthorizationServerKey];
+        var address = string.IsNullOrEmpty(configured) ? configuration[AuthorityKey] : configured;
+        if (development && string.IsNullOrEmpty(address))
+        {
+            return [];
+        }
+
+        if (!Uri.TryCreate(address, UriKind.Absolute, out var server) || (!development && server.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new InvalidOperationException(
+                $"Set {AuthorizationServerKey} (or {AuthorityKey}) to the address of the '{Realm}' realm that MCP clients sign in to, " +
+                $"for example https://login.example.com/realms/{Realm}. Outside Development it must use HTTPS (ADR 0022).");
+        }
+
+        return [server.OriginalString];
     }
 
     private static bool IsHttps(string? address) =>

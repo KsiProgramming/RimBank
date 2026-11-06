@@ -43,6 +43,14 @@ namespace RimBank.Http
     }
 }
 
+namespace RimBank.Mcp.Errors
+{
+    public static class ToolErrors
+    {
+        public static string ArgumentsInvalidCode => "shared.tool-arguments-invalid";
+    }
+}
+
 namespace RimBank.Postgresql
 {
     public static class ServiceDomainStoreRegistration

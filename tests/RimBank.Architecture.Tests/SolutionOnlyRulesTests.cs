@@ -11,6 +11,7 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.Host")]
     [InlineData("RimBank.Problems")]
     [InlineData("RimBank.Http")]
+    [InlineData("RimBank.Mcp")]
     [InlineData("RimBank.Postgresql")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]

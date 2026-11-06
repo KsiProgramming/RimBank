@@ -23,6 +23,11 @@
     <ProjectReference Include="..\..\src\RimBank.AppHost\RimBank.AppHost.csproj" />
   </ItemGroup>
 
+  <!-- The dev-only realm file, read by DevRealmTests without starting Keycloak (ADR 0019, ADR 0022). -->
+  <ItemGroup>
+    <None Include="..\..\src\RimBank.AppHost\Realms\rimbank-realm.json" Link="Realms\rimbank-realm.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="Shouldly" />
     <Using Include="Xunit" />

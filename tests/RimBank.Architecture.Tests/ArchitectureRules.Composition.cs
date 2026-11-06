@@ -2,7 +2,7 @@ namespace RimBank.Architecture.Tests;
 
 // The composition projects (tech-stack §2–§4, ADR 0014–0019): RimBank.Host composes, RimBank.AppHost orchestrates,
 // RimBank.ServiceDefaults is applied by the host and alone opens endpoints (its health probes) to anonymous callers, RimBank.Problems maps errors for the adapters that answer callers,
-// RimBank.Http holds the HTTP conventions every .Api follows, and RimBank.Postgresql holds the Marten and Wolverine
+// RimBank.Http holds the HTTP conventions every .Api follows, RimBank.Mcp the MCP conventions every .Mcp follows, and RimBank.Postgresql holds the Marten and Wolverine
 // conventions every .Postgresql adapter follows.
 // Contexts and SharedKernel never reach up to any of them.
 public static partial class ArchitectureRules
@@ -12,6 +12,7 @@ public static partial class ArchitectureRules
     private const string ServiceDefaultsRoot = "RimBank.ServiceDefaults";
     private const string ProblemsRoot = "RimBank.Problems";
     private const string HttpRoot = "RimBank.Http";
+    private const string SharedMcpRoot = "RimBank.Mcp";
     private const string SharedPostgresqlRoot = "RimBank.Postgresql";
 
     public static ArchitectureRule SharedPostgresqlOnlyInPostgresqlAdapters { get; } = new(
@@ -55,11 +56,12 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule ProblemsOnlyInAdaptersAndHost { get; } = new(
         "problems-only-in-adapters-and-host",
-        "tech-stack §4 and ADR 0015: only .Api, .Mcp and RimBank.Host turn an Error into Problem Details; a core returns the Error",
+        "tech-stack §4, ADR 0015 and ADR 0022: only .Api, .Mcp, RimBank.Mcp and RimBank.Host turn an Error into Problem Details; a core returns the Error",
         code =>
             from type in code.Types
             where !Namespaces.IsWithin(type.NamespaceName(), HostRoot)
                 && !Namespaces.IsWithin(type.NamespaceName(), ProblemsRoot)
+                && !Namespaces.IsWithin(type.NamespaceName(), SharedMcpRoot)
                 && ContextAddress.Parse(type.NamespaceName())?.Part is not (ContextPart.Api or ContextPart.Mcp)
             from target in code.Targets(type)
             where Namespaces.IsWithin(target.NamespaceName(), ProblemsRoot)
@@ -102,6 +104,30 @@ public static partial class ArchitectureRules
                 && !new[] { AspNetCore, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
                     .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
             select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, RimBank.Problems, ASP.NET Core or the BCL"));
+
+    public static ArchitectureRule SharedMcpOnlyInMcpAndHost { get; } = new(
+        "shared-mcp-only-in-mcp-and-host",
+        "tech-stack §4 and ADR 0022: only .Mcp and RimBank.Host use the MCP conventions; a core returns its Error, and .Api has its own transport",
+        code =>
+            from type in code.Types
+            where !Namespaces.IsWithin(type.NamespaceName(), HostRoot)
+                && !Namespaces.IsWithin(type.NamespaceName(), SharedMcpRoot)
+                && ContextAddress.Parse(type.NamespaceName())?.Part is not ContextPart.Mcp
+            from target in code.Targets(type)
+            where Namespaces.IsWithin(target.NamespaceName(), SharedMcpRoot)
+            select new Violation(type.Display(), $"depends on {target.Display()} ({SharedMcpRoot})"));
+
+    public static ArchitectureRule SharedMcpDependencies { get; } = new(
+        "shared-mcp-dependencies",
+        "tech-stack §4 and ADR 0022: RimBank.Mcp references SharedKernel, RimBank.Problems, ASP.NET Core and the MCP C# SDK only, never a context, Marten or Wolverine",
+        code =>
+            from type in code.Types
+            where Namespaces.IsWithin(type.NamespaceName(), SharedMcpRoot)
+            from target in code.Targets(type)
+            where !IsBcl(target)
+                && !new[] { AspNetCore, "Microsoft.Extensions", ModelContextProtocol, "RimBank.SharedKernel", ProblemsRoot, SharedMcpRoot }
+                    .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
+            select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, RimBank.Problems, ASP.NET Core, the MCP C# SDK or the BCL"));
 
     public static ArchitectureRule AllowAnonymousOnlyInServiceDefaults { get; } = new(
         "allow-anonymous-only-in-service-defaults",

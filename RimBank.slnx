@@ -10,6 +10,7 @@
     <Project Path="src/RimBank.AppHost/RimBank.AppHost.csproj" />
     <Project Path="src/RimBank.Host/RimBank.Host.csproj" />
     <Project Path="src/RimBank.Http/RimBank.Http.csproj" />
+    <Project Path="src/RimBank.Mcp/RimBank.Mcp.csproj" />
     <Project Path="src/RimBank.Postgresql/RimBank.Postgresql.csproj" />
     <Project Path="src/RimBank.Problems/RimBank.Problems.csproj" />
     <Project Path="src/RimBank.ServiceDefaults/RimBank.ServiceDefaults.csproj" />
@@ -23,6 +24,7 @@
     <Project Path="tests/RimBank.Conformance.Tests/RimBank.Conformance.Tests.csproj" />
     <Project Path="tests/RimBank.Host.Tests/RimBank.Host.Tests.csproj" />
     <Project Path="tests/RimBank.Http.Tests/RimBank.Http.Tests.csproj" />
+    <Project Path="tests/RimBank.Mcp.Tests/RimBank.Mcp.Tests.csproj" />
     <Project Path="tests/RimBank.Postgresql.Tests/RimBank.Postgresql.Tests.csproj" />
     <Project Path="tests/RimBank.Problems.Tests/RimBank.Problems.Tests.csproj" />
     <Project Path="tests/RimBank.SharedKernel.Testing/RimBank.SharedKernel.Testing.csproj" />

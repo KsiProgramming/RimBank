@@ -2,7 +2,8 @@ namespace RimBank.AppHost;
 
 /// <summary>
 /// The Aspire AppHost: one PostgreSQL server with the <c>rimbank</c> database, a Keycloak server with the dev-only
-/// <c>rimbank</c> realm (ADR 0019), and <c>RimBank.Host</c>, which waits for both (ADR 0014). Each context gets its own schema, role and connection string inside that database
+/// <c>rimbank</c> realm (ADR 0019), and <c>RimBank.Host</c>, which waits for both (ADR 0014) and tells MCP clients
+/// where Keycloak is (ADR 0022). Each context gets its own schema, role and connection string inside that database
 /// (ADR 0016); the first context adds its connection string here in roadmap 1.4.
 /// </summary>
 public sealed class Program
@@ -18,6 +19,15 @@ public sealed class Program
 
     /// <summary>The realm file Keycloak imports on its first start: local development only (ADR 0019).</summary>
     public const string RealmFile = "./Realms/rimbank-realm.json";
+
+    /// <summary>The realm the realm file creates, which issues RimBank's access tokens (ADR 0019).</summary>
+    public const string Realm = "rimbank";
+
+    /// <summary>
+    /// The variable that tells the host which Keycloak address MCP clients sign in to: the realm on Keycloak's own
+    /// endpoint, which a client outside the AppHost can reach, unlike the service-discovery name (ADR 0022).
+    /// </summary>
+    public const string McpAuthorizationServerVariable = "Mcp__AuthorizationServer";
 
     /// <summary>The volume Keycloak keeps its realms in.</summary>
     public const string KeycloakVolume = "rimbank-keycloak-data";
@@ -51,6 +61,7 @@ public sealed class Program
             .WithReference(keycloak)
             .WaitFor(database)
             .WaitFor(keycloak)
+            .WithEnvironment(McpAuthorizationServerVariable, ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/{Realm}"))
             .WithHttpHealthCheck("/health");
 
         builder.Build().Run();

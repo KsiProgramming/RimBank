@@ -81,19 +81,22 @@ The console prints the Aspire dashboard URL. The dashboard shows `postgres`, the
 Every request needs a JWT bearer token for the audience `rimbank-api`, except the health probes ([ADR 0019](docs/adr/0019-authentication-baseline.md)). A missing or invalid token is a 401 `shared.unauthenticated` Problem Details response, and a refused policy is a 403 `shared.forbidden`.
 
 - **Locally**, the AppHost runs Keycloak with the dev-only realm `rimbank` from `src/RimBank.AppHost/Realms`. Get a token with the client-credentials grant of `rimbank-dev-client`, as `src/RimBank.Host/RimBank.Host.http` and the realm's README show. Its secret is published and only for local use.
-- **Outside Development**, the host needs `Authentication:Authority`, the HTTPS address of the realm (for example `https://login.example.com/realms/rimbank`). Without it, the host refuses to start.
+- **Outside Development**, the host needs `Authentication:Authority`, the HTTPS address of the realm (for example `https://login.example.com/realms/rimbank`). Without it, the host refuses to start. MCP clients are sent to the same address unless `Mcp:AuthorizationServer` (also HTTPS) says otherwise ([ADR 0022](docs/adr/0022-mcp-authorization-and-tool-errors.md)).
 - **Deny by default:** never call `AllowAnonymous()` or use `[AllowAnonymous]`. New endpoints are protected without opting in, and the architecture rule `allow-anonymous-only-in-service-defaults` fails otherwise. Narrow access with `RequireAuthorization(...)` (per-operation policies come in roadmap 1.15).
 - **Caller:** the host turns the token's `sub` and `azp` into an `Actor` (SharedKernel) and hands the subject to the message bus. Adapters and cores never read the token.
 - **Tests** sign tokens with an in-memory key: call `builder.UseTestTokens()` and send `TestTokens.Issue()` (in `tests/RimBank.Host.Tests/Security`).
 
 ### MCP
 
-The host serves one MCP server at `/mcp` (Streamable HTTP, stateless, [ADR 0021](docs/adr/0021-mcp-wiring-and-tool-conventions.md)). It needs a bearer token like every other endpoint.
+The host serves one MCP server at `/mcp` (Streamable HTTP, stateless, [ADR 0021](docs/adr/0021-mcp-wiring-and-tool-conventions.md)). It needs a bearer token like every other endpoint. Its 401 points MCP clients to the protected-resource metadata at `/.well-known/oauth-protected-resource/mcp`, which names the Keycloak realm ([ADR 0022](docs/adr/0022-mcp-authorization-and-tool-errors.md)).
 
 - **Adding tools:** a context's `.Mcp` project exposes one `IMcpServerBuilder` extension, for example `AddPartyReferenceDataDirectoryTools()`, which calls `WithTools<…>()`. The context's module calls only that extension in `AddMcpTools`. Never call `AddMcpServer`, `WithHttpTransport` or `MapMcp` from a context. A tool name registered twice stops the host.
 - **Names:** one tool per BIAN operation, `<service_domain>_<operation>[_<behavior_qualifier>]` in snake_case, set explicitly with `[McpServerTool(Name = …)]`. The description is the BIAN operation's description.
 - **Annotations:** set `ReadOnly`, `Destructive`, `Idempotent` and `OpenWorld` on every tool, following the table in ADR 0021. `Retrieve` tools are read-only queries. Every other tool is a command with an idempotency key.
-- **Tests** connect the SDK's `McpClient` in-process over `HttpClientTransport`, using the test server's `HttpClient` with a `TestTokens` bearer token (see `tests/RimBank.Host.Tests/Mcp`).
+- **Errors:** a tool dispatches through `IMessageBus` and answers with `result.ToToolResult(...)` from `RimBank.Mcp`. A failed `Result` becomes `isError` with the same Problem Details as HTTP. Never throw for a business failure. The host's tool error filter adds `instance` and `traceId`, turns arguments the SDK cannot bind into `shared.tool-arguments-invalid` (400), and turns any exception into `shared.unexpected` (500) with no exception text.
+- **Caller:** a tool call carries the token's subject to the message bus like an HTTP call. Do not read the token in a tool.
+- **Connecting a local client:** start the AppHost, then point MCP Inspector (`npx @modelcontextprotocol/inspector`) or Claude Code at the host's `/mcp` URL from the Aspire dashboard. Use client ID `rimbank-mcp-client` (public, PKCE, loopback redirects `http://127.0.0.1:<any port>` and `http://localhost:6274`). Sign in as `rimbank-developer` / `rimbank-developer-local-only`. Both are dev-only and published on purpose.
+- **Tests** connect the SDK's `McpClient` in-process over `HttpClientTransport`, using the test server's `HttpClient` with a `TestTokens` bearer token (`McpTestHost` in `tests/RimBank.Host.Tests/Mcp`).
 
 ### Errors
 
@@ -166,10 +169,12 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `service-defaults-only-in-host` | Only `RimBank.Host` uses `RimBank.ServiceDefaults` | tech-stack §1–§2, ADR 0014 |
 | `nothing-depends-on-apphost` | Nothing uses `RimBank.AppHost` | tech-stack §1, ADR 0014 |
 | `host-is-the-composition-root` | Nothing outside `RimBank.Host` uses it; a context never implements `IServiceDomainModule` itself | tech-stack §2, §4, ADR 0014 |
-| `problems-only-in-adapters-and-host` | Only `.Api`, `.Mcp` and `RimBank.Host` use `RimBank.Problems` | tech-stack §4, ADR 0015 |
+| `problems-only-in-adapters-and-host` | Only `.Api`, `.Mcp`, `RimBank.Mcp` and `RimBank.Host` use `RimBank.Problems` | tech-stack §4, ADR 0015, ADR 0022 |
 | `problems-dependencies` | `RimBank.Problems` uses SharedKernel, ASP.NET Core and the BCL only | tech-stack §4, ADR 0015 |
 | `http-only-in-api-and-host` | Only `.Api` and `RimBank.Host` use `RimBank.Http` | tech-stack §4, ADR 0018 |
 | `http-dependencies` | `RimBank.Http` uses SharedKernel, `RimBank.Problems`, ASP.NET Core and the BCL only | tech-stack §4, ADR 0018 |
+| `shared-mcp-only-in-mcp-and-host` | Only `.Mcp` and `RimBank.Host` use `RimBank.Mcp` | tech-stack §4, ADR 0022 |
+| `shared-mcp-dependencies` | `RimBank.Mcp` uses SharedKernel, `RimBank.Problems`, ASP.NET Core, the MCP SDK and the BCL only | tech-stack §4, ADR 0022 |
 | `allow-anonymous-only-in-service-defaults` | Nothing outside `RimBank.ServiceDefaults` calls `AllowAnonymous()` or uses `[AllowAnonymous]`: only the health probes are anonymous | tech-stack §10, ADR 0019 |
 | `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` and `RimBank.Host` (for its own message store) use `RimBank.Postgresql` | tech-stack §4, ADR 0016, ADR 0017 |
 | `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Wolverine, Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016, ADR 0017 |
