@@ -44,6 +44,22 @@ public sealed class SolutionRulesTests
             ignoreOrder: true);
     }
 
+    // The CQRS rules only bite on what they recognise, so the first real handler and write port must be recognised.
+    [Fact]
+    public void The_party_register_flow_is_classified_as_write_side()
+    {
+        var solution = CodeBases.Solution;
+        var handler = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Registration.RegisterPartyHandler");
+        var command = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Registration.RegisterParty");
+        var directory = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.IPartyDirectory");
+
+        solution.IsCommandHandler(handler).ShouldBeTrue();
+        solution.IsQueryHandler(handler).ShouldBeFalse();
+        solution.IsCommand(command).ShouldBeTrue();
+        solution.IsWritePort(directory).ShouldBeTrue();
+        solution.IsReadPort(directory).ShouldBeFalse();
+    }
+
     [Fact]
     public void Production_types_and_test_assemblies_are_both_loaded()
     {

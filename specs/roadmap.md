@@ -45,7 +45,7 @@
 
 - [x] **1.1 ADR:** BIAN → DDD mapping for this domain: aggregate boundaries, BQs as entities, the command/query split of its operations, and its read models (which views, inline or async).
 - [x] **1.2 Aggregate:** `PartyReferenceDataDirectoryEntry` state, `Register` decision, `PartyRegistered` event, invariants, unit tests.
-- [ ] **1.3 Register flow (command side):** `RegisterParty` command and handler, `PartyDirectory` write port, in-memory test adapter.
+- [x] **1.3 Register flow (command side):** `RegisterParty` command and handler, `PartyDirectory` write port, in-memory test adapter.
 - [ ] **1.4 PostgreSQL adapter (write side):** Marten event-stream implementation of `PartyDirectory`, with integration tests.
 - [ ] **1.5 API adapter: Register:** `POST /PartyReferenceDataDirectory/Register` with validation returning Problem Details; the response is built from the command outcome, not from a read model.
 - [ ] **1.6 Retrieve flow (query side):** `PartyReferenceDataDirectoryEntryView`, its pure projection, `RetrievePartyReferenceDataDirectoryEntry` query and handler, `PartyDirectoryEnquiry` read port and in-memory adapter, with projection unit tests.
