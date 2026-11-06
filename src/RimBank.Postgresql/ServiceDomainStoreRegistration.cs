@@ -24,8 +24,8 @@ public static class ServiceDomainStoreRegistration
     /// Registers the context's own Marten store as <typeparamref name="TStore"/>: its own schema, its own login role
     /// (from <c>ConnectionStrings:&lt;ServiceDomain&gt;</c>), its own async daemon, and a <c>ready</c> health check
     /// (ADR 0016). It also connects the store to Wolverine (ADR 0017): the outbox and inbox tables live in the context's
-    /// own schema, every handler in the context's namespace commits through this store, and the context's own messages
-    /// go to its durable local queue.
+    /// own schema, every handler in the context's namespace commits through this store, the context's own messages
+    /// go to its durable local queue, and every command is handled once per idempotency key (ADR 0018).
     /// </summary>
     /// <typeparam name="TStore">
     /// The context's store marker, declared in its <c>.Postgresql</c> adapter, for example
@@ -69,6 +69,9 @@ public static class ServiceDomainStoreRegistration
                 options.DatabaseSchemaName = name.SchemaName;
                 options.Events.DatabaseSchemaName = name.SchemaName;
                 options.AutoCreateSchemaObjects = production ? AutoCreate.None : AutoCreate.CreateOrUpdate;
+
+                // The outcomes of the context's commands, next to its events (ADR 0018).
+                options.Schema.For<IdempotentOutcome>();
                 configure?.Invoke(options);
                 return options;
             })
@@ -88,6 +91,9 @@ public static class ServiceDomainStoreRegistration
             // Every handler in the context's namespace commits through the context's own store, so the core needs no
             // Wolverine attribute and a handler cannot commit to another context's store by mistake.
             options.Policies.UseAncillaryStorageFromNamespace(typeof(TStore), coreNamespace);
+
+            // Every command of the context is handled once per idempotency key, in the same transaction (ADR 0018).
+            options.Policies.Add(new CommandIdempotencyPolicy(coreNamespace, name.SchemaName));
 
             // The context's own messages go to its own durable local queue: they survive a restart and are retried,
             // and a backlog in one context never delays another.
