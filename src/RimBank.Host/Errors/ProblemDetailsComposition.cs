@@ -23,8 +23,9 @@ public static class ProblemDetailsComposition
 
     /// <summary>
     /// Adds the exception handler and status-code pages to the pipeline, before any endpoint. A bodiless 404 (no
-    /// endpoint matched) becomes <c>shared.not-found</c>; any other bodiless 4xx/5xx gets a Problem Details body with
-    /// the framework's default type.
+    /// endpoint matched) becomes <c>shared.not-found</c>, the bodiless 401 and 403 of authentication become
+    /// <c>shared.unauthenticated</c> and <c>shared.forbidden</c> (ADR 0019); any other bodiless 4xx/5xx gets a Problem
+    /// Details body with the framework's default type.
     /// </summary>
     /// <param name="app">The application.</param>
     /// <returns>The same application.</returns>
@@ -39,9 +40,13 @@ public static class ProblemDetailsComposition
     private static async Task WriteStatusCodeProblemAsync(StatusCodeContext context)
     {
         var httpContext = context.HttpContext;
-        var problem = httpContext.Response.StatusCode == StatusCodes.Status404NotFound
-            ? ErrorProblemDetails.Create(SharedProblems.NotFound)
-            : new Microsoft.AspNetCore.Mvc.ProblemDetails { Status = httpContext.Response.StatusCode };
+        var problem = httpContext.Response.StatusCode switch
+        {
+            StatusCodes.Status401Unauthorized => ErrorProblemDetails.Create(SharedProblems.Unauthenticated),
+            StatusCodes.Status403Forbidden => ErrorProblemDetails.Create(SharedProblems.Forbidden),
+            StatusCodes.Status404NotFound => ErrorProblemDetails.Create(SharedProblems.NotFound),
+            var status => new Microsoft.AspNetCore.Mvc.ProblemDetails { Status = status },
+        };
 
         await httpContext.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(new ProblemDetailsContext
         {

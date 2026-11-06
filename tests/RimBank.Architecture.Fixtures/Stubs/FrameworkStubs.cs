@@ -29,6 +29,22 @@ namespace Microsoft.AspNetCore.Http
     public interface IResult;
 }
 
+namespace Microsoft.AspNetCore.Authorization
+{
+    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Method)]
+    public sealed class AllowAnonymousAttribute : System.Attribute;
+}
+
+namespace Microsoft.AspNetCore.Builder
+{
+    public static class AuthorizationEndpointConventionBuilderExtensions
+    {
+        public static TBuilder AllowAnonymous<TBuilder>(this TBuilder builder) => builder;
+
+        public static TBuilder RequireAuthorization<TBuilder>(this TBuilder builder) => builder;
+    }
+}
+
 namespace ModelContextProtocol.Server
 {
     [System.AttributeUsage(System.AttributeTargets.Method)]

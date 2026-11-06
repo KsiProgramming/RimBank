@@ -33,6 +33,32 @@ public sealed class AppHostModelTests
     }
 
     [Fact]
+    public async Task Host_finds_keycloak_through_service_discovery_and_waits_for_it()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(ct);
+        var host = builder.CreateResourceBuilder<ProjectResource>(Program.HostResource).Resource;
+
+        var configuration = await ExecutionConfigurationBuilder.Create(host)
+            .WithEnvironmentVariablesConfig()
+            .BuildAsync(new(DistributedApplicationOperation.Publish), NullLogger.Instance, ct);
+
+        host.Annotations.OfType<WaitAnnotation>().ShouldContain(wait => wait.Resource.Name == Program.KeycloakResource);
+        configuration.EnvironmentVariables.ToDictionary().Keys.ShouldContain(key => key.StartsWith($"services__{Program.KeycloakResource}__", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Keycloak_imports_the_dev_realm_and_keeps_its_data_in_a_named_volume()
+    {
+        await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(TestContext.Current.CancellationToken);
+        var keycloak = builder.CreateResourceBuilder<KeycloakResource>(Program.KeycloakResource).Resource;
+
+        keycloak.Annotations.OfType<ContainerMountAnnotation>()
+            .ShouldContain(mount => mount.Source == Program.KeycloakVolume && mount.Type == ContainerMountType.Volume);
+        File.Exists(Path.Combine(builder.AppHostDirectory, Program.RealmFile)).ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Postgres_keeps_its_data_in_a_named_volume()
     {
         await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(TestContext.Current.CancellationToken);

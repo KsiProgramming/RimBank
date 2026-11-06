@@ -25,6 +25,11 @@
     <MicrosoftExtensionsVersion>10.11.0</MicrosoftExtensionsVersion>
     <!-- Keep equal to the Aspire.AppHost.Sdk version in src/RimBank.AppHost/RimBank.AppHost.csproj. -->
     <AspireVersion>13.6.4</AspireVersion>
+    <!--
+      The Keycloak integrations ship only as previews of the same Aspire release (ADR 0019). Keep the release part equal
+      to AspireVersion; Dependabot raises both together.
+    -->
+    <AspireKeycloakVersion>13.6.4-preview.1.26523.11</AspireKeycloakVersion>
   </PropertyGroup>
 
   <!--
@@ -32,15 +37,17 @@
     Aspire.Hosting.AppHost is an implicit reference of Aspire.AppHost.Sdk, versioned by the SDK; listing it here is NU1009.
   -->
   <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.Keycloak" Version="$(AspireKeycloakVersion)" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
   </ItemGroup>
 
   <!--
-    Hosting: service defaults for RimBank.Host (specs/tech-stack.md §1, ADR 0014), and the hosting and health-check
-    abstractions RimBank.Postgresql registers its stores with (ADR 0016).
+    Hosting: service defaults and the Keycloak JWT bearer of RimBank.Host (specs/tech-stack.md §1, ADR 0014, ADR 0019),
+    and the hosting and health-check abstractions RimBank.Postgresql registers its stores with (ADR 0016).
   -->
   <ItemGroup Label="Hosting">
+    <PackageVersion Include="Aspire.Keycloak.Authentication" Version="$(AspireKeycloakVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14" />

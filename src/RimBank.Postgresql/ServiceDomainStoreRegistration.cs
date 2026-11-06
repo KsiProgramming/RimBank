@@ -92,7 +92,9 @@ public static class ServiceDomainStoreRegistration
             // Wolverine attribute and a handler cannot commit to another context's store by mistake.
             options.Policies.UseAncillaryStorageFromNamespace(typeof(TStore), coreNamespace);
 
-            // Every command of the context is handled once per idempotency key, in the same transaction (ADR 0018).
+            // Every command of the context is handled once per idempotency key and caller, in the same transaction
+            // (ADR 0018, ADR 0019). The caller is the envelope's user name, which Wolverine relays only when asked to.
+            options.EnableRelayOfUserName = true;
             options.Policies.Add(new CommandIdempotencyPolicy(coreNamespace, name.SchemaName));
 
             // The context's own messages go to its own durable local queue: they survive a restart and are retried,

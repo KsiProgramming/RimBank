@@ -1,21 +1,35 @@
-# Probes of RimBank.Host. Run the AppHost (dotnet run --project src/RimBank.AppHost) and set @host to the
-# rimbank-host URL shown in the Aspire dashboard. Both probes are anonymous and return the status only.
+# Requests to RimBank.Host. Run the AppHost (dotnet run --project src/RimBank.AppHost) and set @host to the
+# rimbank-host URL and @keycloak to the keycloak URL shown in the Aspire dashboard.
 @host = http://localhost:5100
+@keycloak = http://localhost:8080
 
-### Readiness: every health check must pass
+### Readiness: every health check must pass. The probes are the only anonymous endpoints (ADR 0019).
 GET {{host}}/health
 
 ### Liveness: only checks tagged "live"
 GET {{host}}/alive
 
-### Problem Details (ADR 0015): no endpoint matches, so the host answers 404 application/problem+json:
+### Authentication (ADR 0019): without a token, every other request is a 401 application/problem+json, even when no
+# endpoint matches, so the host never reveals which routes exist:
 # {
-#   "type": "urn:rimbank:problem:shared:not-found",
-#   "title": "Not Found",
-#   "status": 404,
-#   "detail": "No resource exists at this address.",
+#   "type": "urn:rimbank:problem:shared:unauthenticated",
+#   "title": "Unauthorized",
+#   "status": 401,
+#   "detail": "This operation needs a valid access token. Send one in the Authorization header as 'Bearer <token>'.",
 #   "instance": "/PartyReferenceDataDirectory/does-not-exist/Retrieve",
-#   "errorCode": "shared.not-found",
+#   "errorCode": "shared.unauthenticated",
 #   "traceId": "<32 hex characters, the trace shown in the Aspire dashboard>"
 # }
 GET {{host}}/PartyReferenceDataDirectory/does-not-exist/Retrieve
+
+### A token from the local Keycloak, with the dev-only client of src/RimBank.AppHost/Realms (client-credentials grant)
+# @name token
+POST {{keycloak}}/realms/rimbank/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=rimbank-dev-client&client_secret=rimbank-dev-client-secret-local-only
+
+### Problem Details (ADR 0015): with a valid token, no endpoint matches, so the host answers 404
+# application/problem+json with "type": "urn:rimbank:problem:shared:not-found" and "errorCode": "shared.not-found".
+GET {{host}}/PartyReferenceDataDirectory/does-not-exist/Retrieve
+Authorization: Bearer {{token.response.body.$.access_token}}

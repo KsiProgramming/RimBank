@@ -5,7 +5,7 @@ using Aspire.Hosting.Testing;
 
 namespace RimBank.AppHost.Startup.Tests;
 
-// Starts the real AppHost (PostgreSQL container + RimBank.Host) and probes the host. Needs Docker: it always runs in
+// Starts the real AppHost (PostgreSQL and Keycloak containers + RimBank.Host) and probes the host. Needs Docker: it always runs in
 // CI, and is skipped locally only when Docker is not reachable.
 public sealed class AppHostStartupTests
 {
@@ -23,6 +23,7 @@ public sealed class AppHostStartupTests
         await app.StartAsync(ct).WaitAsync(_startupTimeout, ct);
 
         await app.ResourceNotifications.WaitForResourceHealthyAsync(Program.PostgresResource, ct).WaitAsync(_startupTimeout, ct);
+        await app.ResourceNotifications.WaitForResourceHealthyAsync(Program.KeycloakResource, ct).WaitAsync(_startupTimeout, ct);
         await app.ResourceNotifications.WaitForResourceHealthyAsync(Program.HostResource, ct).WaitAsync(_startupTimeout, ct);
         (await app.GetConnectionStringAsync(Program.DatabaseResource, ct)).ShouldNotBeNullOrWhiteSpace();
 
@@ -33,14 +34,21 @@ public sealed class AppHostStartupTests
         (await response.Content.ReadAsStringAsync(ct)).ShouldBe("Healthy");
     }
 
-    // The test runs on a throwaway database: it never reads or writes a developer's data volume, and a volume
+    // The test runs on throwaway containers: it never reads or writes a developer's data volumes, and a volume
     // initialised with another password cannot make it fail.
     private static void WithoutDataVolume(IDistributedApplicationTestingBuilder builder)
     {
-        var postgres = builder.CreateResourceBuilder<PostgresServerResource>(Program.PostgresResource).Resource;
-        foreach (var volume in postgres.Annotations.OfType<ContainerMountAnnotation>().Where(mount => mount.Type == ContainerMountType.Volume).ToList())
+        IResource[] containers =
+        [
+            builder.CreateResourceBuilder<PostgresServerResource>(Program.PostgresResource).Resource,
+            builder.CreateResourceBuilder<KeycloakResource>(Program.KeycloakResource).Resource,
+        ];
+        foreach (var container in containers)
         {
-            postgres.Annotations.Remove(volume);
+            foreach (var volume in container.Annotations.OfType<ContainerMountAnnotation>().Where(mount => mount.Type == ContainerMountType.Volume).ToList())
+            {
+                container.Annotations.Remove(volume);
+            }
         }
     }
 }

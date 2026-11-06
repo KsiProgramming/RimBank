@@ -36,6 +36,8 @@ public static class FixtureContexts
         ("RimBank.SampleBanking.CoreUsesHttp", "http-only-in-api-and-host"),
         ("RimBank.SampleBanking.McpUsesHttp.Mcp", "http-only-in-api-and-host"),
         ("RimBank.Http.FixtureViolations", "http-dependencies"),
+        ("RimBank.SampleBanking.ApiAllowsAnonymous.Api", "allow-anonymous-only-in-service-defaults"),
+        ("RimBank.SampleBanking.McpAllowsAnonymous.Mcp", "allow-anonymous-only-in-service-defaults"),
         ("RimBank.SampleBanking.CoreUsesSharedPostgresql", "shared-postgresql-only-in-postgresql-adapters"),
         ("RimBank.SampleBanking.ApiUsesSharedPostgresql.Api", "shared-postgresql-only-in-postgresql-adapters"),
         ("RimBank.Postgresql.FixtureViolations", "shared-postgresql-dependencies"),

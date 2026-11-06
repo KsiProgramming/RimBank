@@ -76,6 +76,23 @@ namespace RimBank.Http.FixtureViolations
     public sealed record HttpUsesMarten(Marten.IDocumentSession Session);
 }
 
+// allow-anonymous-only-in-service-defaults: an .Api never opens its endpoints to anonymous callers (deny by default).
+namespace RimBank.SampleBanking.ApiAllowsAnonymous.Api
+{
+    public static class ApiAllowsAnonymousEndpoints
+    {
+        public static string Map(string endpoint) =>
+            Microsoft.AspNetCore.Builder.AuthorizationEndpointConventionBuilderExtensions.AllowAnonymous(endpoint);
+    }
+}
+
+// allow-anonymous-only-in-service-defaults: the attribute form is refused too.
+namespace RimBank.SampleBanking.McpAllowsAnonymous.Mcp
+{
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    public static class McpAllowsAnonymousTools;
+}
+
 // shared-postgresql-only-in-postgresql-adapters: a core reaches its store through its ports, never through the
 // Marten conventions.
 namespace RimBank.SampleBanking.CoreUsesSharedPostgresql

@@ -12,7 +12,10 @@ namespace RimBank.Postgresql;
 /// </remarks>
 public sealed class IdempotentOutcome
 {
-    /// <summary><c>&lt;command type&gt;:&lt;key&gt;</c>: the key is scoped to its command type within its context.</summary>
+    /// <summary>
+    /// <c>&lt;command type&gt;:&lt;caller length&gt;:&lt;caller&gt;:&lt;key&gt;</c>: the key is scoped to its command
+    /// type and its caller within its context (ADR 0018, ADR 0019).
+    /// </summary>
     public required string Id { get; init; }
 
     /// <summary>The hexadecimal SHA-256 of the command's JSON without its key.</summary>

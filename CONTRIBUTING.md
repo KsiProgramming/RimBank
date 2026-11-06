@@ -50,7 +50,7 @@ dotnet format RimBank.slnx --verify-no-changes
 Warnings are errors, and package versions live only in `Directory.Packages.props` ([ADR 0013](docs/adr/0013-warning-and-package-governance.md)):
 
 - **Never suppress a warning in code or in a project file.** `#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>` and `<WarningsNotAsErrors>` fail the build (RB0001, RB0002). Fix the code, or, when the rule really does not apply, add a `dotnet_diagnostic.<ID>.severity = none` entry to the `.editorconfig` nearest the code (the project's own, or `tests/.editorconfig`), scoped to the files it covers, with a comment giving the reason. The one exception is the MSBuild warning ASPIRE010 in `RimBank.AppHost.csproj` ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)).
-- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. The one version outside that file is the `Aspire.AppHost.Sdk/<version>` attribute in `src/RimBank.AppHost/RimBank.AppHost.csproj`: raise it together with `AspireVersion`, or the build fails with RB0003. `RimBank.AppHost`, `RimBank.AppHost.Tests` and `RimBank.Architecture.Tests` keep one lock file per runtime (`packages.win-x64.lock.json`, `packages.linux-x64.lock.json`), because Aspire's orchestrator and dashboard packages depend on the machine ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)). Regenerate both after a package change:
+- **Packages:** add or raise a version only in `Directory.Packages.props` (`VersionOverride` is rejected), then run `dotnet restore` and commit the changed `packages.lock.json` files. The one version outside that file is the `Aspire.AppHost.Sdk/<version>` attribute in `src/RimBank.AppHost/RimBank.AppHost.csproj`: raise it together with `AspireVersion`, or the build fails with RB0003. The Keycloak integrations exist only as previews, so their version is `AspireKeycloakVersion`, which must be a preview of the same `AspireVersion` (RB0004, [ADR 0019](docs/adr/0019-authentication-baseline.md)). `RimBank.AppHost`, `RimBank.AppHost.Tests` and `RimBank.Architecture.Tests` keep one lock file per runtime (`packages.win-x64.lock.json`, `packages.linux-x64.lock.json`), because Aspire's orchestrator and dashboard packages depend on the machine ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)). Regenerate both after a package change:
 
   ```bash
   for p in src/RimBank.AppHost tests/RimBank.AppHost.Tests tests/RimBank.Architecture.Tests; do
@@ -64,7 +64,7 @@ Warnings are errors, and package versions live only in `Directory.Packages.props
 
 Tests use xUnit v3 and Shouldly on Microsoft.Testing.Platform ([ADR 0007](docs/adr/0007-test-platform.md)). Run one class with `dotnet test --solution RimBank.slnx --filter-class <Namespace.ClassName>`.
 
-`tests/RimBank.AppHost.Tests` starts real containers (PostgreSQL and the host) and needs Docker. In CI it always runs. Locally it is skipped, with the reason shown, when Docker is not reachable.
+`tests/RimBank.AppHost.Tests` starts real containers (PostgreSQL, Keycloak and the host) and needs Docker. In CI it always runs. Locally it is skipped, with the reason shown, when Docker is not reachable.
 
 ### Running RimBank locally
 
@@ -74,7 +74,17 @@ With Docker running:
 dotnet run --project src/RimBank.AppHost
 ```
 
-The console prints the Aspire dashboard URL. The dashboard shows `postgres`, the `rimbank` database and `rimbank-host`, with their logs, traces and metrics. The host's probes are `GET /health` and `GET /alive` (see `src/RimBank.Host/RimBank.Host.http`). Both are anonymous and return the status only ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)). PostgreSQL keeps its data in the `rimbank-postgres-data` Docker volume, and its generated password lives in the AppHost's user secrets.
+The console prints the Aspire dashboard URL. The dashboard shows `postgres`, the `rimbank` database, `keycloak` and `rimbank-host`, with their logs, traces and metrics. The host's probes are `GET /health` and `GET /alive` (see `src/RimBank.Host/RimBank.Host.http`). Both are anonymous and return the status only ([ADR 0014](docs/adr/0014-host-composition-and-module-entry-point.md)). PostgreSQL keeps its data in the `rimbank-postgres-data` Docker volume and Keycloak in `rimbank-keycloak-data`. Their generated passwords live in the AppHost's user secrets.
+
+### Authentication
+
+Every request needs a JWT bearer token for the audience `rimbank-api`, except the health probes ([ADR 0019](docs/adr/0019-authentication-baseline.md)). A missing or invalid token is a 401 `shared.unauthenticated` Problem Details response, and a refused policy is a 403 `shared.forbidden`.
+
+- **Locally**, the AppHost runs Keycloak with the dev-only realm `rimbank` from `src/RimBank.AppHost/Realms`. Get a token with the client-credentials grant of `rimbank-dev-client`, as `src/RimBank.Host/RimBank.Host.http` and the realm's README show. Its secret is published and only for local use.
+- **Outside Development**, the host needs `Authentication:Authority`, the HTTPS address of the realm (for example `https://login.example.com/realms/rimbank`). Without it, the host refuses to start.
+- **Deny by default:** never call `AllowAnonymous()` or use `[AllowAnonymous]`. New endpoints are protected without opting in, and the architecture rule `allow-anonymous-only-in-service-defaults` fails otherwise. Narrow access with `RequireAuthorization(...)` (per-operation policies come in roadmap 1.15).
+- **Caller:** the host turns the token's `sub` and `azp` into an `Actor` (SharedKernel) and hands the subject to the message bus. Adapters and cores never read the token.
+- **Tests** sign tokens with an in-memory key: call `builder.UseTestTokens()` and send `TestTokens.Issue()` (in `tests/RimBank.Host.Tests/Security`).
 
 ### Errors
 
@@ -105,7 +115,7 @@ The host runs one Wolverine bus ([ADR 0017](docs/adr/0017-wolverine-wiring.md)).
 - **Write ports:** in the `.Postgresql` adapter, implement the port over `IDocumentSession` (a public constructor taking only the session) and register it with `builder.AddWritePort<TPort, TImplementation>()`. Wolverine builds it from the handler's own session and makes the handler transactional, so its events and messages commit together. Do not register write ports in the container.
 - **Read ports:** register them in the container, usually as singletons over the store marker (`store.QuerySession()`). A query handler opens no transaction.
 - **Dispatch:** `.Api` and `.Mcp` call `IMessageBus.InvokeAsync<Result<T>>(…)` and use no other Wolverine type (`adapters-dispatch-through-the-message-bus`).
-- **Idempotency:** every command record implements `ICommand` and so carries an `IdempotencyKey IdempotencyKey`. `AddServiceDomainStore` wraps every command handler with the idempotency policy ([ADR 0018](docs/adr/0018-idempotency-keys-for-commands.md)): the same key and payload return the stored acknowledgement and the handler does not run again; the same key with another payload returns `shared.idempotency-key-reused`; a key still being handled returns `shared.idempotency-key-in-use`; a missing key returns `shared.idempotency-key-missing`. Only successful results are stored, so a rejected command can be retried with the same key. The handler never reads the key. A `.Subscriptions` adapter builds the key from the requesting record's identifier (`IdempotencyKey.From(...)`).
+- **Idempotency:** every command record implements `ICommand` and so carries an `IdempotencyKey IdempotencyKey`. `AddServiceDomainStore` wraps every command handler with the idempotency policy ([ADR 0018](docs/adr/0018-idempotency-keys-for-commands.md)): the same key and payload return the stored acknowledgement and the handler does not run again; the same key with another payload returns `shared.idempotency-key-reused`; a key still being handled returns `shared.idempotency-key-in-use`; a missing key returns `shared.idempotency-key-missing`. Only successful results are stored, so a rejected command can be retried with the same key. Keys are scoped to the caller: two callers with the same key never replay or block each other, and messages no caller sent share the system scope ([ADR 0019](docs/adr/0019-authentication-baseline.md)). The handler never reads the key. A `.Subscriptions` adapter builds the key from the requesting record's identifier (`IdempotencyKey.From(...)`).
 - **HTTP:** every `.Api` endpoint that dispatches a command requires the header with `RequireIdempotencyKey()` from `RimBank.Http` (on the endpoint or its route group), takes an `IdempotencyKeyHeader idempotency` parameter and passes `idempotency.Value` into the command. `Retrieve` (query) endpoints take no key.
 - **Host message store:** Wolverine keeps its own bookkeeping in schema `wolverine` (role `rimbank_wolverine`, `ConnectionStrings:Wolverine`). Without that connection string, as before the first context, messages stay in memory.
 
@@ -136,6 +146,7 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `problems-dependencies` | `RimBank.Problems` uses SharedKernel, ASP.NET Core and the BCL only | tech-stack §4, ADR 0015 |
 | `http-only-in-api-and-host` | Only `.Api` and `RimBank.Host` use `RimBank.Http` | tech-stack §4, ADR 0018 |
 | `http-dependencies` | `RimBank.Http` uses SharedKernel, `RimBank.Problems`, ASP.NET Core and the BCL only | tech-stack §4, ADR 0018 |
+| `allow-anonymous-only-in-service-defaults` | Nothing outside `RimBank.ServiceDefaults` calls `AllowAnonymous()` or uses `[AllowAnonymous]`: only the health probes are anonymous | tech-stack §10, ADR 0019 |
 | `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` and `RimBank.Host` (for its own message store) use `RimBank.Postgresql` | tech-stack §4, ADR 0016, ADR 0017 |
 | `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Wolverine, Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016, ADR 0017 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |

@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Modules.Tests;
 
@@ -16,7 +17,7 @@ public sealed class ServiceDomainModuleCompositionTests
         await using var app = await StartAsync(
             new FakeServiceDomainModule("SampleLedger", "sample-ledger", _calls),
             new FakeServiceDomainModule("SampleStatement", "sample-statement", _calls));
-        using var client = app.GetTestClient();
+        using var client = TestTokens.Authenticated(app.GetTestClient());
 
         app.Services.GetRequiredKeyedService<FakeModuleMarker>("SampleLedger").ServiceDomain.ShouldBe("SampleLedger");
         app.Services.GetRequiredKeyedService<FakeModuleMarker>("SampleStatement").ServiceDomain.ShouldBe("SampleStatement");
@@ -75,6 +76,7 @@ public sealed class ServiceDomainModuleCompositionTests
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
         builder.WebHost.UseTestServer();
+        builder.UseTestTokens();
         return builder;
     }
 

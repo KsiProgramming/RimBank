@@ -1,7 +1,7 @@
 namespace RimBank.Architecture.Tests;
 
-// The composition projects (tech-stack §2–§4, ADR 0014–0018): RimBank.Host composes, RimBank.AppHost orchestrates,
-// RimBank.ServiceDefaults is applied by the host, RimBank.Problems maps errors for the adapters that answer callers,
+// The composition projects (tech-stack §2–§4, ADR 0014–0019): RimBank.Host composes, RimBank.AppHost orchestrates,
+// RimBank.ServiceDefaults is applied by the host and alone opens endpoints (its health probes) to anonymous callers, RimBank.Problems maps errors for the adapters that answer callers,
 // RimBank.Http holds the HTTP conventions every .Api follows, and RimBank.Postgresql holds the Marten and Wolverine
 // conventions every .Postgresql adapter follows.
 // Contexts and SharedKernel never reach up to any of them.
@@ -102,6 +102,28 @@ public static partial class ArchitectureRules
                 && !new[] { AspNetCore, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
                     .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
             select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, RimBank.Problems, ASP.NET Core or the BCL"));
+
+    public static ArchitectureRule AllowAnonymousOnlyInServiceDefaults { get; } = new(
+        "allow-anonymous-only-in-service-defaults",
+        "tech-stack §10 and ADR 0019: every endpoint needs an authenticated caller (deny by default); only the health probes of RimBank.ServiceDefaults are open to anonymous callers, so no .Api, .Mcp or host code calls AllowAnonymous() or uses [AllowAnonymous]",
+        code =>
+            from type in code.Types
+            where !Namespaces.IsWithin(type.NamespaceName(), ServiceDefaultsRoot)
+            from anonymous in code.Targets(type).Where(target => _anonymousMarkers.Contains(target.FullName)).Select(target => target.Display())
+                .Concat(code.CalledMethods(type).Where(IsAllowAnonymousCall).Select(method => $"{method.DeclaringType.Display()}.{method.Name}"))
+                .Distinct(StringComparer.Ordinal)
+            select new Violation(type.Display(), $"opens an endpoint to anonymous callers through {anonymous}"));
+
+    private static readonly string[] _anonymousMarkers =
+    [
+        "Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute",
+        "Microsoft.AspNetCore.Authorization.IAllowAnonymous",
+    ];
+
+    // AllowAnonymous() sits next to RequireAuthorization() on the same extension class, so the rule matches the method.
+    private static bool IsAllowAnonymousCall(ArchUnitNET.Domain.IMember method) =>
+        method.Name.StartsWith("AllowAnonymous", StringComparison.Ordinal)
+        && Namespaces.IsWithin(method.DeclaringType.NamespaceName(), AspNetCore);
 
     private static IEnumerable<Violation> DependenciesOn(CodeBase code, string root, IReadOnlyList<string> allowedFrom) =>
         from type in code.Types

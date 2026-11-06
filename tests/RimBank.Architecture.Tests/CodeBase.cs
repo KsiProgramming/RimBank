@@ -86,13 +86,25 @@ public sealed class CodeBase
     /// </summary>
     public IReadOnlyList<IType> Targets(IType type)
     {
-        var sources = _generatedByOwner.TryGetValue(type.FullName, out var generated) ? [type, .. generated] : new List<IType> { type };
-        return [.. sources
+        return [.. SourcesOf(type)
             .SelectMany(source => source.Dependencies)
             .SelectMany(TargetsOf)
             .Where(target => !target.IsGenericParameter && !target.IsToolGenerated() && target.FullName != type.FullName)
             .DistinctBy(target => target.FullName)];
     }
+
+    /// <summary>
+    /// Every method <paramref name="type"/> calls, including from the compiler-generated types it owns (lambdas, async
+    /// and iterator state machines). A rule needs it when a type is fine to use but one of its methods is not.
+    /// </summary>
+    public IReadOnlyList<IMember> CalledMethods(IType type) =>
+        [.. SourcesOf(type)
+            .SelectMany(source => source.Dependencies)
+            .OfType<MethodCallDependency>()
+            .Select(call => call.TargetMember)];
+
+    private List<IType> SourcesOf(IType type) =>
+        _generatedByOwner.TryGetValue(type.FullName, out var generated) ? [type, .. generated] : [type];
 
     private static IEnumerable<IType> TargetsOf(ITypeDependency dependency) =>
         [dependency.Target, .. dependency.TargetGenericArguments.SelectMany(TypesOf)];
