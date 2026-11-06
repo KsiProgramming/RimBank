@@ -105,6 +105,8 @@ The host runs one Wolverine bus ([ADR 0017](docs/adr/0017-wolverine-wiring.md)).
 - **Write ports:** in the `.Postgresql` adapter, implement the port over `IDocumentSession` (a public constructor taking only the session) and register it with `builder.AddWritePort<TPort, TImplementation>()`. Wolverine builds it from the handler's own session and makes the handler transactional, so its events and messages commit together. Do not register write ports in the container.
 - **Read ports:** register them in the container, usually as singletons over the store marker (`store.QuerySession()`). A query handler opens no transaction.
 - **Dispatch:** `.Api` and `.Mcp` call `IMessageBus.InvokeAsync<Result<T>>(…)` and use no other Wolverine type (`adapters-dispatch-through-the-message-bus`).
+- **Idempotency:** every command record implements `ICommand` and so carries an `IdempotencyKey IdempotencyKey`. `AddServiceDomainStore` wraps every command handler with the idempotency policy ([ADR 0018](docs/adr/0018-idempotency-keys-for-commands.md)): the same key and payload return the stored acknowledgement and the handler does not run again; the same key with another payload returns `shared.idempotency-key-reused`; a key still being handled returns `shared.idempotency-key-in-use`; a missing key returns `shared.idempotency-key-missing`. Only successful results are stored, so a rejected command can be retried with the same key. The handler never reads the key. A `.Subscriptions` adapter builds the key from the requesting record's identifier (`IdempotencyKey.From(...)`).
+- **HTTP:** every `.Api` endpoint that dispatches a command requires the header with `RequireIdempotencyKey()` from `RimBank.Http` (on the endpoint or its route group), takes an `IdempotencyKeyHeader idempotency` parameter and passes `idempotency.Value` into the command. `Retrieve` (query) endpoints take no key.
 - **Host message store:** Wolverine keeps its own bookkeeping in schema `wolverine` (role `rimbank_wolverine`, `ConnectionStrings:Wolverine`). Without that connection string, as before the first context, messages stay in memory.
 
 ### Architecture rules
@@ -132,6 +134,8 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `host-is-the-composition-root` | Nothing outside `RimBank.Host` uses it; a context never implements `IServiceDomainModule` itself | tech-stack §2, §4, ADR 0014 |
 | `problems-only-in-adapters-and-host` | Only `.Api`, `.Mcp` and `RimBank.Host` use `RimBank.Problems` | tech-stack §4, ADR 0015 |
 | `problems-dependencies` | `RimBank.Problems` uses SharedKernel, ASP.NET Core and the BCL only | tech-stack §4, ADR 0015 |
+| `http-only-in-api-and-host` | Only `.Api` and `RimBank.Host` use `RimBank.Http` | tech-stack §4, ADR 0018 |
+| `http-dependencies` | `RimBank.Http` uses SharedKernel, `RimBank.Problems`, ASP.NET Core and the BCL only | tech-stack §4, ADR 0018 |
 | `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` and `RimBank.Host` (for its own message store) use `RimBank.Postgresql` | tech-stack §4, ADR 0016, ADR 0017 |
 | `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Wolverine, Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016, ADR 0017 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |

@@ -82,7 +82,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
-│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring (ADR 0017)
+│  ├─ RimBank.Http/               # HTTP conventions every .Api shares: the Idempotency-Key header (ADR 0018)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring (ADR 0017); command idempotency (ADR 0018)
 │  └─ Party/
 │     ├─ RimBank.Party.PartyReferenceDataDirectory/                    # core
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
@@ -96,7 +97,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.Problems.Tests/         # the Error → Problem Details mapping (ADR 0015)
-   ├─ RimBank.Postgresql.Tests/       # store and messaging conventions with two test-only fake contexts, Testcontainers (ADR 0016, ADR 0017)
+   ├─ RimBank.Http.Tests/             # the Idempotency-Key header and its Problem Details (ADR 0018)
+   ├─ RimBank.Postgresql.Tests/       # store, messaging and idempotency conventions with two test-only fake contexts, Testcontainers (ADR 0016–0018)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
@@ -144,11 +146,12 @@ Commands and queries sit next to each other inside the business flow or Behavior
 | Core (`RimBank.X.Y`) | SharedKernel, its own `.PublishedLanguage` | ASP.NET Core, Marten, Wolverine, Npgsql, **any other context's** core, adapters or `.PublishedLanguage` |
 | `.PublishedLanguage` | BCL only | Everything else |
 | `.Subscriptions` | Its own core, SharedKernel, other contexts' `.PublishedLanguage`, Wolverine | Other contexts' cores or adapters, its own `.Api`, `.Mcp`, `.Postgresql` |
-| `.Api` | Its own core, SharedKernel, `RimBank.Problems`, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
+| `.Api` | Its own core, SharedKernel, `RimBank.Problems`, `RimBank.Http`, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
 | `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
 | `.Postgresql` | Its own core, SharedKernel, `RimBank.Postgresql`, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
 | `RimBank.Problems` | SharedKernel, ASP.NET Core | Cores, adapters, other composition projects ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)) |
-| `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Wolverine (`Wolverine.Marten`, `Wolverine.Postgresql`), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters and by `RimBank.Host` for its own message store | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md), [ADR 0017](../docs/adr/0017-wolverine-wiring.md)) |
+| `RimBank.Http` | SharedKernel, `RimBank.Problems`, ASP.NET Core; used only by `.Api` adapters and `RimBank.Host` | Cores, other adapters, Marten, Wolverine ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)) |
+| `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Wolverine (`Wolverine.Marten`, `Wolverine.Postgresql`), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters and by `RimBank.Host` for its own message store. It also adds the idempotency policy to every command handler ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)) | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md), [ADR 0017](../docs/adr/0017-wolverine-wiring.md)) |
 | `RimBank.Host` | All adapters and cores (composition only) | Business logic |
 
 **Core and Wolverine:** handlers in the core are plain classes with `Handle` methods. They **return** events and messages (Wolverine's cascading convention) instead of taking framework services, so the core has no package reference to Wolverine or Marten. Persistence goes through ports in the core. The `.Postgresql` adapter implements those ports with Marten: the write port over event streams, and the read port over projected documents.
@@ -176,7 +179,7 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
   - extensions: `errorCode`, `traceId`, and `errors` (field → messages) for validation failures
 - Each core `Error` maps to a Problem Details response in one place for the whole solution, `RimBank.Problems`, which every `.Api` and `.Mcp` uses (`error.ToHttpResult()`); the host emits `shared.not-found` and `shared.unexpected` itself ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)). Unhandled exceptions become a generic 500 Problem Details response with no internal details exposed.
 - BIAN-declared statuses are honoured: 400, 401, 403, 404, 429 and 500, plus 409 for concurrency and idempotency conflicts.
-- Every state-changing endpoint requires an `Idempotency-Key` header.
+- Every state-changing endpoint requires an `Idempotency-Key` header: a missing or invalid one is a 400, and a key reused with a different payload or still in use is a 409 (`RequireIdempotencyKey()` and `IdempotencyKeyHeader` in `RimBank.Http`, [ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
 
 ## 6. MCP (Model Context Protocol) adapter
 
@@ -204,7 +207,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 
 ### 8.1 Write side
 
-- A **command** is an immutable record named as a BIAN operation in the imperative (`RegisterParty`, `UpdateDemographics`, `ExecutePayment`). It carries an idempotency key and, where it updates an existing record, an expected stream version.
+- A **command** is an immutable record named as a BIAN operation in the imperative (`RegisterParty`, `UpdateDemographics`, `ExecutePayment`). It carries an idempotency key (`ICommand.IdempotencyKey`) and, where it updates an existing record, an expected stream version. Each context handles a command once per key: the same key and payload return the first acknowledgement without running the handler again, and only successful outcomes are stored, in the same transaction as the events ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
 - A **command handler** loads the aggregate through the write port, calls a pure `Decide`, appends the resulting events and returns an acknowledgement (`id`, `version`, and the decided state when BIAN requires it). It returns `Result<T>`, never a read model.
 - **Invariants that protect money** (funds availability, closure rules, holds) are checked against the authoritative write-side state in the same stream and transaction. They are never checked against an eventually consistent projection.
 - Decision inputs from another context (for example "is this party known?", "is this product launched?") come from **local reference read models** fed by integration events (see §8.4). Their staleness is acceptable and documented in the context's ADR.

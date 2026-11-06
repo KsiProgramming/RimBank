@@ -57,6 +57,9 @@ As in 0.10 and 0.11, there is no real context yet, so the convention is proven w
 - **0018 Idempotency keys for commands:** why the bus and not HTTP middleware; the key's format; `ICommand` carrying the key; per-context outcome storage in the same transaction; fingerprint; storing successes only; the reused / in-use conflict codes; the `RimBank.Http` project; follow-ups for MCP (0.15/4.14), caller scoping (0.13/1.15) and expiry (7.x).
 
 ## Open questions
-- **In-flight detection:** use a unique document insert (Marten `Insert`, so the second commit fails) or a PostgreSQL advisory lock on the key hash. Decide in group 3. The test is the same either way.
-- **Replaying the acknowledgement:** store it as JSON and deserialize it into the handler's `Result<TAck>`. Check that Wolverine middleware can short-circuit with a typed return value for `InvokeAsync<Result<T>>`. If not, fall back to a generated wrapping policy (`IChainPolicy`).
-- **`RimBank.Http` vs folding the binder into an existing project:** keep the separate project unless the ADR review prefers otherwise.
+Answered during implementation (ADR 0018):
+- **In-flight detection:** a transaction-scoped advisory lock (`pg_try_advisory_xact_lock` on a hash of schema, command type and key), taken in the handler's own transaction before the lookup. The loser is refused before its handler runs, so no commit-time exception has to be turned back into a value. `Concurrent_calls_with_the_same_key_commit_once` proves it.
+- **Replaying the acknowledgement:** a generated `IChainPolicy` (two JasperFx frames, the same technique as `AddWritePort` in ADR 0017). `Envelope.ResponseType` is internal to Wolverine, so the gate returns a replay or a refusal through `MessageContext.EnqueueCascadingAsync`, the same call Wolverine generates for a handler's return value, and then stops the chain. The acknowledgement is stored as System.Text.Json and read back as the handler's `TAck`.
+- **`RimBank.Http`:** kept as a separate project, guarded by `http-only-in-api-and-host` and `http-dependencies`.
+- **Additional finding:** the four `shared.idempotency-*` errors live on `IdempotencyKey` in SharedKernel, so the bus policy and the HTTP binder share them. `RimBank.Problems` needed no change, because `Conflict` already maps to 409.
+- **Additional finding:** a command handler must return `Result<T>` (alone, in a `Task`, or in a tuple with cascaded messages). The policy fails at startup with a clear message otherwise.
