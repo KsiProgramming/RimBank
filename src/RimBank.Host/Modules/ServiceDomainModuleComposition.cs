@@ -32,6 +32,22 @@ public static class ServiceDomainModuleComposition
         return builder;
     }
 
+    /// <summary>Calls each module's <see cref="IServiceDomainModule.AddMcpTools"/>, in list order (ADR 0021).</summary>
+    /// <param name="tools">The host's MCP server builder.</param>
+    /// <param name="modules">The modules to register, the same list given to <see cref="AddServiceDomainModules{TBuilder}"/>.</param>
+    /// <returns>The same MCP server builder.</returns>
+    public static IMcpServerBuilder AddServiceDomainMcpTools(this IMcpServerBuilder tools, IReadOnlyList<IServiceDomainModule> modules)
+    {
+        ArgumentNullException.ThrowIfNull(modules);
+
+        foreach (var module in modules)
+        {
+            module.AddMcpTools(tools);
+        }
+
+        return tools;
+    }
+
     /// <summary>Calls each module's <see cref="IServiceDomainModule.MapEndpoints"/>, in list order.</summary>
     /// <param name="endpoints">The application's endpoint route builder.</param>
     /// <param name="modules">The modules to map, the same list given to <see cref="AddServiceDomainModules{TBuilder}"/>.</param>
