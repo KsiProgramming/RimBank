@@ -9,6 +9,7 @@
   <Folder Name="/src/">
     <Project Path="src/RimBank.AppHost/RimBank.AppHost.csproj" />
     <Project Path="src/RimBank.Host/RimBank.Host.csproj" />
+    <Project Path="src/RimBank.Http/RimBank.Http.csproj" />
     <Project Path="src/RimBank.Postgresql/RimBank.Postgresql.csproj" />
     <Project Path="src/RimBank.Problems/RimBank.Problems.csproj" />
     <Project Path="src/RimBank.ServiceDefaults/RimBank.ServiceDefaults.csproj" />
@@ -19,6 +20,7 @@
     <Project Path="tests/RimBank.Architecture.Fixtures/RimBank.Architecture.Fixtures.csproj" />
     <Project Path="tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj" />
     <Project Path="tests/RimBank.Host.Tests/RimBank.Host.Tests.csproj" />
+    <Project Path="tests/RimBank.Http.Tests/RimBank.Http.Tests.csproj" />
     <Project Path="tests/RimBank.Postgresql.Tests/RimBank.Postgresql.Tests.csproj" />
     <Project Path="tests/RimBank.Problems.Tests/RimBank.Problems.Tests.csproj" />
     <Project Path="tests/RimBank.SharedKernel.Testing/RimBank.SharedKernel.Testing.csproj" />
