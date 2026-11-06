@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Integration tests of the Party Reference Data Directory's PostgreSQL adapter (roadmap 1.4): the Marten write port
+    and RegisterParty through the message bus, against a real PostgreSQL in Testcontainers (specs/tech-stack.md §9).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="WolverineFx.RuntimeCompilation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Party\RimBank.Party.PartyReferenceDataDirectory.Postgresql\RimBank.Party.PartyReferenceDataDirectory.Postgresql.csproj" />
+    <ProjectReference Include="..\..\RimBank.SharedKernel.Testing\RimBank.SharedKernel.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Shouldly" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

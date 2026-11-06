@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Party Reference Data Directory's PostgreSQL adapter (specs/tech-stack.md §3.1, §4): its own Marten store,
+    registered through the shared convention in RimBank.Postgresql (ADR 0016, ADR 0017), and the Marten implementation
+    of its write port IPartyDirectory over the entry's event stream (ADR 0024). It holds no business logic.
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Party.PartyReferenceDataDirectory.Postgresql</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\RimBank.Core\RimBank.Core.csproj" />
+    <ProjectReference Include="..\..\RimBank.Postgresql\RimBank.Postgresql.csproj" />
+  </ItemGroup>
+</Project>

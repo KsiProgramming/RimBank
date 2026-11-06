@@ -1603,6 +1603,25 @@
           "xunit.v3": "[4.0.2, )"
         }
       },
+      "rimbank.party.partyreferencedatadirectory.postgresql": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Core": "[0.1.0-alpha, )",
+          "RimBank.Postgresql": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.party.partyreferencedatadirectory.postgresql.tests": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting": "[10.0.14, )",
+          "RimBank.Party.PartyReferenceDataDirectory.Postgresql": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel.Testing": "[0.1.0-alpha, )",
+          "Shouldly": "[4.3.0, )",
+          "Testcontainers.PostgreSql": "[4.16.0, )",
+          "WolverineFx.RuntimeCompilation": "[6.62.0, )",
+          "xunit.v3": "[4.0.2, )"
+        }
+      },
       "rimbank.postgresql": {
         "type": "Project",
         "dependencies": {

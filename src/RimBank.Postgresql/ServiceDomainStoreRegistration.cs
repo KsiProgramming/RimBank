@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using Weasel.Core;
 using Wolverine;
 using Wolverine.Marten;
 
@@ -71,6 +72,9 @@ public static class ServiceDomainStoreRegistration
                 options.DatabaseSchemaName = name.SchemaName;
                 options.Events.DatabaseSchemaName = name.SchemaName;
                 options.AutoCreateSchemaObjects = production ? AutoCreate.None : AutoCreate.CreateOrUpdate;
+
+                // Typed ids as plain GUID strings and enums as names, in events and documents alike (ADR 0016).
+                options.UseSystemTextJsonForSerialization(EnumStorage.AsString, configure: StoredJson.AddConverters);
 
                 // The outcomes of the context's commands, next to its events (ADR 0018).
                 options.Schema.For<IdempotentOutcome>();
