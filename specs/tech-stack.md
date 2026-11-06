@@ -135,11 +135,17 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ RetrievePartyReferenceDataDirectoryEntryHandler.cs
 │  ├─ PartyReferenceDataDirectoryEntryView.cs             # read model (immutable record)
 │  └─ PartyReferenceDataDirectoryEntryViewProjection.cs   # pure evolve: event → view
-├─ Demographics/                          # Behavior Qualifier (its own commands, queries, views)
+├─ Demographics/                          # Behavior Qualifier: entity of the entry (its own commands and queries)
 ├─ Reference/
-├─ Associations/
+├─ Associations/                          # Behavior Qualifier as its own aggregate (ADR 0024)
+│  ├─ PartyAssociation.cs                 # state + evolve
+│  ├─ PartyAssociationId.cs
+│  ├─ Events.cs
+│  ├─ Decisions.cs
+│  ├─ PartyAssociationView.cs
+│  └─ PartyAssociationViewProjection.cs
 ├─ BankRelations/
-├─ PartyDirectory.cs                      # write port: load and append the entry's event stream
+├─ PartyDirectory.cs                      # write port: load and append the entry and association event streams
 └─ PartyDirectoryEnquiry.cs               # read port: query the read models
 ```
 
