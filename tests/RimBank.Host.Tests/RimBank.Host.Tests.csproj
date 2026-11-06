@@ -12,10 +12,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RimBank.Host\RimBank.Host.csproj" />
+    <ProjectReference Include="..\RimBank.Host.Testing\RimBank.Host.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Shouldly" />
+    <Using Include="RimBank.Host.Testing" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

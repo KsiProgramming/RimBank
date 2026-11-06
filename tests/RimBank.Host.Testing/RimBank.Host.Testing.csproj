@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Shared helpers for tests that run RimBank.Host in memory: access tokens signed with an in-memory key that the host
+    is told to trust (ADR 0019). Used by RimBank.Host.Tests and by each context's .Api.Tests and .Mcp.Tests.
+    A class library, not a test executable: it has no tests of its own.
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Host.Testing</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RimBank.Host\RimBank.Host.csproj" />
+  </ItemGroup>
+</Project>

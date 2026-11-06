@@ -128,4 +128,17 @@ public sealed class SolutionOnlyRulesTests
         ArchitectureRules.NamespaceIsAllowed("RimBank.Party.Directory", _catalogue).ShouldBeFalse();
         ArchitectureRules.NamespaceIsAllowed("Banking.Party", _catalogue).ShouldBeFalse();
     }
+
+    // The fixtures stub Wolverine, so the real interface hierarchy is checked here: a Wolverine upgrade that moves
+    // InvokeAsync to another interface fails this test instead of every .Api and .Mcp adapter.
+    [Fact]
+    public void The_message_bus_surface_is_what_IMessageBus_is_made_of()
+    {
+        // By assembly-qualified name: the fixtures' stub has the same full name.
+        var messageBus = Type.GetType("Wolverine.IMessageBus, Wolverine", throwOnError: true)!;
+
+        ArchitectureRules.MessageBusSurface.ShouldBe(
+            [messageBus.FullName!, .. messageBus.GetInterfaces().Select(type => type.FullName!)],
+            ignoreOrder: true);
+    }
 }

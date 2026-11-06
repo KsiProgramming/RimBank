@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
-using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Tests;
 

@@ -12,6 +12,17 @@ public static partial class ArchitectureRules
     private const string Wolverine = "Wolverine";
     private const string WolverineMarten = "Wolverine.Marten";
     private const string MessageBus = "Wolverine.IMessageBus";
+
+    /// <summary>
+    /// <see cref="MessageBus"/> and the interfaces it is made of: calling <c>bus.InvokeAsync&lt;T&gt;(…)</c> on an
+    /// <c>IMessageBus</c> compiles to a call on the interface that declares it (<c>ICommandBus</c>).
+    /// <c>The_message_bus_surface_is_what_IMessageBus_is_made_of</c> keeps this list equal to Wolverine's.
+    /// </summary>
+    public static IReadOnlySet<string> MessageBusSurface { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        MessageBus,
+        "Wolverine.ICommandBus",
+    };
     private const string Npgsql = "Npgsql";
     private const string ModelContextProtocol = "ModelContextProtocol";
 
@@ -67,7 +78,7 @@ public static partial class ArchitectureRules
             from target in code.Targets(type)
             where Namespaces.IsWithin(target.NamespaceName(), Wolverine)
                 && !Namespaces.IsWithin(target.NamespaceName(), WolverineMarten)
-                && target.FullName != MessageBus
+                && !MessageBusSurface.Contains(target.FullName)
             select new Violation(type.Display(), $"depends on {target.Display()}, which is not {MessageBus}"));
 
     public static ArchitectureRule PostgresqlDependencies { get; } = new(

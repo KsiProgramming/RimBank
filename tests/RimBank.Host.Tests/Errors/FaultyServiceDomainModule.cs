@@ -40,5 +40,9 @@ internal sealed class FaultyServiceDomainModule : IServiceDomainModule
         endpoints.MapGet("/faulty/boom", IResult () => throw new InvalidOperationException(Secret));
         endpoints.MapGet("/faulty/missing", () => Missing.ToHttpResult());
         endpoints.MapGet("/faulty/invalid", () => Invalid.ToHttpResult());
+        endpoints.MapPost("/faulty/samples", (Sample sample) => TypedResults.Ok(sample));
     }
+
+    /// <summary>A JSON body, so a request the framework cannot read can be sent.</summary>
+    public sealed record Sample(int Size);
 }

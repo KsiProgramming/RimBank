@@ -7,13 +7,15 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using RimBank.Host.Security;
 
-namespace RimBank.Host.Security.Tests;
+namespace RimBank.Host.Testing;
 
 /// <summary>
 /// Access tokens for in-process host tests, signed with an in-memory RSA key that the host is told to trust. The host
-/// never fetches Keycloak's metadata in these tests (ADR 0019): <see cref="UseTestTokens"/> gives the JWT bearer a fixed
-/// configuration.
+/// never fetches Keycloak's metadata in these tests (ADR 0019): <see cref="UseTestTokens"/> (or
+/// <see cref="TrustTestTokens"/> with <see cref="Issuer"/> as <c>Authentication:Authority</c>) gives the JWT bearer a
+/// fixed configuration.
 /// </summary>
 public static class TestTokens
 {
@@ -32,7 +34,18 @@ public static class TestTokens
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Configuration[AuthenticationComposition.AuthorityKey] = Issuer;
-        builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+        builder.Services.TrustTestTokens();
+        return builder;
+    }
+
+    /// <summary>
+    /// Makes the JWT bearer trust tokens from <see cref="Issue"/>, for a host built elsewhere (for example
+    /// <c>WebApplicationFactory&lt;Program&gt;</c>). Also set <c>Authentication:Authority</c> to <see cref="Issuer"/>.
+    /// </summary>
+    public static IServiceCollection TrustTestTokens(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
         {
             var configuration = new OpenIdConnectConfiguration { Issuer = Issuer };
             configuration.SigningKeys.Add(_trusted);
@@ -41,7 +54,7 @@ public static class TestTokens
             options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);
             options.TokenValidationParameters.ValidIssuer = Issuer;
         });
-        return builder;
+        return services;
     }
 
     /// <summary>A token the host accepts, unless one of the arguments says otherwise.</summary>

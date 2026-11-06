@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Party\RimBank.Party.PartyReferenceDataDirectory.Api\RimBank.Party.PartyReferenceDataDirectory.Api.csproj" />
     <ProjectReference Include="..\Party\RimBank.Party.PartyReferenceDataDirectory.Postgresql\RimBank.Party.PartyReferenceDataDirectory.Postgresql.csproj" />
     <ProjectReference Include="..\RimBank.Mcp\RimBank.Mcp.csproj" />
     <ProjectReference Include="..\RimBank.Postgresql\RimBank.Postgresql.csproj" />

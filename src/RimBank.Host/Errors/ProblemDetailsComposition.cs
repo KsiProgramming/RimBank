@@ -22,10 +22,11 @@ public static class ProblemDetailsComposition
     }
 
     /// <summary>
-    /// Adds the exception handler and status-code pages to the pipeline, before any endpoint. A bodiless 404 (no
-    /// endpoint matched) becomes <c>shared.not-found</c>, the bodiless 401 and 403 of authentication become
-    /// <c>shared.unauthenticated</c> and <c>shared.forbidden</c> (ADR 0019); any other bodiless 4xx/5xx gets a Problem
-    /// Details body with the framework's default type.
+    /// Adds the exception handler and status-code pages to the pipeline, before any endpoint. A bodiless 400 (the
+    /// framework could not bind the request) becomes <c>shared.request-malformed</c>, a bodiless 404 (no endpoint
+    /// matched) <c>shared.not-found</c>, and the bodiless 401 and 403 of authentication <c>shared.unauthenticated</c>
+    /// and <c>shared.forbidden</c> (ADR 0019); any other bodiless 4xx/5xx gets a Problem Details body with the
+    /// framework's default type.
     /// </summary>
     /// <param name="app">The application.</param>
     /// <returns>The same application.</returns>
@@ -42,6 +43,7 @@ public static class ProblemDetailsComposition
         var httpContext = context.HttpContext;
         var problem = httpContext.Response.StatusCode switch
         {
+            StatusCodes.Status400BadRequest => ErrorProblemDetails.Create(SharedProblems.RequestMalformed),
             StatusCodes.Status401Unauthorized => ErrorProblemDetails.Create(SharedProblems.Unauthenticated),
             StatusCodes.Status403Forbidden => ErrorProblemDetails.Create(SharedProblems.Forbidden),
             StatusCodes.Status404NotFound => ErrorProblemDetails.Create(SharedProblems.NotFound),

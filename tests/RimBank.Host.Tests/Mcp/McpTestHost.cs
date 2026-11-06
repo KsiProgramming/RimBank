@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using ModelContextProtocol.Client;
 using RimBank.Host.Modules;
-using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Mcp.Tests;
 

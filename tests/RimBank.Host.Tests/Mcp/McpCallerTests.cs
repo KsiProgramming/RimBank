@@ -1,5 +1,4 @@
 using ModelContextProtocol.Protocol;
-using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Mcp.Tests;
 

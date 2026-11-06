@@ -27,6 +27,7 @@ public sealed class SolutionRulesTests
                 "RimBank.Core",
                 "RimBank.Core.Tests",
                 "RimBank.Host",
+                "RimBank.Host.Testing",
                 "RimBank.Host.Tests",
                 "RimBank.Http",
                 "RimBank.Http.Tests",

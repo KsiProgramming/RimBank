@@ -85,6 +85,8 @@ public sealed class ErrorProblemDetailsTests
         ErrorProblemDetails.Create(SharedProblems.NotFound).Type.ShouldBe("urn:rimbank:problem:shared:not-found");
         ErrorProblemDetails.Create(SharedProblems.Unexpected).Type.ShouldBe("urn:rimbank:problem:shared:unexpected");
         ErrorProblemDetails.Create(SharedProblems.Unexpected).Status.ShouldBe(500);
+        ErrorProblemDetails.Create(SharedProblems.RequestMalformed).Type.ShouldBe("urn:rimbank:problem:shared:request-malformed");
+        ErrorProblemDetails.Create(SharedProblems.RequestMalformed).Status.ShouldBe(400);
     }
 
     [Fact]

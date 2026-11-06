@@ -37,7 +37,7 @@ public sealed class AnonymousEndpointTests
             .Where(endpoint => endpoint.RoutePattern.RawText is { } route && (route.StartsWith("/secured/", StringComparison.Ordinal) || route.StartsWith("/faulty/", StringComparison.Ordinal)))
             .ToList();
 
-        moduleEndpoints.Count.ShouldBe(6);
+        moduleEndpoints.Count.ShouldBe(7);
         moduleEndpoints.ShouldAllBe(endpoint => endpoint.Metadata.GetMetadata<IAllowAnonymous>() == null);
     }
 

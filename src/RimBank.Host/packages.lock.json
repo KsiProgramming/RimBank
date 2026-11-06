@@ -582,12 +582,28 @@
           "RimBank.SharedKernel": "[0.1.0-alpha, )"
         }
       },
+      "rimbank.http": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Problems": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
       "rimbank.mcp": {
         "type": "Project",
         "dependencies": {
           "ModelContextProtocol.AspNetCore": "[2.3.1, )",
           "RimBank.Problems": "[0.1.0-alpha, )",
           "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.party.partyreferencedatadirectory.api": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Core": "[0.1.0-alpha, )",
+          "RimBank.Http": "[0.1.0-alpha, )",
+          "RimBank.Problems": "[0.1.0-alpha, )",
+          "WolverineFx": "[6.62.0, )"
         }
       },
       "rimbank.party.partyreferencedatadirectory.postgresql": {

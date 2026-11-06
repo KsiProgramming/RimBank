@@ -28,6 +28,7 @@
     <Project Path="tests/RimBank.Conformance.Testing/RimBank.Conformance.Testing.csproj" />
     <Project Path="tests/RimBank.Conformance.Tests/RimBank.Conformance.Tests.csproj" />
     <Project Path="tests/RimBank.Core.Tests/RimBank.Core.Tests.csproj" />
+    <Project Path="tests/RimBank.Host.Testing/RimBank.Host.Testing.csproj" />
     <Project Path="tests/RimBank.Host.Tests/RimBank.Host.Tests.csproj" />
     <Project Path="tests/RimBank.Http.Tests/RimBank.Http.Tests.csproj" />
     <Project Path="tests/RimBank.Mcp.Tests/RimBank.Mcp.Tests.csproj" />

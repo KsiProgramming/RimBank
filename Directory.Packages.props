@@ -95,6 +95,7 @@
 
   <!-- Testing (specs/tech-stack.md §9, ADR 0007) -->
   <ItemGroup Label="Testing">
+    <PackageVersion Include="Alba" Version="8.5.3" />
     <PackageVersion Include="FsCheck" Version="$(FsCheckVersion)" />
     <PackageVersion Include="FsCheck.Xunit.v3" Version="$(FsCheckVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
