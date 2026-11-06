@@ -26,7 +26,7 @@
 ## 2. Topology: modular monolith first
 
 - One deployable host (`RimBank.Host`) composes all service domains.
-- Each service domain is a fully isolated bounded context with its own PostgreSQL schema **and database role** (it has no grants on other schemas), its own Marten store (event streams, read models and async daemon), no shared tables or views, and no project references to another context's core.
+- Each service domain is a fully isolated bounded context with its own PostgreSQL schema **and database role** (it has no grants on other schemas), its own Marten store (event streams, read models and async daemon), no shared tables or views, and no project references to another context's core. Every context's `.Postgresql` registers its store the same way, through `AddServiceDomainStore<TStore>` in `RimBank.Postgresql`: schema `<service_domain>`, login role `rimbank_<service_domain>`, connection string `ConnectionStrings:<ServiceDomain>` ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md)).
 - Each context registers itself in the host through a single module entry point, so the host composes contexts without knowing their internals: one `IServiceDomainModule` class per context under `RimBank.Host/Modules/<BusinessDomain>/`, listed explicitly in `ServiceDomainModules.All`, which only calls the context's adapter extension methods ([ADR 0014](../docs/adr/0014-host-composition-and-module-entry-point.md)).
 - Contexts communicate **asynchronously through integration events** (Wolverine durable local queues with an outbox). Synchronous cross-context calls are allowed only through an explicit port and need an ADR.
 - Extracting a context into its own service changes only adapters and host wiring, **never the core**.
@@ -82,6 +82,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016)
 │  └─ Party/
 │     ├─ RimBank.Party.PartyReferenceDataDirectory/                    # core
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
@@ -95,6 +96,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.Problems.Tests/         # the Error → Problem Details mapping (ADR 0015)
+   ├─ RimBank.Postgresql.Tests/       # store conventions with two test-only fake contexts, Testcontainers (ADR 0016)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
@@ -144,8 +146,9 @@ Commands and queries sit next to each other inside the business flow or Behavior
 | `.Subscriptions` | Its own core, SharedKernel, other contexts' `.PublishedLanguage`, Wolverine | Other contexts' cores or adapters, its own `.Api`, `.Mcp`, `.Postgresql` |
 | `.Api` | Its own core, SharedKernel, `RimBank.Problems`, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
 | `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
-| `.Postgresql` | Its own core, SharedKernel, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
+| `.Postgresql` | Its own core, SharedKernel, `RimBank.Postgresql`, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
 | `RimBank.Problems` | SharedKernel, ASP.NET Core | Cores, adapters, other composition projects ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)) |
+| `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md)) |
 | `RimBank.Host` | All adapters and cores (composition only) | Business logic |
 
 **Core and Wolverine:** handlers in the core are plain classes with `Handle` methods. They **return** events and messages (Wolverine's cascading convention) instead of taking framework services, so the core has no package reference to Wolverine or Marten. Persistence goes through ports in the core. The `.Postgresql` adapter implements those ports with Marten: the write port over event streams, and the read port over projected documents.
@@ -221,7 +224,8 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 | A query that needs another context's data | A local reference read model fed by that context's integration events (see §8.4); never a direct read of its tables or views |
 | A query that combines several contexts (for example a customer overview) | A dedicated query-only context fed by integration events (for example BIAN *Customer Position*), or composition by the channel; never a cross-schema join |
 
-- Async views expose their staleness (last processed event sequence) so that callers and tests can wait for or detect lag.
+- Async views expose their staleness (last processed event sequence) so that callers and tests can wait for or detect lag (`GetViewProgressAsync`, [ADR 0016](../docs/adr/0016-per-context-marten-stores.md)).
+- A view is wired by lifecycle with `AddInlineView` / `AddAsyncView`, which run the core's pure projection through a generic Marten adapter that holds no logic, and is rebuilt with `RebuildViewAsync` ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md)).
 - Every projection is **rebuildable** from the event store. A projection change that alters its shape ships with a rebuild step, documented in the PR.
 - Read models live in the context's own PostgreSQL schema, like its events, and each context runs its own async daemon, so a stuck projection in one context never blocks another.
 
