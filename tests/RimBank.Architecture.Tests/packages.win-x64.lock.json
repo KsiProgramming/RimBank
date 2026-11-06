@@ -1219,6 +1219,11 @@
           "Microsoft.Extensions.Primitives": "5.0.1"
         }
       },
+      "SharpYaml": {
+        "type": "Transitive",
+        "resolved": "2.1.5",
+        "contentHash": "1pNSpfXxNAgCQ9sacKKpEWO2DxTefoLEjw0v1nWMvyJScUWacoHvjXr4LfcUkhm0qYgNYripFFiUeEzW4tdXIQ=="
+      },
       "SharpZipLib": {
         "type": "Transitive",
         "resolved": "1.4.2",
@@ -1486,11 +1491,6 @@
           "xunit.v3.runner.common": "[4.0.2]"
         }
       },
-      "YamlDotNet": {
-        "type": "Transitive",
-        "resolved": "18.1.0",
-        "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
-      },
       "rimbank.apphost": {
         "type": "Project",
         "dependencies": {
@@ -1514,6 +1514,23 @@
         "type": "Project",
         "dependencies": {
           "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.conformance.testing": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.OpenApi": "[2.13.0, )",
+          "Microsoft.OpenApi.YamlReader": "[2.13.0, )",
+          "Shouldly": "[4.3.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
+      "rimbank.conformance.tests": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Conformance.Testing": "[0.1.0-alpha, )",
+          "Shouldly": "[4.3.0, )",
+          "xunit.v3": "[4.0.2, )"
         }
       },
       "rimbank.host": {
@@ -1878,6 +1895,22 @@
           "Microsoft.Extensions.ServiceDiscovery.Abstractions": "10.11.0"
         }
       },
+      "Microsoft.OpenApi": {
+        "type": "CentralTransitive",
+        "requested": "[2.13.0, )",
+        "resolved": "2.13.0",
+        "contentHash": "wavlgBYnn7uU/ZGhFHNl0UlDOlwz+6KRduKkqdCCbfxxANaQ1rmBpETVGdwXanAM6twQOxsvI3CBEGF4OScbeQ=="
+      },
+      "Microsoft.OpenApi.YamlReader": {
+        "type": "CentralTransitive",
+        "requested": "[2.13.0, )",
+        "resolved": "2.13.0",
+        "contentHash": "Xta+jfHqQHpGUeDi/O8nHnMfMc0drg9iH3Kf/JJCPR9uz5psuBKuLWP68npNVbBCH8mrIl/k2PBiyylgto08+w==",
+        "dependencies": {
+          "Microsoft.OpenApi": "2.13.0",
+          "SharpYaml": "2.1.5"
+        }
+      },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
         "type": "CentralTransitive",
         "requested": "[1.20.1, )",
@@ -1986,6 +2019,12 @@
         "dependencies": {
           "xunit.v3.common": "[4.0.2]"
         }
+      },
+      "YamlDotNet": {
+        "type": "CentralTransitive",
+        "requested": "[18.1.0, )",
+        "resolved": "18.1.0",
+        "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
       }
     }
   }

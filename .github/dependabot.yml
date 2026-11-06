@@ -13,6 +13,10 @@ updates:
     groups:
       nuget-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Microsoft.OpenApi stays on 2.x while Microsoft.AspNetCore.OpenApi requires it (ADR 0020).
+      - dependency-name: "Microsoft.OpenApi*"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /

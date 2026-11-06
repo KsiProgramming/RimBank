@@ -23,6 +23,7 @@
     <OpenTelemetryVersion>1.20.1</OpenTelemetryVersion>
     <WolverineVersion>6.62.0</WolverineVersion>
     <MicrosoftExtensionsVersion>10.11.0</MicrosoftExtensionsVersion>
+    <MicrosoftOpenApiVersion>2.13.0</MicrosoftOpenApiVersion>
     <!-- Keep equal to the Aspire.AppHost.Sdk version in src/RimBank.AppHost/RimBank.AppHost.csproj. -->
     <AspireVersion>13.6.4</AspireVersion>
     <!--
@@ -93,6 +94,17 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
     <PackageVersion Include="xunit.v3" Version="$(XunitV3Version)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitV3Version)" />
+  </ItemGroup>
+
+  <!--
+    BIAN conformance harness: reads the ext-DDD OpenAPI and AsyncAPI specifications (specs/tech-stack.md §9, ADR 0020).
+    Microsoft.OpenApi stays on the 2.x line, which Microsoft.AspNetCore.OpenApi for .NET 10 requires ([2.12.2, 3.0.0)),
+    so the host can later generate its own OpenAPI document with the same object model. Dependabot ignores its majors.
+  -->
+  <ItemGroup Label="Conformance">
+    <PackageVersion Include="Microsoft.OpenApi" Version="$(MicrosoftOpenApiVersion)" />
+    <PackageVersion Include="Microsoft.OpenApi.YamlReader" Version="$(MicrosoftOpenApiVersion)" />
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 
   <!-- Architecture tests (CONTRIBUTING "Architecture rules", ADR 0012) -->
