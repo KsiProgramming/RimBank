@@ -26,6 +26,8 @@ public sealed class SolutionRulesTests
                 "RimBank.Host.Tests",
                 "RimBank.Problems",
                 "RimBank.Problems.Tests",
+                "RimBank.Postgresql",
+                "RimBank.Postgresql.Tests",
                 "RimBank.ServiceDefaults",
                 "RimBank.SharedKernel",
                 "RimBank.SharedKernel.Testing",
@@ -39,6 +41,6 @@ public sealed class SolutionRulesTests
     {
         CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.SharedKernel.Money");
         CodeBases.Solution.TestAssemblies.Select(assembly => assembly.Assembly)
-            .ShouldBe(["RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Host.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
+            .ShouldBe(["RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Host.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
     }
 }

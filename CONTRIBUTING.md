@@ -92,6 +92,10 @@ Amounts are always `Money` over a `decimal`, never `double` or `float` and never
 
 An aggregate state is a `sealed record` implementing `IDecider<TSelf, TCommand, TEvent>`: `Initial` and `Evolve` in `<Aggregate>.cs`, `Decide` in a `partial` in `Decisions.cs`. A view is projected by a `sealed class …Projection` implementing `IProjection<TView, TEvent>` ([ADR 0010](docs/adr/0010-decider-and-projection-contracts.md)). Keep both pure: time and new IDs come in the command, set by the handler. Build decisions with `Decision.Accept<TEvent>(…)` / `Decision.Nothing<TEvent>()` or return an `Error`. Test them with `DeciderSpecification` (Given / When / Then) and `ProjectionSpecification` (Given / Then view), and run `DeciderLaws`, including `ProjectionAgreesWithState` for each view. All three come from `tests/RimBank.SharedKernel.Testing`. An event or view holding a collection needs value equality.
 
+### Event store and views
+
+A context's `.Postgresql` adapter registers its own Marten store with `RimBank.Postgresql` ([ADR 0016](docs/adr/0016-per-context-marten-stores.md)). Declare a marker `public interface I<ServiceDomain>Store : IDocumentStore;` and call `builder.AddServiceDomainStore<I<ServiceDomain>Store>("<ServiceDomain>", options => …)`. That gives the context schema `<service_domain>`, role `rimbank_<service_domain>`, connection string `ConnectionStrings:<ServiceDomain>`, its own async daemon and a `ready` health check. Inside the options, map every event to a stable name (`options.Events.MapEventType<TEvent>("snake_case_name")`) and wire each view by lifecycle: `options.AddInlineView<TView, TProjection, TEvent>()` for a single-stream view read right after a command, and `AddAsyncView` for everything else. A view has a `Guid Id` equal to its stream's id. `store.GetViewProgressAsync(name)` reports an async view's lag, and `store.RebuildViewAsync(name, timeout)` rebuilds a view. In Development the host creates the role and schema from the context's connection string (`RimBank:Postgresql:ProvisionRoles`). The integration tests need Docker.
+
 ### Architecture rules
 
 `tests/RimBank.Architecture.Tests` checks the constitution's structural rules with ArchUnitNET. Each rule holds for the solution and is proven to bite against a bad context in `tests/RimBank.Architecture.Fixtures` ([ADR 0012](docs/adr/0012-cqrs-role-markers.md)). Run only these tests with:
@@ -116,6 +120,8 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `host-is-the-composition-root` | Nothing outside `RimBank.Host` uses it; a context never implements `IServiceDomainModule` itself | tech-stack §2, §4, ADR 0014 |
 | `problems-only-in-adapters-and-host` | Only `.Api`, `.Mcp` and `RimBank.Host` use `RimBank.Problems` | tech-stack §4, ADR 0015 |
 | `problems-dependencies` | `RimBank.Problems` uses SharedKernel, ASP.NET Core and the BCL only | tech-stack §4, ADR 0015 |
+| `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` uses `RimBank.Postgresql` | tech-stack §4, ADR 0016 |
+| `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |
 | `query-handlers-stay-on-read-side` | A query handler never uses an `IWritePort`, an aggregate, an `ICommand` or a command handler | tech-stack §4, ADR 0012 |
 | `projections-implement-contract` | A `…Projection` is a sealed class implementing `IProjection`, and every `IProjection` is named `…Projection` | ADR 0010 |
