@@ -11,6 +11,7 @@ public static partial class ArchitectureRules
     private const string Marten = "Marten";
     private const string Wolverine = "Wolverine";
     private const string WolverineMarten = "Wolverine.Marten";
+    private const string MessageBus = "Wolverine.IMessageBus";
     private const string Npgsql = "Npgsql";
     private const string ModelContextProtocol = "ModelContextProtocol";
 
@@ -55,6 +56,19 @@ public static partial class ArchitectureRules
         "mcp-dependencies",
         "tech-stack §4 and §6: .Mcp references its own core, SharedKernel, the MCP C# SDK and Wolverine's IMessageBus, never .Api or .Postgresql",
         code => PartDependencies(code, ContextPart.Mcp, Banned(Marten, WolverineMarten, Npgsql), [ContextPart.Api, ContextPart.Postgresql]));
+
+    // Wolverine.Marten is left to api-dependencies and mcp-dependencies, so one mistake breaks one rule.
+    public static ArchitectureRule AdaptersDispatchThroughTheMessageBus { get; } = new(
+        "adapters-dispatch-through-the-message-bus",
+        "tech-stack §4 and §6, ADR 0017: .Api and .Mcp use Wolverine only through IMessageBus; the host and each context's .Postgresql configure Wolverine",
+        code =>
+            from type in code.Types
+            where ContextAddress.Parse(type.NamespaceName())?.Part is ContextPart.Api or ContextPart.Mcp
+            from target in code.Targets(type)
+            where Namespaces.IsWithin(target.NamespaceName(), Wolverine)
+                && !Namespaces.IsWithin(target.NamespaceName(), WolverineMarten)
+                && target.FullName != MessageBus
+            select new Violation(type.Display(), $"depends on {target.Display()}, which is not {MessageBus}"));
 
     public static ArchitectureRule PostgresqlDependencies { get; } = new(
         "postgresql-dependencies",

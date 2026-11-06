@@ -78,3 +78,22 @@ namespace RimBank.SampleBanking.PostgresqlUsesMcp.Postgresql
         public static Guid Save(RimBank.SampleBanking.PostgresqlUsesMcp.Mcp.PostgresqlUsesMcpToolInput input) => input?.Id ?? Guid.Empty;
     }
 }
+
+// adapters-dispatch-through-the-message-bus: an .Api dispatches through IMessageBus; configuring Wolverine is the
+// host's and the context's .Postgresql's job.
+namespace RimBank.SampleBanking.ApiConfiguresWolverine.Api
+{
+    public static class ApiConfiguresWolverineEndpoints
+    {
+        public static void Configure(Wolverine.WolverineOptions options) => _ = options;
+    }
+}
+
+// adapters-dispatch-through-the-message-bus: so does an .Mcp adapter.
+namespace RimBank.SampleBanking.McpConfiguresWolverine.Mcp
+{
+    public static class McpConfiguresWolverineTools
+    {
+        public static void Configure(Wolverine.WolverineOptions options) => _ = options;
+    }
+}
