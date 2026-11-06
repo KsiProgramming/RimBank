@@ -7,6 +7,7 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/Party/RimBank.Party.PartyReferenceDataDirectory.Api/RimBank.Party.PartyReferenceDataDirectory.Api.csproj" />
     <Project Path="src/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql/RimBank.Party.PartyReferenceDataDirectory.Postgresql.csproj" />
     <Project Path="src/RimBank.AppHost/RimBank.AppHost.csproj" />
     <Project Path="src/RimBank.Core/RimBank.Core.csproj" />
@@ -19,6 +20,7 @@
     <Project Path="src/RimBank.SharedKernel/RimBank.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Party/RimBank.Party.PartyReferenceDataDirectory.Api.Tests/RimBank.Party.PartyReferenceDataDirectory.Api.Tests.csproj" />
     <Project Path="tests/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests.csproj" />
     <Project Path="tests/RimBank.AppHost.Tests/RimBank.AppHost.Tests.csproj" />
     <Project Path="tests/RimBank.Architecture.Fixtures/RimBank.Architecture.Fixtures.csproj" />

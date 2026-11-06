@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Tests of the Party Reference Data Directory's HTTP adapter (roadmap 1.5): request and response mapping, the
+    endpoints over HTTP against a real PostgreSQL in Testcontainers, and BIAN conformance of the routes
+    (specs/tech-stack.md §9).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RimBank.Party.PartyReferenceDataDirectory.Api.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Party\RimBank.Party.PartyReferenceDataDirectory.Api\RimBank.Party.PartyReferenceDataDirectory.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Shouldly" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>
