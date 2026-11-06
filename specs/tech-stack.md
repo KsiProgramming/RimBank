@@ -28,7 +28,7 @@
 - One deployable host (`RimBank.Host`) composes all service domains.
 - Each service domain is a fully isolated bounded context with its own PostgreSQL schema **and database role** (it has no grants on other schemas), its own Marten store (event streams, read models and async daemon), no shared tables or views, and no project references to another context's core. Every context's `.Postgresql` registers its store the same way, through `AddServiceDomainStore<TStore>` in `RimBank.Postgresql`: schema `<service_domain>`, login role `rimbank_<service_domain>`, connection string `ConnectionStrings:<ServiceDomain>` ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md)).
 - Each context registers itself in the host through a single module entry point, so the host composes contexts without knowing their internals: one `IServiceDomainModule` class per context under `RimBank.Host/Modules/<BusinessDomain>/`, listed explicitly in `ServiceDomainModules.All`, which only calls the context's adapter extension methods ([ADR 0014](../docs/adr/0014-host-composition-and-module-entry-point.md)).
-- Contexts communicate **asynchronously through integration events** (Wolverine durable local queues with an outbox). Synchronous cross-context calls are allowed only through an explicit port and need an ADR.
+- Contexts communicate **asynchronously through integration events** (Wolverine durable local queues with an outbox). The host runs one Wolverine bus; each context's outbox and inbox tables live in its own schema, its handlers commit through its own store, and its messages go to its own durable local queue. Wolverine's own node bookkeeping lives in the host's `wolverine` schema, on which no context has grants ([ADR 0017](../docs/adr/0017-wolverine-wiring.md)). Synchronous cross-context calls are allowed only through an explicit port and need an ADR.
 - Extracting a context into its own service changes only adapters and host wiring, **never the core**.
 
 ## 3. Naming & solution layout
@@ -78,11 +78,11 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  └─ release14.0.0/              # BIAN v14 specs (ADR 0002)
 ├─ src/
 │  ├─ RimBank.SharedKernel/       # Money, Currency, Result, typed ids, decider abstractions (no infra)
-│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, auth, OTel
+│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, the Wolverine bus (Messaging/, ADR 0017), auth, OTel
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
-│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring (ADR 0017)
 │  └─ Party/
 │     ├─ RimBank.Party.PartyReferenceDataDirectory/                    # core
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
@@ -91,12 +91,12 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
-   ├─ RimBank.Host.Tests/             # host composition, module convention and health probes (in-process)
+   ├─ RimBank.Host.Tests/             # host composition, module convention, message bus and health probes (in-process)
    ├─ RimBank.AppHost.Tests/          # Aspire resource model and a real startup with Docker (ADR 0014)
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.Problems.Tests/         # the Error → Problem Details mapping (ADR 0015)
-   ├─ RimBank.Postgresql.Tests/       # store conventions with two test-only fake contexts, Testcontainers (ADR 0016)
+   ├─ RimBank.Postgresql.Tests/       # store and messaging conventions with two test-only fake contexts, Testcontainers (ADR 0016, ADR 0017)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
@@ -148,7 +148,7 @@ Commands and queries sit next to each other inside the business flow or Behavior
 | `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
 | `.Postgresql` | Its own core, SharedKernel, `RimBank.Postgresql`, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
 | `RimBank.Problems` | SharedKernel, ASP.NET Core | Cores, adapters, other composition projects ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)) |
-| `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md)) |
+| `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Wolverine (`Wolverine.Marten`, `Wolverine.Postgresql`), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters and by `RimBank.Host` for its own message store | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md), [ADR 0017](../docs/adr/0017-wolverine-wiring.md)) |
 | `RimBank.Host` | All adapters and cores (composition only) | Business logic |
 
 **Core and Wolverine:** handlers in the core are plain classes with `Handle` methods. They **return** events and messages (Wolverine's cascading convention) instead of taking framework services, so the core has no package reference to Wolverine or Marten. Persistence goes through ports in the core. The `.Postgresql` adapter implements those ports with Marten: the write port over event streams, and the read port over projected documents.
