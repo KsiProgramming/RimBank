@@ -1,0 +1,5 @@
+using RimBank.SharedKernel.Testing;
+
+namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+
+public sealed class PartyReferenceDataDirectoryEntryIdContractTests : TypedIdContractTests<PartyReferenceDataDirectoryEntryId>;
