@@ -57,6 +57,14 @@
   </ItemGroup>
 
   <!--
+    AI agent interface: the official Model Context Protocol C# SDK, Streamable HTTP at /mcp in RimBank.Host
+    (specs/tech-stack.md §1, §6, ADR 0021). It brings ModelContextProtocol and ModelContextProtocol.Core transitively.
+  -->
+  <ItemGroup Label="Mcp">
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.1" />
+  </ItemGroup>
+
+  <!--
     Persistence: one Marten store per context, with its own schema, role and async daemon (specs/tech-stack.md §1–§2,
     ADR 0016). Marten brings Npgsql, Weasel and JasperFx; one of them is pinned here only when NuGet audit needs it.
   -->
