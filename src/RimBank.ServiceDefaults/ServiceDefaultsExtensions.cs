@@ -8,12 +8,14 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Scalar.AspNetCore;
 
 namespace RimBank.ServiceDefaults;
 
 /// <summary>
 /// The service defaults every RimBank host applies: OpenTelemetry traces, metrics and logs, health checks, service
-/// discovery and HttpClient resilience (specs/tech-stack.md §1, ADR 0014).
+/// discovery, HttpClient resilience, and the OpenAPI document with its Scalar UI in Development (specs/tech-stack.md §1,
+/// ADR 0014).
 /// </summary>
 public static class ServiceDefaultsExtensions
 {
@@ -32,7 +34,16 @@ public static class ServiceDefaultsExtensions
     /// </summary>
     public const string MartenTelemetry = "Marten";
 
-    /// <summary>Adds OpenTelemetry, the default health checks, service discovery and HttpClient resilience.</summary>
+    /// <summary>The OpenAPI document of the host's HTTP endpoints, served in Development only.</summary>
+    public const string OpenApiDocumentPath = "/openapi/v1.json";
+
+    /// <summary>The Scalar UI over <see cref="OpenApiDocumentPath"/>, served in Development only.</summary>
+    public const string ApiReferencePath = "/scalar";
+
+    /// <summary>
+    /// Adds OpenTelemetry, the default health checks, service discovery, HttpClient resilience and the OpenAPI
+    /// document generator (its default document, <c>v1</c>).
+    /// </summary>
     /// <param name="builder">The host builder.</param>
     /// <returns>The same builder.</returns>
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder)
@@ -40,6 +51,7 @@ public static class ServiceDefaultsExtensions
     {
         builder.ConfigureOpenTelemetry();
         builder.AddDefaultHealthChecks();
+        builder.Services.AddOpenApi();
 
         builder.Services.AddServiceDiscovery();
         builder.Services.ConfigureHttpClientDefaults(http =>
@@ -102,7 +114,10 @@ public static class ServiceDefaultsExtensions
     /// <summary>
     /// Maps <see cref="HealthEndpointPath"/> and <see cref="AlivenessEndpointPath"/> in every environment, open to
     /// anonymous callers so orchestrators can probe them. The body is the status only (<c>Healthy</c>,
-    /// <c>Degraded</c> or <c>Unhealthy</c>), never check names, exceptions or versions (ADR 0014).
+    /// <c>Degraded</c> or <c>Unhealthy</c>), never check names, exceptions or versions (ADR 0014). In Development only,
+    /// it also maps the OpenAPI document (<see cref="OpenApiDocumentPath"/>) and the Scalar UI
+    /// (<see cref="ApiReferencePath"/>), open to anonymous callers so a developer can read them before signing in;
+    /// calling an operation from the UI still needs a token.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder.</param>
     /// <returns>The same endpoint route builder.</returns>
@@ -113,6 +128,12 @@ public static class ServiceDefaultsExtensions
         {
             Predicate = registration => registration.Tags.Contains(LiveTag),
         }).AllowAnonymous();
+
+        if (endpoints.ServiceProvider.GetRequiredService<IHostEnvironment>().IsDevelopment())
+        {
+            endpoints.MapOpenApi().AllowAnonymous();
+            endpoints.MapScalarApiReference().AllowAnonymous();
+        }
 
         return endpoints;
     }

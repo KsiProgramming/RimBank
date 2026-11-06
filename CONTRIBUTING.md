@@ -175,7 +175,7 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `http-dependencies` | `RimBank.Http` uses SharedKernel, `RimBank.Problems`, ASP.NET Core and the BCL only | tech-stack §4, ADR 0018 |
 | `shared-mcp-only-in-mcp-and-host` | Only `.Mcp` and `RimBank.Host` use `RimBank.Mcp` | tech-stack §4, ADR 0022 |
 | `shared-mcp-dependencies` | `RimBank.Mcp` uses SharedKernel, `RimBank.Problems`, ASP.NET Core, the MCP SDK and the BCL only | tech-stack §4, ADR 0022 |
-| `allow-anonymous-only-in-service-defaults` | Nothing outside `RimBank.ServiceDefaults` calls `AllowAnonymous()` or uses `[AllowAnonymous]`: only the health probes are anonymous | tech-stack §10, ADR 0019 |
+| `allow-anonymous-only-in-service-defaults` | Nothing outside `RimBank.ServiceDefaults` calls `AllowAnonymous()` or uses `[AllowAnonymous]`: only the health probes (and, in Development, the OpenAPI document and Scalar UI) are anonymous | tech-stack §10, ADR 0019 |
 | `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` and `RimBank.Host` (for its own message store) use `RimBank.Postgresql` | tech-stack §4, ADR 0016, ADR 0017 |
 | `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Wolverine, Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016, ADR 0017 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |

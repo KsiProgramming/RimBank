@@ -3,6 +3,7 @@ using RimBank.Host.Errors;
 using RimBank.Host.Mcp;
 using RimBank.Host.Messaging;
 using RimBank.Host.Modules;
+using RimBank.Host.OpenApi;
 using RimBank.Host.Security;
 using RimBank.ServiceDefaults;
 
@@ -32,6 +33,7 @@ public static class HostComposition
         // Command handlers take the time through TimeProvider (specs/tech-stack.md §7); a test host may supply its own.
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddRimBankProblemDetails();
+        builder.Services.AddRimBankOpenApi();
         builder.AddRimBankAuthentication();
         builder.AddRimBankMessaging();
         builder.AddServiceDomainModules(modules);

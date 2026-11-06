@@ -103,6 +103,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Http.Tests/             # the Idempotency-Key header and its Problem Details (ADR 0018)
    ├─ RimBank.Mcp.Tests/              # the Error → tool result mapping (ADR 0022)
    ├─ RimBank.Postgresql.Tests/       # store, messaging and idempotency conventions with two test-only fake contexts, Testcontainers (ADR 0016–0018)
+   ├─ RimBank.Host.Testing/           # shared helpers for in-memory host tests: test-signed access tokens (ADR 0019), used by Host.Tests and each .Api.Tests / .Mcp.Tests
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by every .Api.Tests: spec loaders, route and channel assertions (ADR 0020)
    ├─ RimBank.Conformance.Tests/      # the harness on the real Party YAML and a test-only fake context (ADR 0020)
@@ -276,7 +277,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 
 ## 10. Security & supply chain
 
-- Every endpoint requires authentication by default: the authorization fallback policy requires an authenticated caller, and only the health probes of `RimBank.ServiceDefaults` are anonymous, guarded by the architecture rule `allow-anonymous-only-in-service-defaults` ([ADR 0019](../docs/adr/0019-authentication-baseline.md)). Authorisation policies are defined per BIAN operation.
+- Every endpoint requires authentication by default: the authorization fallback policy requires an authenticated caller, and only the health probes of `RimBank.ServiceDefaults` are anonymous (and, in Development only, the OpenAPI document and Scalar UI it maps, roadmap 1.5), guarded by the architecture rule `allow-anonymous-only-in-service-defaults` ([ADR 0019](../docs/adr/0019-authentication-baseline.md)). Authorisation policies are defined per BIAN operation.
 - The caller is an `Actor` (SharedKernel: the token's `sub` and `azp`). The host relays its subject to the message bus as the Wolverine user name, which scopes idempotency keys and reaches Marten's last-modified-by and the trace. Cores and adapters never read the token.
 - PII is masked in logs, and sensitive fields are protected at rest.
 - Secrets come from user-secrets locally and from a vault in deployed environments. They are never in source.

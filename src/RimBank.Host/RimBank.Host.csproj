@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Party\RimBank.Party.PartyReferenceDataDirectory.Api\RimBank.Party.PartyReferenceDataDirectory.Api.csproj" />
     <ProjectReference Include="..\Party\RimBank.Party.PartyReferenceDataDirectory.Postgresql\RimBank.Party.PartyReferenceDataDirectory.Postgresql.csproj" />
+    <ProjectReference Include="..\RimBank.Http\RimBank.Http.csproj" />
     <ProjectReference Include="..\RimBank.Mcp\RimBank.Mcp.csproj" />
     <ProjectReference Include="..\RimBank.Postgresql\RimBank.Postgresql.csproj" />
     <ProjectReference Include="..\RimBank.Problems\RimBank.Problems.csproj" />

@@ -1076,6 +1076,7 @@
         "dependencies": {
           "Aspire.Keycloak.Authentication": "[13.6.4-preview.1.26523.11, )",
           "ModelContextProtocol.AspNetCore": "[2.3.1, )",
+          "RimBank.Http": "[0.1.0-alpha, )",
           "RimBank.Mcp": "[0.1.0-alpha, )",
           "RimBank.Party.PartyReferenceDataDirectory.Api": "[0.1.0-alpha, )",
           "RimBank.Party.PartyReferenceDataDirectory.Postgresql": "[0.1.0-alpha, )",
@@ -1141,13 +1142,15 @@
       "rimbank.servicedefaults": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.AspNetCore.OpenApi": "[10.0.14, )",
           "Microsoft.Extensions.Http.Resilience": "[10.11.0, )",
           "Microsoft.Extensions.ServiceDiscovery": "[10.11.0, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.20.1, )",
           "OpenTelemetry.Extensions.Hosting": "[1.20.1, )",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.20.1, )",
           "OpenTelemetry.Instrumentation.Http": "[1.20.1, )",
-          "OpenTelemetry.Instrumentation.Runtime": "[1.20.1, )"
+          "OpenTelemetry.Instrumentation.Runtime": "[1.20.1, )",
+          "Scalar.AspNetCore": "[2.18.7, )"
         }
       },
       "rimbank.sharedkernel": {
@@ -1178,6 +1181,15 @@
           "Microsoft.IO.RecyclableMemoryStream": "3.0.1",
           "Weasel.Postgresql": "9.49.0",
           "Weasel.Storage": "9.49.0"
+        }
+      },
+      "Microsoft.AspNetCore.OpenApi": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.14, )",
+        "resolved": "10.0.14",
+        "contentHash": "3M6yO4nv8fmvM/1X7DqQcMxw/ptNLBcUzZt19SBEyfZF32gqZuwoPNnYd1xlDnFvQOGOkZDncf7p9E24blcTkQ==",
+        "dependencies": {
+          "Microsoft.OpenApi": "[2.12.2, 3.0.0)"
         }
       },
       "Microsoft.Extensions.Diagnostics.HealthChecks": {
@@ -1256,6 +1268,12 @@
           "Microsoft.Extensions.ServiceDiscovery.Abstractions": "10.11.0"
         }
       },
+      "Microsoft.OpenApi": {
+        "type": "CentralTransitive",
+        "requested": "[2.13.0, )",
+        "resolved": "2.13.0",
+        "contentHash": "wavlgBYnn7uU/ZGhFHNl0UlDOlwz+6KRduKkqdCCbfxxANaQ1rmBpETVGdwXanAM6twQOxsvI3CBEGF4OScbeQ=="
+      },
       "ModelContextProtocol.AspNetCore": {
         "type": "CentralTransitive",
         "requested": "[2.3.1, )",
@@ -1312,6 +1330,12 @@
         "dependencies": {
           "OpenTelemetry.Api": "[1.20.1, 2.0.0)"
         }
+      },
+      "Scalar.AspNetCore": {
+        "type": "CentralTransitive",
+        "requested": "[2.18.7, )",
+        "resolved": "2.18.7",
+        "contentHash": "JrNu0Sm4TVeJ//ptvAS3yRbT0oobfR8qp0ecf3HIS9zX4V7uSABr+VYEyWT7uyXjhN2ZTrZ/cpwKv7zHjlK8Gg=="
       },
       "WolverineFx": {
         "type": "CentralTransitive",

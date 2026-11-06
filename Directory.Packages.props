@@ -57,6 +57,15 @@
   </ItemGroup>
 
   <!--
+    HTTP API description: the built-in OpenAPI document and the Scalar UI, mapped by RimBank.ServiceDefaults in
+    Development only (specs/tech-stack.md §1, roadmap 1.5).
+  -->
+  <ItemGroup Label="OpenApi">
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.18.7" />
+  </ItemGroup>
+
+  <!--
     AI agent interface: the official Model Context Protocol C# SDK, Streamable HTTP at /mcp in RimBank.Host
     (specs/tech-stack.md §1, §6, ADR 0021). It brings ModelContextProtocol and ModelContextProtocol.Core transitively.
   -->

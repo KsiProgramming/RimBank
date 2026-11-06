@@ -131,7 +131,7 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule AllowAnonymousOnlyInServiceDefaults { get; } = new(
         "allow-anonymous-only-in-service-defaults",
-        "tech-stack §10 and ADR 0019: every endpoint needs an authenticated caller (deny by default); only the health probes of RimBank.ServiceDefaults are open to anonymous callers, so no .Api, .Mcp or host code calls AllowAnonymous() or uses [AllowAnonymous]",
+        "tech-stack §10 and ADR 0019: every endpoint needs an authenticated caller (deny by default); only the health probes of RimBank.ServiceDefaults (and, in Development, its OpenAPI document and Scalar UI) are open to anonymous callers, so no .Api, .Mcp or host code calls AllowAnonymous() or uses [AllowAnonymous]",
         code =>
             from type in code.Types
             where !Namespaces.IsWithin(type.NamespaceName(), ServiceDefaultsRoot)
