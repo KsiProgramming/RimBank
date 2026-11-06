@@ -1556,6 +1556,7 @@
           "Aspire.Keycloak.Authentication": "[13.6.4-preview.1.26523.11, )",
           "ModelContextProtocol.AspNetCore": "[2.3.1, )",
           "RimBank.Mcp": "[0.1.0-alpha, )",
+          "RimBank.Party.PartyReferenceDataDirectory.Postgresql": "[0.1.0-alpha, )",
           "RimBank.Postgresql": "[0.1.0-alpha, )",
           "RimBank.Problems": "[0.1.0-alpha, )",
           "RimBank.ServiceDefaults": "[0.1.0-alpha, )",

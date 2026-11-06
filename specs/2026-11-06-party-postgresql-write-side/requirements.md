@@ -51,6 +51,9 @@ Drivers: mission principles 2 (hexagonal: Marten only in the adapter), 4 (event-
 | Port implementation | `sealed class MartenPartyDirectory(IDocumentSession)`, built by Wolverine's codegen (`AddWritePort`) | ADR 0017: the port uses the handler's own session, so events and the idempotency outcome commit together |
 | Duplicate stream | Not translated; Marten's `ExistingStreamIdCollisionException` surfaces as an infrastructure fault | The handler already loads first and returns `party.party-already-registered`. A collision of a fresh Guid v7 is a race, an exception per tech-stack §7 |
 | `TimeProvider` registration | `TimeProvider.System` in `RimBank.Host` | Composition-root concern (§4). Tests override it with `FixedTimeProvider` |
+| Idempotency JSON | `IdempotencyGate` stores, replays and fingerprints with `StoredJson.Options` (typed-id converter, enum names) | Found while implementing: with default options a replayed `RegisterPartyAcknowledged` lost its typed ids (private constructor, get-only `Value`). The bus replay test pins it |
+| Codegen references | `AddServiceDomainStore` and `AddWritePort` add the store marker's and the port implementation's assemblies to Wolverine's code generation | Found while implementing: the generated handler names types from the context's own `.Postgresql` assembly, which the fakes had hidden by sharing one assembly with their tests. Recorded in ADR 0017 |
+| Host tests without a database | Host tests about the bus, telemetry and health build the host with no context (`HostWithoutContexts`) instead of `WebApplicationFactory<Program>` | `Program` now runs the Party context, which needs its database. The full `Program` is proven against real PostgreSQL by `AppHostStartupTests` |
 | Work order | Test first, three groups: adapter → bus round trip → host, AppHost and docs | Chosen in the interview |
 
 ## ADRs to write

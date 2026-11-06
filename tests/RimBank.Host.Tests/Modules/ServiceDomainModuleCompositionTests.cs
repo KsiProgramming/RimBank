@@ -69,9 +69,9 @@ public sealed class ServiceDomainModuleCompositionTests
     }
 
     [Fact]
-    public void The_host_runs_no_service_domain_until_stage_1()
+    public void The_host_runs_the_party_reference_data_directory()
     {
-        ServiceDomainModules.All.ShouldBeEmpty();
+        ServiceDomainModules.All.Select(module => module.ServiceDomain).ShouldBe(["PartyReferenceDataDirectory"]);
     }
 
     private static WebApplicationBuilder NewBuilder()
