@@ -32,8 +32,10 @@ public static class ServiceDomainStoreRegistration
     /// <c>public interface IPartyReferenceDataDirectoryStore : IDocumentStore;</c>.
     /// </typeparam>
     /// <typeparam name="TCore">
-    /// Any type in the root namespace of the context's core, for example its Control Record. Its assembly is searched
-    /// for handlers, and its namespace (with child namespaces, so the context's own adapters too) is bound to the store.
+    /// Any type in the root namespace of the context's core, for example its Control Record. Its assembly
+    /// (<c>RimBank.Core</c>, shared by every context, ADR 0023) is searched for handlers, and its namespace (with child
+    /// namespaces, so the context's own adapters too) is bound to the store: the namespace, not the assembly, tells
+    /// contexts apart.
     /// </typeparam>
     /// <param name="builder">The host builder.</param>
     /// <param name="serviceDomain">The BIAN service domain name in PascalCase.</param>

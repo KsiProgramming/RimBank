@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The core of every service domain: domain and application logic only, one folder per context
+    (<BusinessDomain>/<ServiceDomain>/ = namespace RimBank.<BusinessDomain>.<ServiceDomain>, ADR 0023).
+    It references SharedKernel and, per context, that context's own .PublishedLanguage; never a framework or an
+    adapter (specs/tech-stack.md §4). Contexts are kept apart inside it by the architecture tests.
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

@@ -14,7 +14,7 @@ The code is meant to read like the business it serves. Every BIAN service domain
 
 | BIAN concept | DDD / code concept | Example |
 |---|---|---|
-| Service domain | Bounded context (one core project) | `RimBank.Party.PartyReferenceDataDirectory` |
+| Service domain | Bounded context (a folder and namespace of the one `RimBank.Core` project, plus its own adapters) | `RimBank.Party.PartyReferenceDataDirectory` |
 | Control Record | Aggregate root (event-sourced) | `PartyReferenceDataDirectoryEntry` |
 | Behavior Qualifier | Entity inside the aggregate (or its own aggregate, by ADR) | `Demographics`, `Reference` |
 | Operation (Register, Initiate, Update, Control, Execute, …) | Command with a pure decision, appending events | `RegisterParty` |
@@ -33,7 +33,7 @@ Namespaces follow `RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]` (adapte
 ├─ specs/                     # the constitution: mission, tech stack, roadmap, phase plans
 ├─ docs/adr/                  # architecture decision records
 ├─ doc-0/release14.0.0/       # BIAN v14 specifications (read-only input)
-├─ src/                       # production code
+├─ src/                       # production code: RimBank.Core (every context's domain and application logic) and each context's adapters
 └─ tests/                     # test projects
 ```
 

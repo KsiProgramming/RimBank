@@ -21,6 +21,10 @@
     <ItemGroup>
       <_RimBankSourceFile Include="@(Compile->'%(FullPath)')"
                           Condition="!$([System.String]::Copy('%(FullPath)').StartsWith('$(_RimBankIntermediateDir)'))" />
+    </ItemGroup>
+
+    <!-- Skipped when a project has no source file of its own yet (RimBank.Core before its first context, ADR 0023). -->
+    <ItemGroup Condition="'@(_RimBankSourceFile)' != ''">
       <_RimBankSuppressingFile Include="@(_RimBankSourceFile)"
                                Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($([System.IO.File]::ReadAllText('%(Identity)')), '$(_RimBankSuppressionPattern)'))" />
     </ItemGroup>

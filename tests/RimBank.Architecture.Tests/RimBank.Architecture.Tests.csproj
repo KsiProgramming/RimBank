@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\RimBank.Core\RimBank.Core.csproj" />
     <ProjectReference Include="..\..\src\RimBank.Host\RimBank.Host.csproj" />
     <ProjectReference Include="..\..\src\RimBank.Http\RimBank.Http.csproj" />
     <ProjectReference Include="..\..\src\RimBank.Mcp\RimBank.Mcp.csproj" />
@@ -31,6 +32,7 @@
     <ProjectReference Include="..\RimBank.Architecture.Fixtures\RimBank.Architecture.Fixtures.csproj" />
     <ProjectReference Include="..\RimBank.Conformance.Testing\RimBank.Conformance.Testing.csproj" />
     <ProjectReference Include="..\RimBank.Conformance.Tests\RimBank.Conformance.Tests.csproj" />
+    <ProjectReference Include="..\RimBank.Core.Tests\RimBank.Core.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Host.Tests\RimBank.Host.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Http.Tests\RimBank.Http.Tests.csproj" />
     <ProjectReference Include="..\RimBank.Mcp.Tests\RimBank.Mcp.Tests.csproj" />

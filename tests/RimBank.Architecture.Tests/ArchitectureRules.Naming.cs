@@ -2,9 +2,12 @@ using ArchUnitNET.Domain;
 
 namespace RimBank.Architecture.Tests;
 
-// The naming rules (tech-stack §3, ADR 0011) and the value rules (ADR 0008, ADR 0009).
+// The naming rules (tech-stack §3, ADR 0011, ADR 0023) and the value rules (ADR 0008, ADR 0009).
 public static partial class ArchitectureRules
 {
+    /// <summary>The one project that holds every context's core (ADR 0023). Its root namespace is <c>RimBank</c>.</summary>
+    public const string CoreProject = "RimBank.Core";
+
     /// <summary>Technical folder names a business-first codebase never uses (mission principle 1, tech-stack §3.4).</summary>
     public static IReadOnlyList<string> ForbiddenFolderNames { get; } =
         ["Services", "Repositories", "Helpers", "Managers", "Utils", "Dtos", "Commands", "Queries"];
@@ -18,10 +21,16 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule AssemblyNames { get; } = new(
         "assembly-names",
-        "tech-stack §3.1 and ADR 0011: a project is named after its root namespace, with an allowed adapter suffix",
+        "tech-stack §3.1, ADR 0011 and ADR 0023: a project is a composition project, RimBank.Core holding only catalogued core namespaces, or a context adapter named after its root namespace with an allowed suffix",
         code => code.Types
             .GroupBy(type => type.Assembly.Name.Split(',')[0], StringComparer.Ordinal)
             .SelectMany(assembly => AssemblyNameProblems(assembly.Key, assembly.Select(type => type.NamespaceName()), code.Catalogue)),
+        SolutionOnly: true);
+
+    public static ArchitectureRule CoresLiveInRimBankCore { get; } = new(
+        "cores-live-in-rimbank-core",
+        "tech-stack §3.1 and ADR 0023: every context's core lives in the one RimBank.Core project",
+        code => CoreTypeProblems(code.Types.Select(type => (type.Display(), type.NamespaceName(), type.Assembly.Name.Split(',')[0])), code.Catalogue),
         SolutionOnly: true);
 
     public static ArchitectureRule BusinessFolderNames { get; } = new(
@@ -60,15 +69,25 @@ public static partial class ArchitectureRules
     /// <summary>The assembly name rule as a pure function, so its negative cases can be tested without an assembly.</summary>
     public static IEnumerable<Violation> AssemblyNameProblems(string assemblyName, IEnumerable<string> namespaces, ServiceDomainCatalogue catalogue)
     {
+        if (assemblyName == CoreProject)
+        {
+            foreach (var namespaceName in namespaces.Distinct().Where(namespaceName => !IsCataloguedCore(namespaceName, catalogue)))
+            {
+                yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', which is not the core of a catalogued RimBank.<BusinessDomain>.<ServiceDomain>");
+            }
+
+            yield break;
+        }
+
         var segments = assemblyName.Split('.');
         var named = ContextAddress.CompositionProjects.Contains(assemblyName)
-            || segments.Length is 3 or 4
+            || segments.Length == 4
                 && segments[0] == "RimBank"
                 && catalogue.Contains(segments[1], segments[2])
-                && (segments.Length == 3 || ContextAddress.AdapterSuffixes.ContainsKey(segments[3]));
+                && ContextAddress.AdapterSuffixes.ContainsKey(segments[3]);
         if (!named)
         {
-            yield return new Violation(assemblyName, "is not a composition project or RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>] with a catalogued service domain and an allowed adapter suffix");
+            yield return new Violation(assemblyName, $"is not a composition project, {CoreProject}, or RimBank.<BusinessDomain>.<ServiceDomain>.<Adapter> with a catalogued service domain and an allowed adapter suffix");
         }
 
         foreach (var namespaceName in namespaces.Distinct().Where(namespaceName => !Namespaces.IsWithin(namespaceName, assemblyName)))
@@ -77,11 +96,23 @@ public static partial class ArchitectureRules
         }
     }
 
+    /// <summary>
+    /// The core location rule as a pure function over (type, namespace, assembly): a type in the core of a catalogued
+    /// context must be in <see cref="CoreProject"/>. An uncatalogued namespace is left to <c>namespace-rule</c>.
+    /// </summary>
+    public static IEnumerable<Violation> CoreTypeProblems(IEnumerable<(string TypeName, string NamespaceName, string AssemblyName)> types, ServiceDomainCatalogue catalogue) =>
+        types
+            .Where(type => type.AssemblyName != CoreProject && IsCataloguedCore(type.NamespaceName, catalogue))
+            .Select(type => new Violation(type.TypeName, $"is in the core of {ContextAddress.Parse(type.NamespaceName)!.Context} but lives in {type.AssemblyName}, not {CoreProject}"));
+
     /// <summary>The test namespace rule as a pure function over (type, namespace) pairs.</summary>
     public static IEnumerable<Violation> TestNamespaceProblems(IEnumerable<(string TypeName, string NamespaceName)> types) =>
         types
             .Where(type => !type.NamespaceName.EndsWith(".Tests", StringComparison.Ordinal))
             .Select(type => new Violation(type.TypeName, $"namespace '{type.NamespaceName}' does not end with .Tests"));
+
+    private static bool IsCataloguedCore(string namespaceName, ServiceDomainCatalogue catalogue) =>
+        ContextAddress.Parse(namespaceName) is { Part: ContextPart.Core } address && catalogue.Contains(address.BusinessDomain, address.ServiceDomain);
 
     // ArchUnitNET exposes neither "readonly" nor "record" on a struct, so the rule reads what the compiler emits:
     // [IsReadOnly] on a readonly struct, and a [CompilerGenerated] PrintMembers on a record struct.
