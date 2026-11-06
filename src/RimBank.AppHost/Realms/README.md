@@ -7,6 +7,8 @@ Keycloak imports these files the first time the AppHost starts it (`WithRealmImp
 - the realm `rimbank`;
 - `rimbank-api`, the audience every access token must carry (no one signs in to it);
 - `rimbank-dev-client`, a confidential client for the client-credentials grant. Its secret, `rimbank-dev-client-secret-local-only`, is published here on purpose and is not a secret. Never reuse it.
+- `rimbank-mcp-client`, a public client for MCP clients such as MCP Inspector or Claude Code. It uses the authorization code flow with PKCE `S256` and only redirects to `http://127.0.0.1` (any port) or `http://localhost:6274` (MCP Inspector) (ADR 0022).
+- `rimbank-developer`, the user who signs in through `rimbank-mcp-client`. Its password, `rimbank-developer-local-only`, is published here on purpose. Never reuse it.
 
 The admin password is an Aspire-generated parameter kept in user secrets, never in source.
 

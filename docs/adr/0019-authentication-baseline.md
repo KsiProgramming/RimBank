@@ -60,7 +60,7 @@ How the caller reaches the idempotency policy, which runs on the message bus, no
 - The caller's subject also lands in Marten's last-modified-by and on the trace as `enduser.id`. The subject is opaque, but it is still a personal identifier: it is never logged at Information level by RimBank code, and tokens never appear in responses or logs.
 - Deferred:
   - Per-BIAN-operation authorisation policies and separate command and query scopes (1.15).
-  - MCP authorization through Keycloak, and relaying the MCP caller the same way (0.16).
+  - MCP authorization through Keycloak, and relaying the MCP caller the same way (0.16, done in [ADR 0022](0022-mcp-authorization-and-tool-errors.md): `/mcp` is challenged with `resource_metadata`, the MCP scheme serves the RFC 9728 metadata, the dev realm gains `rimbank-mcp-client` and `rimbank-developer`, and tool calls relay the caller through `ActorRelay` unchanged).
   - Recording the `Actor` (subject and client) in event metadata for audit (with the first events, 1.x; audit query in 7.3).
   - A production identity-provider setup, Keycloak deployment and key rotation runbook (7.x).
 - Proven by:

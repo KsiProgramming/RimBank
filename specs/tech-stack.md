@@ -83,6 +83,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Http/               # HTTP conventions every .Api shares: the Idempotency-Key header (ADR 0018)
+│  ├─ RimBank.Mcp/                # MCP conventions every .Mcp shares: Error → isError Problem Details, the tool error filter (ADR 0022)
 │  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring (ADR 0017); command idempotency (ADR 0018)
 │  └─ Party/
 │     ├─ RimBank.Party.PartyReferenceDataDirectory/                    # core
@@ -98,6 +99,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.Problems.Tests/         # the Error → Problem Details mapping (ADR 0015)
    ├─ RimBank.Http.Tests/             # the Idempotency-Key header and its Problem Details (ADR 0018)
+   ├─ RimBank.Mcp.Tests/              # the Error → tool result mapping (ADR 0022)
    ├─ RimBank.Postgresql.Tests/       # store, messaging and idempotency conventions with two test-only fake contexts, Testcontainers (ADR 0016–0018)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
    ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by every .Api.Tests: spec loaders, route and channel assertions (ADR 0020)
@@ -149,10 +151,11 @@ Commands and queries sit next to each other inside the business flow or Behavior
 | `.PublishedLanguage` | BCL only | Everything else |
 | `.Subscriptions` | Its own core, SharedKernel, other contexts' `.PublishedLanguage`, Wolverine | Other contexts' cores or adapters, its own `.Api`, `.Mcp`, `.Postgresql` |
 | `.Api` | Its own core, SharedKernel, `RimBank.Problems`, `RimBank.Http`, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
-| `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
+| `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, `RimBank.Mcp`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
 | `.Postgresql` | Its own core, SharedKernel, `RimBank.Postgresql`, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
 | `RimBank.Problems` | SharedKernel, ASP.NET Core | Cores, adapters, other composition projects ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)) |
 | `RimBank.Http` | SharedKernel, `RimBank.Problems`, ASP.NET Core; used only by `.Api` adapters and `RimBank.Host` | Cores, other adapters, Marten, Wolverine ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)) |
+| `RimBank.Mcp` | SharedKernel, `RimBank.Problems`, ASP.NET Core, MCP C# SDK; used only by `.Mcp` adapters and `RimBank.Host` | Cores, other adapters, Marten, Wolverine ([ADR 0022](../docs/adr/0022-mcp-authorization-and-tool-errors.md)) |
 | `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Wolverine (`Wolverine.Marten`, `Wolverine.Postgresql`), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters and by `RimBank.Host` for its own message store. It also adds the idempotency policy to every command handler ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)) | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md), [ADR 0017](../docs/adr/0017-wolverine-wiring.md)) |
 | `RimBank.Host` | All adapters and cores (composition only) | Business logic |
 
@@ -189,8 +192,8 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
 - **Hosting:** all contexts' MCP tools are registered in `RimBank.Host` and exposed at a single `/mcp` endpoint over Streamable HTTP in stateless mode. Each context hands its tools to the host through its module's `AddMcpTools(IMcpServerBuilder)`, which calls the one extension its `.Mcp` adapter exposes; contexts never configure the transport or map the route, and a tool name registered twice stops the host ([ADR 0021](../docs/adr/0021-mcp-wiring-and-tool-conventions.md)). When a context is extracted, its `.Mcp` adapter moves with it.
 - **Naming:** each tool maps 1:1 to a BIAN operation, named `<service_domain>_<operation>[_<behavior_qualifier>]` in snake_case (for example `party_reference_data_directory_register` and `current_account_retrieve_payment`). Descriptions come from the BIAN operation description, and input schemas reuse the `.Api` request models.
 - **Tool annotations:** every tool sets `readOnly`, `destructive`, `idempotent` and `openWorld` explicitly (table in ADR 0021). Retrieve tools dispatch queries and are marked `readOnly`; every other tool dispatches a command. Operations that move money or close facilities are marked `destructive` and are not `idempotent` unless an idempotency key is supplied.
-- **Security:** the MCP endpoint follows the MCP authorization spec (OAuth 2.1, with Keycloak as the authorization server). Tool calls go through the same per-BIAN-operation authorisation policies as HTTP. Money-moving tools need a dedicated scope and are disabled by default, so each deployment must turn them on explicitly.
-- **Errors:** a business or validation failure returns a tool result with `isError: true` whose content (and `structuredContent`) is the Problem Details JSON (same `type`, `errorCode` and `traceId` as HTTP, ADR 0021). Stack traces and internal details are never exposed.
+- **Security:** the MCP endpoint follows the MCP authorization spec (OAuth 2.1, with Keycloak as the authorization server): a 401 on `/mcp` points to the RFC 9728 protected-resource metadata, which names the realm, and tokens carry the same `rimbank-api` audience as HTTP ([ADR 0022](../docs/adr/0022-mcp-authorization-and-tool-errors.md)). Tool calls go through the same per-BIAN-operation authorisation policies as HTTP. Money-moving tools need a dedicated scope and are disabled by default, so each deployment must turn them on explicitly.
+- **Errors:** a business or validation failure returns a tool result with `isError: true` whose content (and `structuredContent`) is the Problem Details JSON (same `type`, `errorCode` and `traceId` as HTTP, ADR 0021). Adapters return failures with `ToToolResult` from `RimBank.Mcp`, whose call-tool filter turns unbindable arguments into `shared.tool-arguments-invalid` and any exception into `shared.unexpected` ([ADR 0022](../docs/adr/0022-mcp-authorization-and-tool-errors.md)). Stack traces and internal details are never exposed.
 - **Audit:** every tool call records the MCP client identity and a correlation ID in event metadata, as HTTP calls do.
 
 ## 7. Domain modelling conventions
