@@ -35,7 +35,7 @@
 - [x] **0.12 Idempotency:** `Idempotency-Key` middleware or policy for commands, with tests (same key gives the same result, different payload gives 409). Queries are naturally idempotent and need no key.
 - [x] **0.13 Authentication baseline:** Keycloak in Aspire, JWT bearer, deny by default, and a test that an unauthenticated request gets a 401 Problem Details response.
 - [x] **0.14 BIAN conformance harness:** a test utility that loads an ext-DDD OpenAPI/AsyncAPI YAML from `doc-0/release14.0.0/` and asserts that the implemented routes and channels exist, and that `Retrieve` operations are `GET` (queries) and the rest are commands.
-- [ ] **0.15 MCP wiring:** `/mcp` Streamable HTTP endpoint in `RimBank.Host` using the MCP C# SDK, with a `ping`-style smoke tool and an in-process MCP client test. ADR on tool naming, annotations (query tools `readOnly`) and error mapping.
+- [x] **0.15 MCP wiring:** `/mcp` Streamable HTTP endpoint in `RimBank.Host` using the MCP C# SDK, with a `ping`-style smoke tool and an in-process MCP client test. ADR on tool naming, annotations (query tools `readOnly`) and error mapping.
 - [ ] **0.16 MCP security & errors:** MCP authorization through Keycloak, the `Error` → Problem Details mapping as an `isError` tool result, and a test that an unauthenticated call is rejected.
 
 ## Stage 1: Party Reference Data Directory (first vertical slice)

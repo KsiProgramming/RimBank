@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RimBank.Host.Modules;
 using RimBank.Problems;
@@ -27,6 +28,10 @@ internal sealed class FaultyServiceDomainModule : IServiceDomainModule
     public string ServiceDomain => "Faulty";
 
     public void AddServices(IHostApplicationBuilder builder)
+    {
+    }
+
+    public void AddMcpTools(IMcpServerBuilder tools)
     {
     }
 

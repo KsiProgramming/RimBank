@@ -552,8 +552,8 @@
       },
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.5.2",
-        "contentHash": "Ei+YWV9Ybnps7pR1dgjlG29gelXEwZkhLVAcWmKe6HvXS6LNBYgSdWiY3Hk9OZXYtK34rv/NtLWBQYQGOBQYPQ=="
+        "resolved": "10.11.0",
+        "contentHash": "h4DX/TdJU4fk1GGaf19n6Kujkj6VXbGeL4UEOsQ8+ZJC5fVApPauokCtvBP684BYbczUYZQNfo1mbmyHG4WVSg=="
       },
       "Microsoft.Extensions.AmbientMetadata.Application": {
         "type": "Transitive",
@@ -567,10 +567,10 @@
       },
       "Microsoft.Extensions.Caching.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.0.7",
-        "contentHash": "pUDgQKEqNUFlerDIFRg7zzoDVRPEWIG7nR40h8Gzg8RXza4Ry0lWZ7u91bmwu3iUDCxw3Dv6TLHVFoAgY0gy7Q==",
+        "resolved": "10.0.13",
+        "contentHash": "UOJqcdNMoFcV/5RUcOlVKq9pPmbrcmbpLx5iYz9QtrmMcWRQzlL5Q/NZRfbPPLNyIEc1HWjjs5Z7nIwqewU1sg==",
         "dependencies": {
-          "Microsoft.Extensions.Primitives": "10.0.7"
+          "Microsoft.Extensions.Primitives": "10.0.13"
         }
       },
       "Microsoft.Extensions.Caching.Memory": {
@@ -1053,21 +1053,21 @@
       },
       "ModelContextProtocol": {
         "type": "Transitive",
-        "resolved": "1.4.1",
-        "contentHash": "mP5hvBpoWe5EbWBqHWD09A4Dy6Pq+/vV2dumOV4uegCZcg+yqf8q8wrxtuZ3EQyXEJn9jzsnoiI/qyfJAihlZQ==",
+        "resolved": "2.3.1",
+        "contentHash": "r93TE8VAvPIJrvoMPpWhKWcMLvKIPB72JozRye3hHeY7gCsMXYo/3fLVnzNEnjBcXmV8+EXcNMYzC/+0wRkidA==",
         "dependencies": {
-          "Microsoft.Extensions.Caching.Abstractions": "10.0.7",
-          "Microsoft.Extensions.Hosting.Abstractions": "10.0.7",
-          "ModelContextProtocol.Core": "1.4.1"
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.13",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.13",
+          "ModelContextProtocol.Core": "[2.3.1]"
         }
       },
       "ModelContextProtocol.Core": {
         "type": "Transitive",
-        "resolved": "1.4.1",
-        "contentHash": "G/hOBZkJsvF3MSy0sOvXdxca5uRe2Sb4xk7xRuTWNZI45khVBjOLo6nSzGilctIICavNVxbxUF908fLYI9RxkQ==",
+        "resolved": "2.3.1",
+        "contentHash": "cuYIbAWWhVSY0PRaz0LiDoxxnpLdps1tKXjo2LN91CObgWBFcKg3Ebz4kF95O++2Do7GXI2Tl5KQOYM8UoAyZA==",
         "dependencies": {
-          "Microsoft.Extensions.AI.Abstractions": "10.5.2",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.7"
+          "Microsoft.Extensions.AI.Abstractions": "10.11.0",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.13"
         }
       },
       "Mono.Cecil": {
@@ -1538,6 +1538,7 @@
         "type": "Project",
         "dependencies": {
           "Aspire.Keycloak.Authentication": "[13.6.4-preview.1.26523.11, )",
+          "ModelContextProtocol.AspNetCore": "[2.3.1, )",
           "RimBank.Postgresql": "[0.1.0-alpha, )",
           "RimBank.Problems": "[0.1.0-alpha, )",
           "RimBank.ServiceDefaults": "[0.1.0-alpha, )",
@@ -1910,6 +1911,15 @@
         "dependencies": {
           "Microsoft.OpenApi": "2.13.0",
           "SharpYaml": "2.1.5"
+        }
+      },
+      "ModelContextProtocol.AspNetCore": {
+        "type": "CentralTransitive",
+        "requested": "[2.3.1, )",
+        "resolved": "2.3.1",
+        "contentHash": "qlX2AkOg9QJ8iap9NXyOfkNW7abMrf6HU3o7kImIgsNjkPpZQd6ewGxkwRuI5GQNXdONCaROfKMlhPVcYoWQfw==",
+        "dependencies": {
+          "ModelContextProtocol": "[2.3.1]"
         }
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {

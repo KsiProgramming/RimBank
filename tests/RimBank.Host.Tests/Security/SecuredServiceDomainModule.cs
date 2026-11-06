@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RimBank.Host.Modules;
 using Wolverine;
@@ -19,6 +20,10 @@ public sealed class SecuredServiceDomainModule : IServiceDomainModule
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.Services.ConfigureWolverine(options => options.Discovery.IncludeType(typeof(WhoSentThisHandler)));
+    }
+
+    public void AddMcpTools(IMcpServerBuilder tools)
+    {
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

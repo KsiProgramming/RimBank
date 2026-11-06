@@ -20,7 +20,15 @@ public interface IServiceDomainModule
     /// <param name="builder">The host builder, before the application is built.</param>
     void AddServices(IHostApplicationBuilder builder);
 
-    /// <summary>Maps the context's HTTP endpoints (and later its MCP tools) on the built application.</summary>
+    /// <summary>
+    /// Registers the context's MCP tools on the host's single MCP server (ADR 0021), by calling the one
+    /// <see cref="IMcpServerBuilder"/> extension its <c>.Mcp</c> adapter exposes. The host owns the transport and the
+    /// <c>/mcp</c> endpoint; a context without tools yet leaves the body empty.
+    /// </summary>
+    /// <param name="tools">The host's MCP server builder.</param>
+    void AddMcpTools(IMcpServerBuilder tools);
+
+    /// <summary>Maps the context's HTTP endpoints on the built application.</summary>
     /// <param name="endpoints">The application's endpoint route builder.</param>
     void MapEndpoints(IEndpointRouteBuilder endpoints);
 }
