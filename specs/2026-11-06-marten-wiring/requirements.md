@@ -32,14 +32,14 @@ The fake contexts use one inline view and one async view, to prove both lifecycl
     - a health check `postgresql-<service-domain>` tagged `ready`, which connects with the context's own role;
     - the `Marten` activity source and meter, picked up by the existing OpenTelemetry setup.
   - **Projection adapters:** `opts.AddInlineView<TView, TProjection, TEvent>()` and `opts.AddAsyncView<…>()`. They wrap a pure `IProjection<TView, TEvent>` as a Marten single-stream projection: the adapter only calls `TProjection.Project(view, event)`, and a `null` result deletes the view. No logic lives in the adapter.
-  - **Staleness:** `GetProjectionProgressAsync<TStore>(projectionName)` returns the last processed event sequence next to the store's high-water mark (tech-stack §8.3).
-  - **Rebuild entry point:** `RebuildProjectionAsync<TStore>(projectionName, timeout, ct)` as a library API, used by tests now and by the operations runbook in 7.4.
-  - **Role and schema provisioner:** `ServiceDomainDatabase.ProvisionAsync(adminDataSource, contextConnectionString)`. It is idempotent and creates the login role (user and password taken from the context's connection string), creates the schema with that role as owner, and gives it no grants on any other schema. It runs at startup only when explicitly enabled (Development and tests). Production expects roles and schemas provisioned outside the application.
+  - **Staleness:** `store.GetViewProgressAsync(projectionName)` returns the last processed event sequence next to the store's high-water mark (tech-stack §8.3).
+  - **Rebuild entry point:** `store.RebuildViewAsync(projectionName, timeout, ct)` as a library API, used by tests now and by the operations runbook in 7.4.
+  - **Role and schema provisioner:** `ServiceDomainDatabase.ProvisionAsync(administrator, serviceDomain, contextConnectionString)`. It is idempotent and creates the login role (user and password taken from the context's connection string), creates the schema with that role as owner, and gives it no grants on any other schema. It runs at startup only when explicitly enabled (Development and tests). Production expects roles and schemas provisioned outside the application.
 - **`tests/RimBank.Postgresql.Tests`**: unit tests for the projection adapters, plus Testcontainers smoke tests with two fake contexts (`FakeLedger` and `FakeRegistry`, both test-only).
-- **Architecture rules** (each with a bad fixture using the existing Marten stubs):
-  - only `.Postgresql` adapters, `RimBank.Postgresql` and `RimBank.Host` depend on Marten, Npgsql or `RimBank.Postgresql`;
-  - `RimBank.Postgresql` depends on no core, adapter or composition project;
-  - each `IDocumentStore` marker interface lives in its own context's `.Postgresql` namespace.
+- **Architecture rules** (each with a bad fixture):
+  - `shared-postgresql-only-in-postgresql-adapters`: only a context's `.Postgresql` adapter depends on `RimBank.Postgresql`;
+  - `shared-postgresql-dependencies`: `RimBank.Postgresql` depends on no core, adapter, composition project or ASP.NET Core;
+  - Marten and Npgsql outside `.Postgresql` (and therefore a store marker anywhere else) are already caught by the existing `core-`, `api-`, `mcp-` and `subscriptions-dependencies` rules.
 - **Constitution updates:** a `RimBank.Postgresql` row in tech-stack §4, entries in the §3.3 layout, and the `.Postgresql` row saying it may reference `RimBank.Postgresql`.
 - **ADR 0016**: per-context Marten stores, roles and projection conventions.
 
@@ -71,6 +71,9 @@ The fake contexts use one inline view and one async view, to prove both lifecycl
 - **0016 Per-context Marten stores and projection conventions**: why `RimBank.Postgresql` exists and what it may reference; ancillary stores with no main store; schema, role and connection-string naming; role isolation and who provisions it in each environment; the inline and async adapter over `IProjection`; daemon mode; auto-create policy; health checks; staleness and rebuild APIs.
 
 ## Open questions
-- **View identity:** Marten needs an identity on each view document. Do we require an `Id` of the stream's typed ID (with a Marten value-type registration for `ITypedId<T>`), or a plain `Guid`? The fakes use `Guid`; 1.6 must settle this, ideally in this phase if the typed-ID registration is cheap.
-- **Marten 8 API check:** confirm that `AddMartenStore<T>` + `AddAsyncDaemon` + `ApplyAllDatabaseChangesOnStartup` on an ancillary store with no main store works in Marten 8 (Context7 docs show it alongside a main store). If not, record the workaround in ADR 0016.
-- **Event type naming:** keep Marten's default event type alias, or set explicit aliases so that renaming a C# type never breaks a stream? We lean towards explicit aliases. Decide in ADR 0016.
+Answered during implementation:
+- **View identity:** a view has a `Guid Id` equal to its stream's id, and the adapter is a `SingleStreamProjection<TView, Guid>`. How a view exposes a typed ID (for example a mapped `PartyReferenceDataDirectoryEntryId` in the `.Api` response) is decided with the first real view in 1.6. ADR 0016 records this.
+- **Marten API check:** the current Marten is **9.58.0**, not 8. `AddMartenStore<T>` + `AddAsyncDaemon(DaemonMode.HotCold)` + `ApplyAllDatabaseChangesOnStartup` on ancillary stores with **no main store** works. All Testcontainers tests pass with two such stores in one host, and `IDocumentStore` itself is not registered.
+- **Event type naming:** explicit. Each context maps every event with `options.Events.MapEventType<TEvent>("snake_case_name")` (ADR 0016), and the fakes show the pattern. This is a review rule for now, not a test.
+- **Additional finding:** `projections-implement-contract` (ADR 0010) caught the first name of the Marten adapter, `ViewProjection<…>`: the `…Projection` suffix is reserved for pure projections. The adapter is now `ViewProjector<…>`.
+- **Additional finding:** pinning `Microsoft.Extensions.Hosting(.Abstractions)` centrally needs 10.0.14 (`Microsoft.AspNetCore.Mvc.Testing` 10.0.14 and `Microsoft.Extensions.Http.Resilience` 10.11.0 already need at least 10.0.13 or 10.0.14). With transitive pinning, that moves the Host's and AppHost's transitive `Microsoft.Extensions.*` packages from 10.0.12 to 10.0.14 (a patch update), in both the win-x64 and linux-x64 lock files.
