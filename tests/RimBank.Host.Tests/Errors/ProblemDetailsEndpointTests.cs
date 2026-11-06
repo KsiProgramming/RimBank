@@ -2,10 +2,12 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Errors.Tests;
 
-// Every non-2xx response of the host is RFC 9457 Problem Details, in every environment (tech-stack §5, ADR 0015).
+// Every non-2xx response of the host is RFC 9457 Problem Details, in every environment (tech-stack §5, ADR 0015). The
+// requests are authenticated; the 401 and 403 are covered by AuthenticationTests (ADR 0019).
 public sealed class ProblemDetailsEndpointTests
 {
     private const string ProblemJson = "application/problem+json";
@@ -75,7 +77,7 @@ public sealed class ProblemDetailsEndpointTests
     {
         const string traceId = "4bf92f3577b34da6a3ce929d0e0e4736";
         await using var app = await StartAsync("Production");
-        using var client = app.GetTestClient();
+        using var client = TestTokens.Authenticated(app.GetTestClient());
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/faulty/missing", UriKind.Relative));
         request.Headers.Add("traceparent", $"00-{traceId}-00f067aa0ba902b7-01");
 
@@ -97,7 +99,7 @@ public sealed class ProblemDetailsEndpointTests
     private static async Task<HttpResponseMessage> GetAsync(string environment, string path)
     {
         await using var app = await StartAsync(environment);
-        using var client = app.GetTestClient();
+        using var client = TestTokens.Authenticated(app.GetTestClient());
         var response = await client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
         await response.Content.LoadIntoBufferAsync(TestContext.Current.CancellationToken);
         return response;
@@ -116,6 +118,7 @@ public sealed class ProblemDetailsEndpointTests
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
+        builder.UseTestTokens();
         var app = HostComposition.Build(builder, [new FaultyServiceDomainModule()]);
         await app.StartAsync(TestContext.Current.CancellationToken);
         return app;

@@ -27,6 +27,11 @@ namespace RimBank.Postgresql;
 /// <item>the lock is held by a command still being handled: <c>shared.idempotency-key-in-use</c> is returned.</item>
 /// </list>
 /// <para>
+/// A key is scoped to its context, its command type and its caller: the user name on the envelope, which the host's
+/// actor relay sets to the caller's subject, or <see cref="Actor.System"/> for a message no caller sent (ADR 0019). Two
+/// callers that use the same key never replay, refuse or block each other's commands.
+/// </para>
+/// <para>
 /// A command without a key returns <c>shared.idempotency-key-missing</c>. Every refusal and every replay is returned
 /// the way a handler returns its result, so <c>IMessageBus.InvokeAsync&lt;Result&lt;T&gt;&gt;</c> receives it as a
 /// value; nothing is committed for them.
@@ -61,7 +66,7 @@ public static class IdempotencyGate
             return await StopAsync(context, (Result<TAcknowledgement>)IdempotencyKey.Missing);
         }
 
-        var id = OutcomeId(command);
+        var id = OutcomeId(command, CallerOf(context));
         await session.BeginTransactionAsync(cancellationToken);
         var locked = await session.QueryAsync<bool>("select pg_try_advisory_xact_lock(?)", cancellationToken, LockKey(scope, id));
         if (!locked.Single())
@@ -122,7 +127,16 @@ public static class IdempotencyGate
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(payload.ToJsonString())));
     }
 
-    internal static string OutcomeId(ICommand command) => $"{command.GetType().FullName}:{command.IdempotencyKey.Value}";
+    /// <summary>The caller a command is scoped to: the envelope's user name, or the system actor when it has none.</summary>
+    /// <param name="context">The message context of the command.</param>
+    /// <returns>The caller's subject.</returns>
+    internal static string CallerOf(MessageContext context) =>
+        context.Envelope?.UserName is { Length: > 0 } caller ? caller : Actor.System.Subject;
+
+    // <command type>:<caller length>:<caller>:<key>. The length keeps the id unambiguous: a subject and a key may both
+    // contain colons, and "u:x" + "k" must never read like "u" + "x:k".
+    internal static string OutcomeId(ICommand command, string caller) =>
+        $"{command.GetType().FullName}:{caller.Length}:{caller}:{command.IdempotencyKey.Value}";
 
     // Advisory locks are shared by the whole database, so the key includes the context's schema.
     internal static long LockKey(string scope, string outcomeId) =>

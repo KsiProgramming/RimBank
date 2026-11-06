@@ -44,7 +44,7 @@ Where the HTTP header is read:
 - **A replay or refusal is returned the way a handler returns its result** (`MessageContext.EnqueueCascadingAsync`), so `InvokeAsync<Result<TAck>>` receives it as a value. A replay never cascades the handler's messages again.
 - **Fingerprint:** the hexadecimal SHA-256 of the command's System.Text.Json serialization without its `IdempotencyKey` property. Only the fingerprint and the acknowledgement are stored, never the payload (this limits the spread of PII, §10).
 - **Only successful outcomes are stored.** A rejected command (for example insufficient funds) commits nothing, so the same key can be retried once its cause is fixed. The caller sees the decision again, not a stale rejection.
-- **Scope:** the key is scoped to its context (the outcome lives in its schema) and its command type (part of the id). It is not yet scoped to the caller.
+- **Scope:** the key is scoped to its context (the outcome lives in its schema) and its command type (part of the id). Since [ADR 0019](0019-authentication-baseline.md) it is also scoped to the caller, and the id is `<command type>:<caller length>:<caller>:<key>`.
 - **`RimBank.Http`** (SharedKernel, `RimBank.Problems`, ASP.NET Core) holds `IdempotencyKeyHeader`, an endpoint parameter bound from the header, and `RequireIdempotencyKey()`, an endpoint or group filter that answers 400 Problem Details before the endpoint runs and marks the endpoint with `IdempotencyKeyRequirement` metadata. One header with one value is accepted; several values are `invalid`. Only `.Api` and `RimBank.Host` may use it.
 
 ## Consequences
@@ -56,7 +56,7 @@ Where the HTTP header is read:
 - The first `.Api` (1.5) adds `RequireIdempotencyKey()` to its command endpoints (or their group) and passes `idempotency.Value` into the command.
 - Deferred:
   - The MCP `idempotencyKey` tool argument (0.15/1.16, mandatory for money-moving tools in 4.14).
-  - Scoping keys to the authenticated caller, so that two clients cannot collide or probe each other's keys (0.13/1.15).
+  - ~~Scoping keys to the authenticated caller~~: done in 0.13 ([ADR 0019](0019-authentication-baseline.md)).
   - Expiry and clean-up of stored outcomes, using `mt_last_modified` (7.x hardening).
   - `.Subscriptions` deriving keys from correlation IDs (4.1, 5.4).
 - Proven by `tests/RimBank.Postgresql.Tests/Idempotency` (Testcontainers: replay with one event and one outgoing message, reused key, concurrent calls, failed result retried, key in two contexts and on two command types, missing key, queries untouched, no payload stored), `tests/RimBank.Http.Tests` (400 and 409 Problem Details, queries need no key, endpoint metadata) and `tests/RimBank.SharedKernel.Tests/Idempotency`.

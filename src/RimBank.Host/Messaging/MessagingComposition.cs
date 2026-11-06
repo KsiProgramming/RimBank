@@ -29,6 +29,10 @@ public static class MessagingComposition
             options.Durability.Mode = DurabilityMode.Balanced;
             options.Policies.AutoApplyTransactions();
 
+            // The caller's subject, set on the request's message context by the actor relay, goes on every envelope
+            // the request sends, onto Marten's last-modified-by, and onto the trace (enduser.id) (ADR 0019).
+            options.EnableRelayOfUserName = true;
+
             // Handler code is generated with Roslyn at startup; pre-generated code is decided with the container
             // images (roadmap 7.5, ADR 0017).
             options.CodeGeneration.TypeLoadMode = TypeLoadMode.Dynamic;

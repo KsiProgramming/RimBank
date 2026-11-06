@@ -22,6 +22,13 @@ public sealed class RunningHost(IHost host, string database) : IAsyncDisposable
     /// <summary>The host's message bus, as an <c>.Api</c> or <c>.Mcp</c> adapter uses it.</summary>
     public IMessageBus Bus => Services.GetRequiredService<IMessageBus>();
 
+    /// <summary>
+    /// A message bus for one authenticated caller, as the host's actor relay sets it up for a request: the caller's
+    /// subject is its user name (ADR 0019).
+    /// </summary>
+    public IMessageBus BusOf(string caller) =>
+        new Wolverine.Runtime.MessageBus(Services.GetRequiredService<Wolverine.Runtime.IWolverineRuntime>()) { UserName = caller };
+
     public static async Task<RunningHost> StartAsync(PostgresqlServer server) =>
         await StartAsync(server, await server.CreateDatabaseAsync());
 

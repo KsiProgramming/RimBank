@@ -19,6 +19,10 @@ namespace RimBank.SampleBanking.SampleLedger.Api
     public static class SampleLedgerEndpoints
     {
         public static IResult? Post(PostSampleAmountRequest request, IMessageBus bus) => request is null || bus is null ? null : default;
+
+        // An endpoint may narrow who can call it (per-operation policies, roadmap 1.15), never open it to anonymous callers.
+        public static string Map(string endpoint) =>
+            Microsoft.AspNetCore.Builder.AuthorizationEndpointConventionBuilderExtensions.RequireAuthorization(endpoint);
     }
 }
 

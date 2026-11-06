@@ -44,5 +44,14 @@
            Code="RB0003"
            File="$(MSBuildProjectFullPath)"
            Text="Aspire.AppHost.Sdk is $(AspireHostingSDKVersion) but AspireVersion in Directory.Packages.props is $(AspireVersion). Raise both together (ADR 0014)." />
+
+    <!--
+      RB0004: the Keycloak integrations ship only as previews of an Aspire release, so their version is kept apart in
+      $(AspireKeycloakVersion). It must be a preview of $(AspireVersion), so the two never drift apart (ADR 0019).
+    -->
+    <Error Condition="'$(AspireKeycloakVersion)' != '' And !$(AspireKeycloakVersion.StartsWith('$(AspireVersion)-'))"
+           Code="RB0004"
+           File="$(MSBuildProjectFullPath)"
+           Text="AspireKeycloakVersion is $(AspireKeycloakVersion) but AspireVersion is $(AspireVersion). Use the Keycloak preview of the same Aspire release (ADR 0019)." />
   </Target>
 </Project>

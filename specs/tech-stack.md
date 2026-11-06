@@ -17,7 +17,7 @@
 | API | ASP.NET Core **Minimal APIs** | Built-in OpenAPI document generation and Scalar UI |
 | AI agent interface | **Model Context Protocol** using the official C# SDK (`ModelContextProtocol.AspNetCore`) | Streamable HTTP transport at `/mcp`. See §6 |
 | Error contract | **RFC 9457 Problem Details** | See §5 and §6 |
-| Identity | OpenID Connect / JWT bearer | Keycloak for local development via Aspire |
+| Identity | OpenID Connect / JWT bearer | Keycloak for local development via Aspire (`Aspire.Hosting.Keycloak`, `Aspire.Keycloak.Authentication`, previews pinned as `AspireKeycloakVersion`); `Authentication:Authority` (HTTPS) elsewhere ([ADR 0019](../docs/adr/0019-authentication-baseline.md)) |
 | Local orchestration | **.NET Aspire** (AppHost + ServiceDefaults) | PostgreSQL, Keycloak and later RabbitMQ as Aspire resources |
 | Observability | **OpenTelemetry** (traces, metrics, logs) | Aspire dashboard locally; OTLP exporter in other environments |
 | CI | **GitHub Actions** | Build, test, format, CodeQL, Dependabot |
@@ -78,8 +78,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  └─ release14.0.0/              # BIAN v14 specs (ADR 0002)
 ├─ src/
 │  ├─ RimBank.SharedKernel/       # Money, Currency, Result, typed ids, decider abstractions (no infra)
-│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, the Wolverine bus (Messaging/, ADR 0017), auth, OTel
-│  ├─ RimBank.AppHost/            # .NET Aspire orchestration
+│  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, the Wolverine bus (Messaging/, ADR 0017), authentication and the actor relay (Security/, ADR 0019), OTel
+│  ├─ RimBank.AppHost/            # .NET Aspire orchestration: PostgreSQL, Keycloak with the dev-only realm (Realms/, ADR 0019), the host
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Http/               # HTTP conventions every .Api shares: the Idempotency-Key header (ADR 0018)
@@ -92,7 +92,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
-   ├─ RimBank.Host.Tests/             # host composition, module convention, message bus and health probes (in-process)
+   ├─ RimBank.Host.Tests/             # host composition, module convention, message bus, health probes and authentication with test-signed tokens (in-process)
    ├─ RimBank.AppHost.Tests/          # Aspire resource model and a real startup with Docker (ADR 0014)
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
@@ -178,7 +178,7 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
   - `title`, `status`, `detail`, `instance`
   - extensions: `errorCode`, `traceId`, and `errors` (field → messages) for validation failures
 - Each core `Error` maps to a Problem Details response in one place for the whole solution, `RimBank.Problems`, which every `.Api` and `.Mcp` uses (`error.ToHttpResult()`); the host emits `shared.not-found` and `shared.unexpected` itself ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)). Unhandled exceptions become a generic 500 Problem Details response with no internal details exposed.
-- BIAN-declared statuses are honoured: 400, 401, 403, 404, 429 and 500, plus 409 for concurrency and idempotency conflicts.
+- BIAN-declared statuses are honoured: 400, 401, 403, 404, 429 and 500, plus 409 for concurrency and idempotency conflicts. A missing or invalid token is a 401 `shared.unauthenticated` and a refused policy a 403 `shared.forbidden` ([ADR 0019](../docs/adr/0019-authentication-baseline.md)).
 - Every state-changing endpoint requires an `Idempotency-Key` header: a missing or invalid one is a 400, and a key reused with a different payload or still in use is a 409 (`RequireIdempotencyKey()` and `IdempotencyKeyHeader` in `RimBank.Http`, [ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
 
 ## 6. MCP (Model Context Protocol) adapter
@@ -207,7 +207,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 
 ### 8.1 Write side
 
-- A **command** is an immutable record named as a BIAN operation in the imperative (`RegisterParty`, `UpdateDemographics`, `ExecutePayment`). It carries an idempotency key (`ICommand.IdempotencyKey`) and, where it updates an existing record, an expected stream version. Each context handles a command once per key: the same key and payload return the first acknowledgement without running the handler again, and only successful outcomes are stored, in the same transaction as the events ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
+- A **command** is an immutable record named as a BIAN operation in the imperative (`RegisterParty`, `UpdateDemographics`, `ExecutePayment`). It carries an idempotency key (`ICommand.IdempotencyKey`) and, where it updates an existing record, an expected stream version. Each context handles a command once per key and caller ([ADR 0019](../docs/adr/0019-authentication-baseline.md)): the same key and payload return the first acknowledgement without running the handler again, and only successful outcomes are stored, in the same transaction as the events ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
 - A **command handler** loads the aggregate through the write port, calls a pure `Decide`, appends the resulting events and returns an acknowledgement (`id`, `version`, and the decided state when BIAN requires it). It returns `Result<T>`, never a read model.
 - **Invariants that protect money** (funds availability, closure rules, holds) are checked against the authoritative write-side state in the same stream and transaction. They are never checked against an eventually consistent projection.
 - Decision inputs from another context (for example "is this party known?", "is this product launched?") come from **local reference read models** fed by integration events (see §8.4). Their staleness is acceptable and documented in the context's ADR.
@@ -256,7 +256,8 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 
 ## 10. Security & supply chain
 
-- Every endpoint requires authentication by default. Authorisation policies are defined per BIAN operation.
+- Every endpoint requires authentication by default: the authorization fallback policy requires an authenticated caller, and only the health probes of `RimBank.ServiceDefaults` are anonymous, guarded by the architecture rule `allow-anonymous-only-in-service-defaults` ([ADR 0019](../docs/adr/0019-authentication-baseline.md)). Authorisation policies are defined per BIAN operation.
+- The caller is an `Actor` (SharedKernel: the token's `sub` and `azp`). The host relays its subject to the message bus as the Wolverine user name, which scopes idempotency keys and reaches Marten's last-modified-by and the trace. Cores and adapters never read the token.
 - PII is masked in logs, and sensitive fields are protected at rest.
 - Secrets come from user-secrets locally and from a vault in deployed environments. They are never in source.
 - GitHub: CodeQL, Dependabot, secret scanning, SBOM generation on release, and signed release tags.

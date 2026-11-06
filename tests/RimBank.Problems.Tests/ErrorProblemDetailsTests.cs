@@ -86,4 +86,20 @@ public sealed class ErrorProblemDetailsTests
         ErrorProblemDetails.Create(SharedProblems.Unexpected).Type.ShouldBe("urn:rimbank:problem:shared:unexpected");
         ErrorProblemDetails.Create(SharedProblems.Unexpected).Status.ShouldBe(500);
     }
+
+    [Fact]
+    public void The_authentication_codes_are_a_401_and_a_403()
+    {
+        var unauthenticated = ErrorProblemDetails.Create(SharedProblems.Unauthenticated);
+        var forbidden = ErrorProblemDetails.Create(SharedProblems.Forbidden);
+
+        unauthenticated.Type.ShouldBe("urn:rimbank:problem:shared:unauthenticated");
+        unauthenticated.Status.ShouldBe(401);
+        unauthenticated.Title.ShouldBe("Unauthorized");
+        unauthenticated.Extensions[ProblemExtensions.ErrorCode].ShouldBe("shared.unauthenticated");
+        forbidden.Type.ShouldBe("urn:rimbank:problem:shared:forbidden");
+        forbidden.Status.ShouldBe(403);
+        forbidden.Title.ShouldBe("Forbidden");
+        forbidden.Extensions[ProblemExtensions.ErrorCode].ShouldBe("shared.forbidden");
+    }
 }

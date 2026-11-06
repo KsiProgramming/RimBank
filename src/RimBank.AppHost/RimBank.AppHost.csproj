@@ -1,6 +1,7 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.6.4">
   <!--
-    Local orchestration of RimBank with .NET Aspire (specs/tech-stack.md §1, ADR 0014): PostgreSQL and RimBank.Host.
+    Local orchestration of RimBank with .NET Aspire (specs/tech-stack.md §1, ADR 0014): PostgreSQL, Keycloak (ADR 0019)
+    and RimBank.Host.
     The SDK version is pinned here because Central Package Management cannot pin an MSBuild SDK; keep it equal to
     $(AspireVersion) in Directory.Packages.props. The SDK brings Aspire.Hosting.AppHost itself.
   -->
@@ -35,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Keycloak" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
   </ItemGroup>
 </Project>
