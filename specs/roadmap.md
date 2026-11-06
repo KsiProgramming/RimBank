@@ -44,7 +44,7 @@
 `RimBank.Party.PartyReferenceDataDirectory`. Control Record: *PartyReferenceDataDirectoryEntry*. BQs: Demographics, Reference, Associations, BankRelations. The mapping of every BIAN operation and channel is in [ADR 0024](../docs/adr/0024-party-reference-data-directory-mapping.md). The CR Control, Request, Execute and Exchange operations and the eight BQ channels are deferred (not in Stage 1).
 
 - [x] **1.1 ADR:** BIAN → DDD mapping for this domain: aggregate boundaries, BQs as entities, the command/query split of its operations, and its read models (which views, inline or async).
-- [ ] **1.2 Aggregate:** `PartyReferenceDataDirectoryEntry` state, `Register` decision, `PartyRegistered` event, invariants, unit tests.
+- [x] **1.2 Aggregate:** `PartyReferenceDataDirectoryEntry` state, `Register` decision, `PartyRegistered` event, invariants, unit tests.
 - [ ] **1.3 Register flow (command side):** `RegisterParty` command and handler, `PartyDirectory` write port, in-memory test adapter.
 - [ ] **1.4 PostgreSQL adapter (write side):** Marten event-stream implementation of `PartyDirectory`, with integration tests.
 - [ ] **1.5 API adapter: Register:** `POST /PartyReferenceDataDirectory/Register` with validation returning Problem Details; the response is built from the command outcome, not from a read model.

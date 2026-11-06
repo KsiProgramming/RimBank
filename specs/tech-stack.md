@@ -125,6 +125,7 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 ├─ PartyReferenceDataDirectoryEntry/      # Control Record (aggregate root)
 │  ├─ PartyReferenceDataDirectoryEntry.cs # state + evolve
 │  ├─ PartyReferenceDataDirectoryEntryId.cs
+│  ├─ PartyType.cs                        # Person | Organisation (BIAN Partytypevalues)
 │  ├─ Events.cs
 │  └─ Decisions.cs                        # pure decide functions
 ├─ Registration/                          # business flow (command side): Register / Initiate

@@ -125,6 +125,8 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 
 | Code | Kind | When |
 |---|---|---|
+| `party.party-already-registered` | Conflict (409) | Register on an entry that is already registered (1.2) |
+| `party.party-type-invalid` | Validation (400) | A `PartyType` that is neither `Person` nor `Organisation` (1.2) |
 | `party.party-not-found` | NotFound (404) | The path's entry does not exist (any command or query on an entry, including `Associations/Register`) |
 | `party.behavior-qualifier-not-found` | NotFound (404) | The path's Demographics, Reference or BankRelations id does not belong to the entry |
 | `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner |
