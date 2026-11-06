@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The MCP conventions every .Mcp adapter shares (ADR 0022): an Error becomes an isError tool result whose content is
+    the same RFC 9457 Problem Details as on HTTP, and an unexpected failure becomes shared.unexpected. It references
+    SharedKernel, RimBank.Problems, ASP.NET Core and the MCP C# SDK only, holds no business logic, and is used only by
+    .Mcp adapters and RimBank.Host (specs/tech-stack.md §4, §6).
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Mcp</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+    <ProjectReference Include="..\RimBank.Problems\RimBank.Problems.csproj" />
+  </ItemGroup>
+</Project>

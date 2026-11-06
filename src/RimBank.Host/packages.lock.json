@@ -576,6 +576,14 @@
           "WolverineFx": "6.62.0"
         }
       },
+      "rimbank.mcp": {
+        "type": "Project",
+        "dependencies": {
+          "ModelContextProtocol.AspNetCore": "[2.3.1, )",
+          "RimBank.Problems": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
       "rimbank.postgresql": {
         "type": "Project",
         "dependencies": {

@@ -3,6 +3,7 @@ using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RimBank.Host.Modules;
+using RimBank.Mcp;
 
 namespace RimBank.Host.Mcp;
 
@@ -26,7 +27,8 @@ public static class McpComposition
     public static string ServerVersion { get; } = ProductVersion();
 
     /// <summary>
-    /// Adds the MCP server with the stateless Streamable HTTP transport, then each module's tools in list order.
+    /// Adds the MCP server with the stateless Streamable HTTP transport and the Problem Details tool errors of
+    /// <c>RimBank.Mcp</c> (ADR 0022), then each module's tools in list order.
     /// </summary>
     /// <param name="builder">The host builder.</param>
     /// <param name="modules">The modules to compose, the same list given to the other module steps.</param>
@@ -39,6 +41,7 @@ public static class McpComposition
         builder.Services
             .AddMcpServer(options => options.ServerInfo = new Implementation { Name = ServerName, Version = ServerVersion })
             .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
+            .AddRimBankToolErrors()
             .AddServiceDomainMcpTools(modules);
 
         return builder;

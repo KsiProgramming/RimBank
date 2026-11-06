@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RimBank.Mcp\RimBank.Mcp.csproj" />
     <ProjectReference Include="..\RimBank.Postgresql\RimBank.Postgresql.csproj" />
     <ProjectReference Include="..\RimBank.Problems\RimBank.Problems.csproj" />
     <ProjectReference Include="..\RimBank.ServiceDefaults\RimBank.ServiceDefaults.csproj" />

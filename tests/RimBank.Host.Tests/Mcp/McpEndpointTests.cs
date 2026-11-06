@@ -4,10 +4,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
-using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using RimBank.Host.Errors.Tests;
-using RimBank.Host.Modules;
 using RimBank.Host.Security.Tests;
 
 namespace RimBank.Host.Mcp.Tests;
@@ -19,8 +17,8 @@ public sealed class McpEndpointTests
     [Fact]
     public async Task A_client_connects_and_reads_the_server_info()
     {
-        await using var app = await StartAsync(new McpServiceDomainModule());
-        await using var client = await ConnectAsync(app);
+        await using var app = await McpTestHost.StartAsync(new McpServiceDomainModule());
+        await using var client = await McpTestHost.ConnectAsync(app);
 
         client.ServerInfo.ShouldNotBeNull();
         client.ServerInfo.Name.ShouldBe(McpComposition.ServerName);
@@ -31,8 +29,8 @@ public sealed class McpEndpointTests
     [Fact]
     public async Task The_tool_list_contains_the_module_tool_with_its_annotations()
     {
-        await using var app = await StartAsync(new McpServiceDomainModule());
-        await using var client = await ConnectAsync(app);
+        await using var app = await McpTestHost.StartAsync(new McpServiceDomainModule());
+        await using var client = await McpTestHost.ConnectAsync(app);
 
         var tools = await client.ListToolsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -48,8 +46,8 @@ public sealed class McpEndpointTests
     [Fact]
     public async Task Calling_the_tool_returns_its_result()
     {
-        await using var app = await StartAsync(new McpServiceDomainModule());
-        await using var client = await ConnectAsync(app);
+        await using var app = await McpTestHost.StartAsync(new McpServiceDomainModule());
+        await using var client = await McpTestHost.ConnectAsync(app);
 
         var result = await client.CallToolAsync(FakeServiceDomainTools.RetrieveName, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -61,8 +59,8 @@ public sealed class McpEndpointTests
     public async Task A_host_whose_modules_register_no_tools_offers_no_tools()
     {
         // The SDK announces the tools capability only when a tool is registered, as the MCP specification expects.
-        await using var app = await StartAsync(new FaultyServiceDomainModule(), new SecuredServiceDomainModule());
-        await using var client = await ConnectAsync(app);
+        await using var app = await McpTestHost.StartAsync(new FaultyServiceDomainModule(), new SecuredServiceDomainModule());
+        await using var client = await McpTestHost.ConnectAsync(app);
 
         client.ServerCapabilities.Tools.ShouldBeNull();
     }
@@ -84,7 +82,7 @@ public sealed class McpEndpointTests
     [Fact]
     public async Task Mcp_without_a_token_is_a_shared_unauthenticated_problem()
     {
-        await using var app = await StartAsync(new McpServiceDomainModule());
+        await using var app = await McpTestHost.StartAsync(new McpServiceDomainModule());
         using var http = app.GetTestClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(McpComposition.EndpointPath, UriKind.Relative))
         {
@@ -105,29 +103,5 @@ public sealed class McpEndpointTests
         problem.RootElement.GetProperty("errorCode").GetString().ShouldBe("shared.unauthenticated");
         problem.RootElement.GetProperty("instance").GetString().ShouldBe(McpComposition.EndpointPath);
         problem.RootElement.GetProperty("traceId").GetString().ShouldNotBeNullOrWhiteSpace();
-    }
-
-    private static async Task<WebApplication> StartAsync(params IServiceDomainModule[] modules)
-    {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
-        builder.WebHost.UseTestServer();
-        builder.UseTestTokens();
-        var app = HostComposition.Build(builder, modules);
-        await app.StartAsync(TestContext.Current.CancellationToken);
-        return app;
-    }
-
-    private static Task<McpClient> ConnectAsync(WebApplication app)
-    {
-        var http = TestTokens.Authenticated(app.GetTestClient());
-        var transport = new HttpClientTransport(
-            new HttpClientTransportOptions
-            {
-                Endpoint = new Uri(http.BaseAddress!, McpComposition.EndpointPath),
-                TransportMode = HttpTransportMode.StreamableHttp,
-            },
-            http,
-            ownsHttpClient: true);
-        return McpClient.CreateAsync(transport, cancellationToken: TestContext.Current.CancellationToken);
     }
 }

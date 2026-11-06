@@ -1539,6 +1539,7 @@
         "dependencies": {
           "Aspire.Keycloak.Authentication": "[13.6.4-preview.1.26523.11, )",
           "ModelContextProtocol.AspNetCore": "[2.3.1, )",
+          "RimBank.Mcp": "[0.1.0-alpha, )",
           "RimBank.Postgresql": "[0.1.0-alpha, )",
           "RimBank.Problems": "[0.1.0-alpha, )",
           "RimBank.ServiceDefaults": "[0.1.0-alpha, )",
@@ -1566,6 +1567,22 @@
         "dependencies": {
           "Microsoft.AspNetCore.Mvc.Testing": "[10.0.14, )",
           "RimBank.Http": "[0.1.0-alpha, )",
+          "Shouldly": "[4.3.0, )",
+          "xunit.v3": "[4.0.2, )"
+        }
+      },
+      "rimbank.mcp": {
+        "type": "Project",
+        "dependencies": {
+          "ModelContextProtocol.AspNetCore": "[2.3.1, )",
+          "RimBank.Problems": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel": "[0.1.0-alpha, )"
+        }
+      },
+      "rimbank.mcp.tests": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Mcp": "[0.1.0-alpha, )",
           "Shouldly": "[4.3.0, )",
           "xunit.v3": "[4.0.2, )"
         }
