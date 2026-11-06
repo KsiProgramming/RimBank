@@ -1528,6 +1528,7 @@
       "rimbank.conformance.tests": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.AspNetCore.Mvc.Testing": "[10.0.14, )",
           "RimBank.Conformance.Testing": "[0.1.0-alpha, )",
           "Shouldly": "[4.3.0, )",
           "xunit.v3": "[4.0.2, )"
