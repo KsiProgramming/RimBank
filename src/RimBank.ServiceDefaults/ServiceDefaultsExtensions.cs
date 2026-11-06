@@ -26,6 +26,12 @@ public static class ServiceDefaultsExtensions
     /// <summary>The tag of the health checks that the liveness probe runs.</summary>
     public const string LiveTag = "live";
 
+    /// <summary>
+    /// The activity source and meter Marten reports through. Each context's store reports under it (ADR 0016); the name
+    /// is a string, so the service defaults take no package reference to Marten.
+    /// </summary>
+    public const string MartenTelemetry = "Marten";
+
     /// <summary>Adds OpenTelemetry, the default health checks, service discovery and HttpClient resilience.</summary>
     /// <param name="builder">The host builder.</param>
     /// <returns>The same builder.</returns>
@@ -46,8 +52,8 @@ public static class ServiceDefaultsExtensions
     }
 
     /// <summary>
-    /// Adds OpenTelemetry logging, metrics (ASP.NET Core, HttpClient, runtime) and tracing (ASP.NET Core, HttpClient,
-    /// and the application's own activity source). Probe requests are not traced. The OTLP exporter is used when
+    /// Adds OpenTelemetry logging, metrics (ASP.NET Core, HttpClient, runtime, Marten) and tracing (ASP.NET Core,
+    /// HttpClient, Marten, and the application's own activity source). Probe requests are not traced. The OTLP exporter is used when
     /// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> is set, as Aspire does locally.
     /// </summary>
     /// <param name="builder">The host builder.</param>
@@ -65,9 +71,11 @@ public static class ServiceDefaultsExtensions
             .WithMetrics(metrics => metrics
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation())
+                .AddRuntimeInstrumentation()
+                .AddMeter(MartenTelemetry))
             .WithTracing(tracing => tracing
                 .AddSource(builder.Environment.ApplicationName)
+                .AddSource(MartenTelemetry)
                 .AddAspNetCoreInstrumentation(options => options.Filter = context => !IsProbe(context.Request.Path))
                 .AddHttpClientInstrumentation());
 
