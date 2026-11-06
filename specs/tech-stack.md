@@ -130,6 +130,7 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  └─ Decisions.cs                        # pure decide functions
 ├─ Registration/                          # business flow (command side): Register / Initiate
 │  ├─ RegisterParty.cs                    # command
+│  ├─ RegisterPartyAcknowledged.cs        # acknowledgement, built from the decided state
 │  └─ RegisterPartyHandler.cs
 ├─ Retrieval/                             # business flow (query side): Retrieve
 │  ├─ RetrievePartyReferenceDataDirectoryEntry.cs         # query
@@ -146,7 +147,7 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ PartyAssociationView.cs
 │  └─ PartyAssociationViewProjection.cs
 ├─ BankRelations/
-├─ PartyDirectory.cs                      # write port: load and append the entry and association event streams
+├─ IPartyDirectory.cs                     # write port: load and append the entry and association event streams
 └─ PartyDirectoryEnquiry.cs               # read port: query the read models
 ```
 
