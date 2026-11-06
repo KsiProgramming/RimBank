@@ -1,7 +1,7 @@
 namespace RimBank.Architecture.Tests;
 
 /// <summary>
-/// Every architecture rule of the constitution (tech-stack §2, §3, §4, §8.4; ADR 0008–0012, ADR 0014–0016), in the order of the
+/// Every architecture rule of the constitution (tech-stack §2, §3, §4, §8.4; ADR 0008–0012, ADR 0014–0017), in the order of the
 /// CONTRIBUTING catalogue.
 /// </summary>
 public static partial class ArchitectureRules
@@ -16,6 +16,7 @@ public static partial class ArchitectureRules
         SubscriptionsDependencies,
         ApiDependencies,
         McpDependencies,
+        AdaptersDispatchThroughTheMessageBus,
         PostgresqlDependencies,
         CrossContextIsolation,
         PublishedLanguageHasNoViews,

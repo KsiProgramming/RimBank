@@ -1,10 +1,12 @@
 using Npgsql;
-using RimBank.Postgresql.FakeContexts.Tests;
+using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
 namespace RimBank.Postgresql.Database.Tests;
 
 // tech-stack §2 and §8.4: each context logs in as its own role, which owns its own schema and is given nothing on any
-// other schema, so a context can never read another context's events or views. PostgreSQL enforces it (ADR 0016).
+// other schema, so a context can never read another context's events, views, outbox or inbox (ADR 0016), nor the
+// host's own Wolverine schema (ADR 0017). PostgreSQL enforces it.
 public sealed class RoleIsolationTests(PostgresqlServer server)
 {
     private const string InsufficientPrivilege = "42501";
@@ -14,6 +16,10 @@ public sealed class RoleIsolationTests(PostgresqlServer server)
     [Theory]
     [InlineData("SELECT count(*) FROM fake_registry.mt_events")]
     [InlineData("SELECT count(*) FROM fake_registry.mt_doc_fakeregistryentryview")]
+    [InlineData("SELECT count(*) FROM fake_registry.wolverine_incoming_envelopes")]
+    [InlineData("SELECT count(*) FROM fake_registry.wolverine_outgoing_envelopes")]
+    [InlineData("SELECT count(*) FROM wolverine.wolverine_nodes")]
+    [InlineData("SELECT count(*) FROM wolverine.wolverine_incoming_envelopes")]
     [InlineData("CREATE TABLE fake_registry.intruder (id int)")]
     public async Task A_context_role_cannot_read_or_write_another_contexts_schema(string sql)
     {
@@ -32,7 +38,7 @@ public sealed class RoleIsolationTests(PostgresqlServer server)
         await using var host = await RunningHost.StartAsync(server);
         await using var administrator = NpgsqlDataSource.Create(server.AdministratorConnectionString(host.Database));
         await using var command = administrator.CreateCommand(
-            "SELECT nspname, pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname LIKE 'fake\\_%' ORDER BY nspname");
+            "SELECT nspname, pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname LIKE 'fake\\_%' OR nspname = 'wolverine' ORDER BY nspname");
         await using var reader = await command.ExecuteReaderAsync(Cancellation);
 
         var owners = new List<(string Schema, string Owner)>();
@@ -41,7 +47,7 @@ public sealed class RoleIsolationTests(PostgresqlServer server)
             owners.Add((reader.GetString(0), reader.GetString(1)));
         }
 
-        owners.ShouldBe([("fake_ledger", "rimbank_fake_ledger"), ("fake_registry", "rimbank_fake_registry")]);
+        owners.ShouldBe([("fake_ledger", "rimbank_fake_ledger"), ("fake_registry", "rimbank_fake_registry"), ("wolverine", "rimbank_wolverine")]);
     }
 
     [Fact]

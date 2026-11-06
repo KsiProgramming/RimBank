@@ -94,7 +94,18 @@ An aggregate state is a `sealed record` implementing `IDecider<TSelf, TCommand, 
 
 ### Event store and views
 
-A context's `.Postgresql` adapter registers its own Marten store with `RimBank.Postgresql` ([ADR 0016](docs/adr/0016-per-context-marten-stores.md)). Declare a marker `public interface I<ServiceDomain>Store : IDocumentStore;` and call `builder.AddServiceDomainStore<I<ServiceDomain>Store>("<ServiceDomain>", options => …)`. That gives the context schema `<service_domain>`, role `rimbank_<service_domain>`, connection string `ConnectionStrings:<ServiceDomain>`, its own async daemon and a `ready` health check. Inside the options, map every event to a stable name (`options.Events.MapEventType<TEvent>("snake_case_name")`) and wire each view by lifecycle: `options.AddInlineView<TView, TProjection, TEvent>()` for a single-stream view read right after a command, and `AddAsyncView` for everything else. A view has a `Guid Id` equal to its stream's id. `store.GetViewProgressAsync(name)` reports an async view's lag, and `store.RebuildViewAsync(name, timeout)` rebuilds a view. In Development the host creates the role and schema from the context's connection string (`RimBank:Postgresql:ProvisionRoles`). The integration tests need Docker.
+A context's `.Postgresql` adapter registers its own Marten store with `RimBank.Postgresql` ([ADR 0016](docs/adr/0016-per-context-marten-stores.md)). Declare a marker `public interface I<ServiceDomain>Store : IDocumentStore;` and call `builder.AddServiceDomainStore<I<ServiceDomain>Store, TCore>("<ServiceDomain>", options => …)`, where `TCore` is any type in the core's root namespace (for example the Control Record). That gives the context schema `<service_domain>`, role `rimbank_<service_domain>`, connection string `ConnectionStrings:<ServiceDomain>`, its own async daemon and a `ready` health check. Inside the options, map every event to a stable name (`options.Events.MapEventType<TEvent>("snake_case_name")`) and wire each view by lifecycle: `options.AddInlineView<TView, TProjection, TEvent>()` for a single-stream view read right after a command, and `AddAsyncView` for everything else. A view has a `Guid Id` equal to its stream's id. `store.GetViewProgressAsync(name)` reports an async view's lag, and `store.RebuildViewAsync(name, timeout)` rebuilds a view. In Development the host creates the role and schema from the context's connection string (`RimBank:Postgresql:ProvisionRoles`). The integration tests need Docker.
+
+### Messaging
+
+The host runs one Wolverine bus ([ADR 0017](docs/adr/0017-wolverine-wiring.md)). `AddServiceDomainStore` also connects the context to it: Wolverine finds the handlers in the core's assembly, every handler in the core's namespace commits through the context's own store, the outbox and inbox tables live in the context's schema, and the context's messages go to its durable local queue `<service-domain>`.
+
+- **Handlers** live in the core as plain `static` classes named `…Handler` with a `Handle` method. They take the command or query, then their ports, and never Marten or Wolverine. A command handler returns `Result<TAcknowledgement>`, or `(Result<TAcknowledgement>, TMessage?)` to publish a message after the commit. A query handler returns `Result<TView>`.
+- **A failed decision commits nothing:** append events and return messages only when the decision succeeds. The transaction then has nothing to save.
+- **Write ports:** in the `.Postgresql` adapter, implement the port over `IDocumentSession` (a public constructor taking only the session) and register it with `builder.AddWritePort<TPort, TImplementation>()`. Wolverine builds it from the handler's own session and makes the handler transactional, so its events and messages commit together. Do not register write ports in the container.
+- **Read ports:** register them in the container, usually as singletons over the store marker (`store.QuerySession()`). A query handler opens no transaction.
+- **Dispatch:** `.Api` and `.Mcp` call `IMessageBus.InvokeAsync<Result<T>>(…)` and use no other Wolverine type (`adapters-dispatch-through-the-message-bus`).
+- **Host message store:** Wolverine keeps its own bookkeeping in schema `wolverine` (role `rimbank_wolverine`, `ConnectionStrings:Wolverine`). Without that connection string, as before the first context, messages stay in memory.
 
 ### Architecture rules
 
@@ -112,6 +123,7 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `subscriptions-dependencies` | `.Subscriptions` never uses its own `.Api`, `.Mcp` or `.Postgresql`, ASP.NET Core, Marten, Npgsql or the MCP SDK | tech-stack §4 |
 | `api-dependencies` | `.Api` never uses `.Postgresql`, Marten, Wolverine.Marten, Npgsql or the MCP SDK | tech-stack §4 |
 | `mcp-dependencies` | `.Mcp` never uses `.Api`, `.Postgresql`, Marten, Wolverine.Marten or Npgsql | tech-stack §4, §6 |
+| `adapters-dispatch-through-the-message-bus` | `.Api` and `.Mcp` use Wolverine only through `IMessageBus` | tech-stack §4, §6, ADR 0017 |
 | `postgresql-dependencies` | `.Postgresql` never uses `.Api`, `.Mcp`, ASP.NET Core or the MCP SDK | tech-stack §4 |
 | `cross-context-isolation` | The only reference to another context is `.Subscriptions` → its `.PublishedLanguage` | tech-stack §8.4, ADR 0004 |
 | `published-language-has-no-views` | No view (a type a projection returns) lives in `.PublishedLanguage` | tech-stack §3.1, §8.4 |
@@ -120,8 +132,8 @@ dotnet test --project tests/RimBank.Architecture.Tests
 | `host-is-the-composition-root` | Nothing outside `RimBank.Host` uses it; a context never implements `IServiceDomainModule` itself | tech-stack §2, §4, ADR 0014 |
 | `problems-only-in-adapters-and-host` | Only `.Api`, `.Mcp` and `RimBank.Host` use `RimBank.Problems` | tech-stack §4, ADR 0015 |
 | `problems-dependencies` | `RimBank.Problems` uses SharedKernel, ASP.NET Core and the BCL only | tech-stack §4, ADR 0015 |
-| `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` uses `RimBank.Postgresql` | tech-stack §4, ADR 0016 |
-| `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016 |
+| `shared-postgresql-only-in-postgresql-adapters` | Only a context's `.Postgresql` and `RimBank.Host` (for its own message store) use `RimBank.Postgresql` | tech-stack §4, ADR 0016, ADR 0017 |
+| `shared-postgresql-dependencies` | `RimBank.Postgresql` uses SharedKernel, Marten (JasperFx, Weasel, Npgsql), Wolverine, Microsoft.Extensions and the BCL only | tech-stack §4, ADR 0016, ADR 0017 |
 | `command-handlers-stay-on-write-side` | A command handler never uses an `IReadPort`, a view, an `IQuery<>` or a query handler | tech-stack §4, ADR 0012 |
 | `query-handlers-stay-on-read-side` | A query handler never uses an `IWritePort`, an aggregate, an `ICommand` or a command handler | tech-stack §4, ADR 0012 |
 | `projections-implement-contract` | A `…Projection` is a sealed class implementing `IProjection`, and every `IProjection` is named `…Projection` | ADR 0010 |

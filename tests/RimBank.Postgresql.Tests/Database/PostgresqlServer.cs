@@ -3,7 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using RimBank.Postgresql.Database.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
+using RimBank.Postgresql.FakeContexts.Ledger.Tests;
+using RimBank.Postgresql.FakeContexts.Registry.Tests;
 using Testcontainers.PostgreSql;
 
 [assembly: AssemblyFixture(typeof(PostgresqlServer))]
@@ -64,6 +65,7 @@ public sealed class PostgresqlServer : IAsyncLifetime
             ["ConnectionStrings:rimbank"] = AdministratorConnectionString(database),
             [$"ConnectionStrings:{FakeLedger.ServiceDomain}"] = ContextConnectionString(database, FakeLedger.ServiceDomain),
             [$"ConnectionStrings:{FakeRegistry.ServiceDomain}"] = ContextConnectionString(database, FakeRegistry.ServiceDomain),
+            [$"ConnectionStrings:{MessagingNodeRegistration.MessagingNode}"] = ContextConnectionString(database, MessagingNodeRegistration.MessagingNode.Value),
             ["RimBank:Postgresql:ProvisionRoles"] = "true",
         };
         foreach (var (key, value) in overrides ?? new Dictionary<string, string?>())
@@ -72,8 +74,9 @@ public sealed class PostgresqlServer : IAsyncLifetime
         }
 
         builder.Configuration.AddInMemoryCollection(settings);
-        builder.AddServiceDomainStore<IFakeLedgerStore>(FakeLedger.ServiceDomain, FakeLedger.Configure);
-        builder.AddServiceDomainStore<IFakeRegistryStore>(FakeRegistry.ServiceDomain, FakeRegistry.Configure);
+        builder.UseTestBus();
+        builder.AddFakeLedger();
+        builder.AddFakeRegistry();
         return builder.Build();
     }
 

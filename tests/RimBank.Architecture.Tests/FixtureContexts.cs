@@ -21,6 +21,8 @@ public static class FixtureContexts
         ("RimBank.SampleBanking.SubscriptionsUsesOwnApi", "subscriptions-dependencies"),
         ("RimBank.SampleBanking.ApiUsesPostgresql", "api-dependencies"),
         ("RimBank.SampleBanking.McpUsesApi", "mcp-dependencies"),
+        ("RimBank.SampleBanking.ApiConfiguresWolverine.Api", "adapters-dispatch-through-the-message-bus"),
+        ("RimBank.SampleBanking.McpConfiguresWolverine.Mcp", "adapters-dispatch-through-the-message-bus"),
         ("RimBank.SampleBanking.PostgresqlUsesMcp", "postgresql-dependencies"),
         ("RimBank.SampleBanking.CoreUsesOtherPublishedLanguage", "cross-context-isolation"),
         ("RimBank.SampleBanking.SubscriptionsUsesOtherCore", "cross-context-isolation"),

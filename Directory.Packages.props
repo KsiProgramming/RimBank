@@ -21,6 +21,7 @@
     <FsCheckVersion>3.6.0</FsCheckVersion>
     <XunitV3Version>4.0.2</XunitV3Version>
     <OpenTelemetryVersion>1.20.1</OpenTelemetryVersion>
+    <WolverineVersion>6.62.0</WolverineVersion>
     <MicrosoftExtensionsVersion>10.11.0</MicrosoftExtensionsVersion>
     <!-- Keep equal to the Aspire.AppHost.Sdk version in src/RimBank.AppHost/RimBank.AppHost.csproj. -->
     <AspireVersion>13.6.4</AspireVersion>
@@ -53,6 +54,18 @@
   -->
   <ItemGroup Label="Persistence">
     <PackageVersion Include="Marten" Version="9.58.0" />
+  </ItemGroup>
+
+  <!--
+    Messaging: command and query dispatch, the transactional outbox and inbox, and local durable queues
+    (specs/tech-stack.md §1–§2, ADR 0017). WolverineFx.Marten must match the Marten version above: 6.62.0 is built
+    against Marten 9.58.0. It brings WolverineFx and WolverineFx.Postgresql transitively. WolverineFx.RuntimeCompilation
+    (Roslyn) generates the handler code at startup; only RimBank.Host and the tests reference it (ADR 0017).
+  -->
+  <ItemGroup Label="Messaging">
+    <PackageVersion Include="WolverineFx" Version="$(WolverineVersion)" />
+    <PackageVersion Include="WolverineFx.Marten" Version="$(WolverineVersion)" />
+    <PackageVersion Include="WolverineFx.RuntimeCompilation" Version="$(WolverineVersion)" />
   </ItemGroup>
 
   <!-- Observability (specs/tech-stack.md §1, mission quality bar) -->
