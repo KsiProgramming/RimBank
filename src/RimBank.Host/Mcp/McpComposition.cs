@@ -3,6 +3,7 @@ using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RimBank.Host.Modules;
+using RimBank.Host.Security;
 using RimBank.Mcp;
 
 namespace RimBank.Host.Mcp;
@@ -70,7 +71,7 @@ public static class McpComposition
                 $"Each MCP tool name is registered exactly once, but these are registered more than once: {string.Join(", ", duplicates)}.");
         }
 
-        endpoints.MapMcp(EndpointPath);
+        endpoints.MapMcp(EndpointPath).RequireAuthorization(AuthenticationComposition.McpPolicy);
         return endpoints;
     }
 

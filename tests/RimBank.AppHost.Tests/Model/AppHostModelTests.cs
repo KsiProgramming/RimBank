@@ -48,6 +48,22 @@ public sealed class AppHostModelTests
     }
 
     [Fact]
+    public async Task Host_tells_mcp_clients_the_keycloak_realm_they_can_reach()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(ct);
+        var host = builder.CreateResourceBuilder<ProjectResource>(Program.HostResource).Resource;
+
+        var configuration = await ExecutionConfigurationBuilder.Create(host)
+            .WithEnvironmentVariablesConfig()
+            .BuildAsync(new(DistributedApplicationOperation.Publish), NullLogger.Instance, ct);
+
+        var variables = configuration.EnvironmentVariables.ToDictionary();
+        variables.ShouldContainKey(Program.McpAuthorizationServerVariable);
+        variables[Program.McpAuthorizationServerVariable].ShouldEndWith($"/realms/{Program.Realm}");
+    }
+
+    [Fact]
     public async Task Keycloak_imports_the_dev_realm_and_keeps_its_data_in_a_named_volume()
     {
         await using var builder = await DistributedApplicationTestingBuilder.CreateAsync<Program>(TestContext.Current.CancellationToken);
