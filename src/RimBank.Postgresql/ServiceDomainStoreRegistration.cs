@@ -94,6 +94,9 @@ public static class ServiceDomainStoreRegistration
         {
             options.Discovery.IncludeAssembly(typeof(TCore).Assembly);
 
+            // The generated handler code names the store marker, declared in the context's own .Postgresql assembly.
+            options.CodeGeneration.ReferenceAssembly(typeof(TStore).Assembly);
+
             // Every handler in the context's namespace commits through the context's own store, so the core needs no
             // Wolverine attribute and a handler cannot commit to another context's store by mistake.
             options.Policies.UseAncillaryStorageFromNamespace(typeof(TStore), coreNamespace);
