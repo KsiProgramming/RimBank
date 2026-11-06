@@ -1543,6 +1543,7 @@
       "rimbank.core.tests": {
         "type": "Project",
         "dependencies": {
+          "FsCheck.Xunit.v3": "[3.6.0, )",
           "RimBank.Core": "[0.1.0-alpha, )",
           "RimBank.SharedKernel.Testing": "[0.1.0-alpha, )",
           "Shouldly": "[4.3.0, )",
