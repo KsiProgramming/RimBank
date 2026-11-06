@@ -18,7 +18,7 @@ Spec files in scope: `doc-0/release14.0.0/apis-iso20022_ext-ddd/oas3/yamls/Party
 - A new shared test library, `tests/RimBank.Conformance.Testing`, holding:
   - **Spec location:** finds `doc-0/release14.0.0/apis-iso20022_ext-ddd/` by walking up from the test output to the folder that holds `RimBank.slnx`. It loads a service domain by its BIAN name (for example `PartyReferenceDataDirectory`), and an unknown name fails with a message that lists the available specs.
   - **A small BIAN spec model:** `BianOperation` (operation id such as `PartyReferenceDataDirectoryEntry/Register`, HTTP method, path template, and kind `Query` when the action is `Retrieve`, otherwise `Command`) and `BianChannel` (address such as `PartyReferenceDataDirectoryEntry/Created`).
-  - **OpenAPI loader** built on Microsoft.OpenApi and its YAML reader. **AsyncAPI loader** built on YamlDotNet, reading only `channels.*.address` and `operations.*` (`action`, `channel`).
+  - **OpenAPI loader** built on Microsoft.OpenApi and its YAML reader. **AsyncAPI loader** built on YamlDotNet, reading only `channels.*.address`.
   - **Implemented routes** read from an ASP.NET Core `EndpointDataSource` (method and route pattern). Templates are compared after normalisation: matching ignores case, every `{parameter}` matches any parameter name (so `{id}` matches `{partyreferencedatadirectoryid}`), and route constraints are dropped.
   - **Conformance assertions** (Shouldly, with messages that name the BIAN operation or channel):
     1. Every implemented route under `/<ServiceDomain>/` matches a spec operation with **the same method as the spec** (for example `PUT` for `Update`, `POST` for `Register`).

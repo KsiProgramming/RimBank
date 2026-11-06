@@ -100,6 +100,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Http.Tests/             # the Idempotency-Key header and its Problem Details (ADR 0018)
    ├─ RimBank.Postgresql.Tests/       # store, messaging and idempotency conventions with two test-only fake contexts, Testcontainers (ADR 0016–0018)
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
+   ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by every .Api.Tests: spec loaders, route and channel assertions (ADR 0020)
+   ├─ RimBank.Conformance.Tests/      # the harness on the real Party YAML and a test-only fake context (ADR 0020)
    └─ Party/
       ├─ RimBank.Party.PartyReferenceDataDirectory.Tests/              # domain + application (no I/O)
       ├─ RimBank.Party.PartyReferenceDataDirectory.Api.Tests/          # HTTP + Problem Details + BIAN conformance
@@ -250,7 +252,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 | Property-based | FsCheck | Money arithmetic, balance invariants, evolve/decide laws, projection/aggregate agreement |
 | Integration | Testcontainers (PostgreSQL), Alba | Marten persistence and projections (inline and async daemon), Wolverine outbox, HTTP endpoints end to end |
 | Architecture | ArchUnitNET | Dependency rules and CQRS rules in §4, naming rules in §3, cross-context isolation in §8.4 |
-| Contract | OpenAPI/AsyncAPI conformance tests; published-event schema snapshots | Implemented routes and events match the BIAN v14 ext-DDD YAML; published integration events stay backwards compatible |
+| Contract | OpenAPI/AsyncAPI conformance tests (`RimBank.Conformance.Testing`: Microsoft.OpenApi, YamlDotNet, [ADR 0020](../docs/adr/0020-bian-conformance-harness.md)); published-event schema snapshots | Implemented routes and channels exist in the BIAN v14 ext-DDD YAML with the spec's method, `Retrieve` is `GET` and nothing else is; published integration events stay backwards compatible |
 | MCP | MCP C# SDK client in-process against the test host | Tool list, input schemas, results, Problem Details errors, and parity with the HTTP endpoint for the same operation |
 | Mutation (later) | Stryker.NET | Core projects of money-moving domains |
 
