@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using RimBank.SharedKernel;
 
-namespace RimBank.Http;
+namespace RimBank.Api;
 
 /// <summary>
 /// The <c>Idempotency-Key</c> header of a command endpoint (specs/tech-stack.md §5, ADR 0018), bound as an endpoint

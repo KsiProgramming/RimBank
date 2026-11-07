@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The HTTP API of every service domain (ADR 0025): one folder per context with its BIAN routes as Minimal API
+    endpoints (<BusinessDomain>/<ServiceDomain>/, namespace RimBank.<BusinessDomain>.<ServiceDomain>.Api), and at its
+    root the HTTP conventions they share (namespace RimBank.Api: the Idempotency-Key header, ADR 0018, and
+    stream-version entity tags). An endpoint maps its request to a core command or query, dispatches it through
+    Wolverine's IMessageBus, and maps the outcome to a response or to Problem Details (RimBank.Problems). It holds no
+    business logic and never references a .Postgresql adapter; RimBank.Host composes it (specs/tech-stack.md §4).
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WolverineFx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RimBank.Core\RimBank.Core.csproj" />
+    <ProjectReference Include="..\RimBank.Problems\RimBank.Problems.csproj" />
+    <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

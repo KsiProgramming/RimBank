@@ -54,7 +54,7 @@ Make the options concrete for this specific phase, not generic. If the answers l
 
 ## 5. Write the planning package
 
-Create `specs/<YYYY-MM-DD>-<slug>/` using today's date (`date +%F`). Write the three files below. Keep them short and concrete; a reviewer should be able to read all three in a few minutes. Reflect the user's answers explicitly, and cite mission principles or tech-stack sections where they drive a decision. Use the exact project and namespace names the tech stack prescribes (for example `RimBank.Party.PartyReferenceDataDirectory.Api`).
+Create `specs/<YYYY-MM-DD>-<slug>/` using today's date (`date +%F`). Write the three files below. Keep them short and concrete; a reviewer should be able to read all three in a few minutes. Reflect the user's answers explicitly, and cite mission principles or tech-stack sections where they drive a decision. Use the exact project and namespace names the tech stack prescribes (for example `RimBank.Core`, `RimBank.Api` and namespaces such as `RimBank.Party.PartyReferenceDataDirectory.Api.Registration`; never a per-context `.Api` or `.Mcp` project, ADR 0025).
 
 ### requirements.md
 

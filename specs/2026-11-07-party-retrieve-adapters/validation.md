@@ -14,8 +14,8 @@ Some Definition-of-done items are covered elsewhere. There is no new projection 
   - view `Version` = Marten stream version;
   - `RebuildViewAsync` recreates the view;
   - the query through `IMessageBus` returns the view, or `party.party-not-found`.
-- [x] **Entity tags** (`RimBank.Http.Tests`, `StreamVersionTagTests`): strong format; `If-None-Match` matches an exact tag, a weak one, a list and `*`, and nothing else.
-- [x] **HTTP** (`RimBank.Party.PartyReferenceDataDirectory.Api.Tests`, Alba + Testcontainers):
+- [x] **Entity tags** (`RimBank.Api.Tests`, `StreamVersionTagTests`): strong format; `If-None-Match` matches an exact tag, a weak one, a list and `*`, and nothing else.
+- [x] **HTTP** (`RimBank.Api.Tests/Party/PartyReferenceDataDirectory`, Alba + Testcontainers):
   - Register then Retrieve → 200 with the same fields and the same `ETag` as Register;
   - unknown id → 404 `application/problem+json` `party.party-not-found`;
   - malformed, empty or non-v7 id → 400 `shared.invalid-identifier` with `errors["partyreferencedatadirectoryid"]`;
@@ -24,17 +24,18 @@ Some Definition-of-done items are covered elsewhere. There is no new projection 
   - the existing Register tests are unchanged and green.
 - [x] **Conformance** (existing test): the mapped routes, now including `GET …/{partyreferencedatadirectoryid}/Retrieve`, conform to the BIAN YAML.
 - [x] **Architecture tests** green. The endpoint dispatches only through `IMessageBus`. `.Api` does not reference `.Postgresql`. `MartenPartyDirectoryEnquiry` stays in `.Postgresql`. The query handler still uses only the read port and the view.
+- [x] **One API project (ADR 0025)**: `assembly-names` and the new `http-and-mcp-adapters-live-in-shared-projects` hold for the solution; `SolutionOnlyRulesTests` prove that a per-context `.Api` or `.Mcp` project, an endpoint type outside `RimBank.Api`, and `RimBank.Api` holding a core or `.Postgresql` namespace all fail.
 - [x] `RimBank.Host.Tests` green: the host starts with the read port, and Register is unchanged.
 - [ ] Locked restore, `dotnet build -c Release` (warnings as errors), `dotnet test --solution RimBank.slnx`, `dotnet format --verify-no-changes` and CodeQL: green in CI.
 
 ## Manual / demo checks
-- [x] The demo is the Alba suite: `dotnet test tests/Party/RimBank.Party.PartyReferenceDataDirectory.Api.Tests --filter "FullyQualifiedName~Retrieval"`, with every case above green.
+- [x] The demo is the Alba suite: `dotnet test --project tests/RimBank.Api.Tests --filter "FullyQualifiedName~PartyReferenceDataDirectory.Api.Retrieval"`, with every case above green.
 - [x] Reading check: the response is built only from the view, never from the write port or the aggregate. The 404 and 400 bodies are `application/problem+json` with `type`, `errorCode` and `traceId`. The route parameter is named `partyreferencedatadirectoryid`, as in BIAN.
 
 ## Merge criteria
 - [ ] All checks above pass in CI
 - [x] Roadmap checkbox 1.7 ticked in the same PR
-- [x] ADR 0024 (Retrieve request) and ADR 0017 (`AddReadPort`) amended; no new ADR needed
+- [x] ADR 0025 written (one `RimBank.Api` project); ADR 0024 (Retrieve request), ADR 0017 (`AddReadPort`), ADR 0018 and ADR 0022 amended
 - [x] tech-stack §3.3 comments updated
 - [ ] The PR notes the one-off `RebuildViewAsync` for development databases with entries from before 1.7
 - [x] No PII in logs, and no new PII returned (`PartyReference` stays omitted until 1.9/1.10)

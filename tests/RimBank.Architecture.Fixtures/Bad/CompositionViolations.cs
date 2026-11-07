@@ -57,7 +57,7 @@ namespace RimBank.SampleBanking.CoreUsesHttp
 {
     public static class CoreUsesHttpEntry
     {
-        public static string Header() => RimBank.Http.IdempotencyKeyHeader.HeaderName;
+        public static string Header() => RimBank.Api.IdempotencyKeyHeader.HeaderName;
     }
 }
 
@@ -66,12 +66,12 @@ namespace RimBank.SampleBanking.McpUsesHttp.Mcp
 {
     public static class McpUsesHttpTools
     {
-        public static string Header() => RimBank.Http.IdempotencyKeyHeader.HeaderName;
+        public static string Header() => RimBank.Api.IdempotencyKeyHeader.HeaderName;
     }
 }
 
-// http-dependencies: RimBank.Http reads requests; it never touches a store.
-namespace RimBank.Http.FixtureViolations
+// http-dependencies: the HTTP conventions of RimBank.Api read requests; it never touches a store.
+namespace RimBank.Api.FixtureViolations
 {
     public sealed record HttpUsesMarten(Marten.IDocumentSession Session);
 }

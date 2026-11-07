@@ -40,6 +40,7 @@ public static partial class ArchitectureRules
         NamespaceRule,
         AssemblyNames,
         CoresLiveInRimBankCore,
+        HttpAndMcpAdaptersLiveInSharedProjects,
         BusinessFolderNames,
         TypedIdsAreReadonlyRecordStructs,
         NoBinaryFloatingPoint,

@@ -2,7 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 
-namespace RimBank.Http;
+namespace RimBank.Api;
 
 /// <summary>
 /// A record's stream version as an HTTP entity tag (specs/tech-stack.md §5): commands and queries send it as a strong

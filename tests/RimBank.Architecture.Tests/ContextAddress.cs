@@ -19,7 +19,7 @@ public sealed record ContextAddress(string BusinessDomain, string ServiceDomain,
 {
     /// <summary>Projects that are not a bounded context: they hold no business domain (tech-stack §3.3).</summary>
     public static IReadOnlyList<string> CompositionProjects { get; } =
-        ["RimBank.SharedKernel", "RimBank.Host", "RimBank.AppHost", "RimBank.ServiceDefaults", "RimBank.Problems", "RimBank.Http", "RimBank.Mcp", "RimBank.Postgresql"];
+        ["RimBank.SharedKernel", "RimBank.Host", "RimBank.AppHost", "RimBank.ServiceDefaults", "RimBank.Problems", "RimBank.Api", "RimBank.Mcp", "RimBank.Postgresql"];
 
     /// <summary>The adapter suffixes a context project may have (tech-stack §3.1).</summary>
     public static IReadOnlyDictionary<string, ContextPart> AdapterSuffixes { get; } = new Dictionary<string, ContextPart>(StringComparer.Ordinal)

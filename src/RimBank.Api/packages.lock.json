@@ -95,13 +95,6 @@
           "RimBank.SharedKernel": "[0.1.0-alpha, )"
         }
       },
-      "rimbank.http": {
-        "type": "Project",
-        "dependencies": {
-          "RimBank.Problems": "[0.1.0-alpha, )",
-          "RimBank.SharedKernel": "[0.1.0-alpha, )"
-        }
-      },
       "rimbank.problems": {
         "type": "Project",
         "dependencies": {

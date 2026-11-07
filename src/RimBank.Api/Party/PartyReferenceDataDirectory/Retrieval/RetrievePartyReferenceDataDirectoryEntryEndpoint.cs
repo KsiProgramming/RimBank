@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using RimBank.Http;
+using RimBank.Api;
 using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.Party.PartyReferenceDataDirectory.Retrieval;
 using RimBank.Problems;

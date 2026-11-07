@@ -29,12 +29,10 @@ public sealed class SolutionRulesTests
                 "RimBank.Host",
                 "RimBank.Host.Testing",
                 "RimBank.Host.Tests",
-                "RimBank.Http",
-                "RimBank.Http.Tests",
+                "RimBank.Api",
+                "RimBank.Api.Tests",
                 "RimBank.Mcp",
                 "RimBank.Mcp.Tests",
-                "RimBank.Party.PartyReferenceDataDirectory.Api",
-                "RimBank.Party.PartyReferenceDataDirectory.Api.Tests",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests",
                 "RimBank.Problems",
@@ -113,6 +111,6 @@ public sealed class SolutionRulesTests
     {
         CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.SharedKernel.Money");
         CodeBases.Solution.TestAssemblies.Select(assembly => assembly.Assembly)
-            .ShouldBe(["RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Conformance.Tests", "RimBank.Core.Tests", "RimBank.Host.Tests", "RimBank.Http.Tests", "RimBank.Mcp.Tests", "RimBank.Party.PartyReferenceDataDirectory.Api.Tests", "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
+            .ShouldBe(["RimBank.Api.Tests", "RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Conformance.Tests", "RimBank.Core.Tests", "RimBank.Host.Tests", "RimBank.Mcp.Tests", "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
     }
 }

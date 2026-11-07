@@ -52,7 +52,7 @@ Where the HTTP header is read:
 - Every command in every context is idempotent per key, whichever channel sends it. A context gets this from `AddServiceDomainStore`, and its core does nothing beyond declaring the key on its commands.
 - A command handler must return `Result<T>` (alone, in a `Task`, or in a tuple with cascaded messages). Startup fails with a clear message otherwise.
 - The outcome table `mt_doc_idempotentoutcome` lives in each context's schema. Marten's `mt_last_modified` records when each outcome was written.
-- New architecture rules: `http-only-in-api-and-host` and `http-dependencies`, each with bad fixtures. `RimBank.Http` is a composition project.
+- New architecture rules: `http-only-in-api-and-host` and `http-dependencies`, each with bad fixtures. `RimBank.Http` is a composition project. *Amended by [ADR 0025](0025-one-api-project.md):* `RimBank.Http` is merged into `RimBank.Api`. The conventions keep their types under the namespace `RimBank.Api`, and both rules keep their ids.
 - The first `.Api` (1.5) adds `RequireIdempotencyKey()` to its command endpoints (or their group) and passes `idempotency.Value` into the command.
 - Deferred:
   - The MCP `idempotencyKey` tool argument (0.15/1.16, mandatory for money-moving tools in 4.14).

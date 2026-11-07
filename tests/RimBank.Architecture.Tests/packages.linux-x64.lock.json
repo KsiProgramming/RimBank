@@ -1496,6 +1496,30 @@
           "xunit.v3.runner.common": "[4.0.2]"
         }
       },
+      "rimbank.api": {
+        "type": "Project",
+        "dependencies": {
+          "RimBank.Core": "[0.1.0-alpha, )",
+          "RimBank.Problems": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel": "[0.1.0-alpha, )",
+          "WolverineFx": "[6.62.0, )"
+        }
+      },
+      "rimbank.api.tests": {
+        "type": "Project",
+        "dependencies": {
+          "Alba": "[8.5.3, )",
+          "Microsoft.AspNetCore.Mvc.Testing": "[10.0.14, )",
+          "RimBank.Api": "[0.1.0-alpha, )",
+          "RimBank.Conformance.Testing": "[0.1.0-alpha, )",
+          "RimBank.Host": "[0.1.0-alpha, )",
+          "RimBank.Host.Testing": "[0.1.0-alpha, )",
+          "RimBank.SharedKernel.Testing": "[0.1.0-alpha, )",
+          "Shouldly": "[4.3.0, )",
+          "Testcontainers.PostgreSql": "[4.16.0, )",
+          "xunit.v3": "[4.0.2, )"
+        }
+      },
       "rimbank.apphost": {
         "type": "Project",
         "dependencies": {
@@ -1560,9 +1584,8 @@
         "dependencies": {
           "Aspire.Keycloak.Authentication": "[13.6.4-preview.1.26523.11, )",
           "ModelContextProtocol.AspNetCore": "[2.3.1, )",
-          "RimBank.Http": "[0.1.0-alpha, )",
+          "RimBank.Api": "[0.1.0-alpha, )",
           "RimBank.Mcp": "[0.1.0-alpha, )",
-          "RimBank.Party.PartyReferenceDataDirectory.Api": "[0.1.0-alpha, )",
           "RimBank.Party.PartyReferenceDataDirectory.Postgresql": "[0.1.0-alpha, )",
           "RimBank.Postgresql": "[0.1.0-alpha, )",
           "RimBank.Problems": "[0.1.0-alpha, )",
@@ -1586,22 +1609,6 @@
           "xunit.v3": "[4.0.2, )"
         }
       },
-      "rimbank.http": {
-        "type": "Project",
-        "dependencies": {
-          "RimBank.Problems": "[0.1.0-alpha, )",
-          "RimBank.SharedKernel": "[0.1.0-alpha, )"
-        }
-      },
-      "rimbank.http.tests": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.AspNetCore.Mvc.Testing": "[10.0.14, )",
-          "RimBank.Http": "[0.1.0-alpha, )",
-          "Shouldly": "[4.3.0, )",
-          "xunit.v3": "[4.0.2, )"
-        }
-      },
       "rimbank.mcp": {
         "type": "Project",
         "dependencies": {
@@ -1615,29 +1622,6 @@
         "dependencies": {
           "RimBank.Mcp": "[0.1.0-alpha, )",
           "Shouldly": "[4.3.0, )",
-          "xunit.v3": "[4.0.2, )"
-        }
-      },
-      "rimbank.party.partyreferencedatadirectory.api": {
-        "type": "Project",
-        "dependencies": {
-          "RimBank.Core": "[0.1.0-alpha, )",
-          "RimBank.Http": "[0.1.0-alpha, )",
-          "RimBank.Problems": "[0.1.0-alpha, )",
-          "WolverineFx": "[6.62.0, )"
-        }
-      },
-      "rimbank.party.partyreferencedatadirectory.api.tests": {
-        "type": "Project",
-        "dependencies": {
-          "Alba": "[8.5.3, )",
-          "RimBank.Conformance.Testing": "[0.1.0-alpha, )",
-          "RimBank.Host": "[0.1.0-alpha, )",
-          "RimBank.Host.Testing": "[0.1.0-alpha, )",
-          "RimBank.Party.PartyReferenceDataDirectory.Api": "[0.1.0-alpha, )",
-          "RimBank.SharedKernel.Testing": "[0.1.0-alpha, )",
-          "Shouldly": "[4.3.0, )",
-          "Testcontainers.PostgreSql": "[4.16.0, )",
           "xunit.v3": "[4.0.2, )"
         }
       },

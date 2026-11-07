@@ -35,7 +35,7 @@ public static class FixtureContexts
         ("RimBank.Problems.FixtureViolations", "problems-dependencies"),
         ("RimBank.SampleBanking.CoreUsesHttp", "http-only-in-api-and-host"),
         ("RimBank.SampleBanking.McpUsesHttp.Mcp", "http-only-in-api-and-host"),
-        ("RimBank.Http.FixtureViolations", "http-dependencies"),
+        ("RimBank.Api.FixtureViolations", "http-dependencies"),
         ("RimBank.SampleBanking.CoreUsesSharedMcp", "shared-mcp-only-in-mcp-and-host"),
         ("RimBank.SampleBanking.ApiUsesSharedMcp.Api", "shared-mcp-only-in-mcp-and-host"),
         ("RimBank.Mcp.FixtureViolations", "shared-mcp-dependencies"),

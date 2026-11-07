@@ -10,11 +10,9 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.SharedKernel")]
     [InlineData("RimBank.Host")]
     [InlineData("RimBank.Problems")]
-    [InlineData("RimBank.Http")]
+    [InlineData("RimBank.Api")]
     [InlineData("RimBank.Mcp")]
     [InlineData("RimBank.Postgresql")]
-    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]
-    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Mcp")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Postgresql")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage")]
     [InlineData("RimBank.LoansAndDeposits.CurrentAccount.Subscriptions")]
@@ -24,6 +22,8 @@ public sealed class SolutionOnlyRulesTests
     }
 
     [Theory]
+    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]
+    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Mcp")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Core")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Infrastructure")]
@@ -41,8 +41,8 @@ public sealed class SolutionOnlyRulesTests
     public void A_namespace_outside_the_project_root_fails()
     {
         ArchitectureRules.AssemblyNameProblems(
-                "RimBank.Party.PartyReferenceDataDirectory.Api",
-                ["RimBank.Party.PartyReferenceDataDirectory.Api.Registration", "RimBank.Party.PartyReferenceDataDirectory.Registration"],
+                "RimBank.Party.PartyReferenceDataDirectory.Postgresql",
+                ["RimBank.Party.PartyReferenceDataDirectory.Postgresql", "RimBank.Party.PartyReferenceDataDirectory.Registration"],
                 _catalogue)
             .ShouldHaveSingleItem().Detail.ShouldContain("'RimBank.Party.PartyReferenceDataDirectory.Registration'");
     }
@@ -77,7 +77,7 @@ public sealed class SolutionOnlyRulesTests
         ArchitectureRules.CoreTypeProblems(
                 [
                     ("RimBank.Party.PartyReferenceDataDirectory.RegisterParty", "RimBank.Party.PartyReferenceDataDirectory.Registration", "RimBank.Core"),
-                    ("RimBank.Party.PartyReferenceDataDirectory.Api.RegisterEndpoint", "RimBank.Party.PartyReferenceDataDirectory.Api", "RimBank.Party.PartyReferenceDataDirectory.Api"),
+                    ("RimBank.Party.PartyReferenceDataDirectory.Api.RegisterEndpoint", "RimBank.Party.PartyReferenceDataDirectory.Api", "RimBank.Api"),
                     ("RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage.PartyCreated", "RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage", "RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage"),
                     ("RimBank.SharedKernel.Money", "RimBank.SharedKernel", "RimBank.SharedKernel"),
                     ("RimBank.Unknown.Context.Stray", "RimBank.Unknown.Context", "RimBank.Unknown.Context"),
@@ -87,7 +87,7 @@ public sealed class SolutionOnlyRulesTests
     }
 
     [Theory]
-    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]
+    [InlineData("RimBank.Api")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory")]
     [InlineData("RimBank.Host")]
     public void A_core_type_outside_the_core_project_fails(string assemblyName)
@@ -96,6 +96,52 @@ public sealed class SolutionOnlyRulesTests
                 [("RimBank.Party.PartyReferenceDataDirectory.Registration.RegisterParty", "RimBank.Party.PartyReferenceDataDirectory.Registration", assemblyName)],
                 _catalogue)
             .ShouldHaveSingleItem().Detail.ShouldContain($"lives in {assemblyName}, not RimBank.Core");
+    }
+
+    [Theory]
+    [InlineData("RimBank.Api", "RimBank.Api")]
+    [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory.Api")]
+    [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval")]
+    [InlineData("RimBank.Mcp", "RimBank.Mcp.Errors")]
+    [InlineData("RimBank.Mcp", "RimBank.Party.PartyReferenceDataDirectory.Mcp")]
+    public void A_shared_adapter_project_holding_its_conventions_and_catalogued_adapters_passes(string assemblyName, string namespaceName)
+    {
+        ArchitectureRules.AssemblyNameProblems(assemblyName, [namespaceName], _catalogue).ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory")]
+    [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory.Mcp")]
+    [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory.Postgresql")]
+    [InlineData("RimBank.Api", "RimBank.Customers.Directory.Api")]
+    [InlineData("RimBank.Mcp", "RimBank.Party.PartyReferenceDataDirectory.Api")]
+    public void A_shared_adapter_project_holding_anything_else_fails(string assemblyName, string namespaceName)
+    {
+        ArchitectureRules.AssemblyNameProblems(assemblyName, [namespaceName], _catalogue)
+            .ShouldHaveSingleItem().Detail.ShouldContain($"'{namespaceName}'");
+    }
+
+    [Fact]
+    public void Http_and_mcp_adapter_types_in_their_shared_projects_pass()
+    {
+        ArchitectureRules.SharedAdapterTypeProblems(
+                [
+                    ("RimBank.Party.PartyReferenceDataDirectory.Api.RegisterPartyEndpoint", "RimBank.Party.PartyReferenceDataDirectory.Api.Registration", "RimBank.Api"),
+                    ("RimBank.Party.PartyReferenceDataDirectory.Mcp.RegisterTool", "RimBank.Party.PartyReferenceDataDirectory.Mcp", "RimBank.Mcp"),
+                    ("RimBank.Party.PartyReferenceDataDirectory.Postgresql.MartenPartyDirectory", "RimBank.Party.PartyReferenceDataDirectory.Postgresql", "RimBank.Party.PartyReferenceDataDirectory.Postgresql"),
+                ],
+                _catalogue)
+            .ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api", "RimBank.Party.PartyReferenceDataDirectory.Api", "RimBank.Api")]
+    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api.Registration", "RimBank.Host", "RimBank.Api")]
+    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Mcp", "RimBank.Party.PartyReferenceDataDirectory.Mcp", "RimBank.Mcp")]
+    public void An_http_or_mcp_adapter_type_outside_its_shared_project_fails(string namespaceName, string assemblyName, string expected)
+    {
+        ArchitectureRules.SharedAdapterTypeProblems([($"{namespaceName}.Endpoint", namespaceName, assemblyName)], _catalogue)
+            .ShouldHaveSingleItem().Detail.ShouldContain($"lives in {assemblyName}, not {expected}");
     }
 
     [Fact]

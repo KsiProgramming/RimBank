@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using RimBank.Problems;
 
-namespace RimBank.Http;
+namespace RimBank.Api;
 
 /// <summary>Requires the <c>Idempotency-Key</c> header on command endpoints (specs/tech-stack.md §5, ADR 0018).</summary>
 public static class IdempotencyKeyEndpoints

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RimBank.Problems;
 using RimBank.SharedKernel;
 
-namespace RimBank.Http.Tests;
+namespace RimBank.Api.Tests;
 
 // Roadmap 0.12: every state-changing endpoint requires an Idempotency-Key header, and a missing, invalid, reused or
 // in-use key is RFC 9457 Problem Details (specs/tech-stack.md §5, ADR 0015, ADR 0018). Queries need no key.

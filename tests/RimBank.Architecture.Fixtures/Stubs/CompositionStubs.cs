@@ -35,7 +35,7 @@ namespace RimBank.Problems
     }
 }
 
-namespace RimBank.Http
+namespace RimBank.Api
 {
     public static class IdempotencyKeyHeader
     {

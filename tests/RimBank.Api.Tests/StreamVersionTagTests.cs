@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 
-namespace RimBank.Http.Tests;
+namespace RimBank.Api.Tests;
 
 // Roadmap 1.7: a record's stream version travels as a strong ETag, and a conditional GET whose If-None-Match already
 // names it is not modified (specs/tech-stack.md §5, RFC 9110 §8.8.3 and §13.1.2).

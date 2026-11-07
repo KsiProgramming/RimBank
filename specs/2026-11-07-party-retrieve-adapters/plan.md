@@ -41,3 +41,11 @@ Every group is written test first, and the solution builds and its tests pass af
 - [ ] PR note: a development database with entries from before 1.7 needs `RebuildViewAsync` once for `PartyReferenceDataDirectoryEntryViewProjection`.
 - [x] Roadmap: tick **1.7**.
 - [x] Run `dotnet format --verify-no-changes` and the full `dotnet test --solution RimBank.slnx` locally.
+
+## 4. One API project (from review, ADR 0025)
+- [x] New `src/RimBank.Api` (`RootNamespace` `RimBank.Api`): `RimBank.Http`'s files at its root under the namespace `RimBank.Api`, and the Party endpoints in `Party/PartyReferenceDataDirectory/{Registration,Retrieval}/` with unchanged namespaces. Delete `RimBank.Http` and `RimBank.Party.PartyReferenceDataDirectory.Api`; `RimBank.Host` references `RimBank.Api`.
+- [x] New `tests/RimBank.Api.Tests`: `RimBank.Http.Tests` at its root (namespace `RimBank.Api.Tests`) and the Party HTTP tests in `Party/PartyReferenceDataDirectory/`. Delete both old test projects.
+- [x] Architecture tests: `assembly-names` accepts `RimBank.Api` and `RimBank.Mcp` holding their conventions and catalogued `.Api` / `.Mcp` namespaces, and no longer accepts a per-context `.Api` or `.Mcp` project. New solution-only rule `http-and-mcp-adapters-live-in-shared-projects`. The HTTP convention rules read `RimBank.Api`, and the fixtures' header stub moves there. `SolutionOnlyRulesTests` cover the new cases.
+- [x] Docs: ADR 0025; notes in ADR 0018 and ADR 0022; tech-stack §2, §3.1, §3.3, §4, §5, §6; CONTRIBUTING (rules table, adding a context); the `plan-feature` skill example.
+- [x] Lock files regenerated: new `RimBank.Api` and `RimBank.Api.Tests`, `RimBank.Host`, and both runtime lock files of `RimBank.Architecture.Tests`.
+- [x] Locked restore, Release build, full test run and `dotnet format --verify-no-changes`.
