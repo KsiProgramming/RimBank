@@ -75,7 +75,14 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 - **Response.** It answers `200`, built from the acknowledgement: the Register response's shape plus `RefreshDate`, with the new version as `ETag`. From 1.8, Retrieve also returns `RefreshDate`, and omits it until the first Update.
 - **Spec defect.** The spec's `200` for this operation points at `BadRequest`. RimBank answers with the intended `UpdatePartyReferenceDataDirectoryEntryResponse` schema instead.
 
-**Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its exact semantics are decided in 1.9.
+**Demographics requests (1.9).** The Demographics record lives in the entry (an entity, as decided above), so its three operations use the entry's stream, version and inline view.
+- **Ids.** Every route carries `{partyreferencedatadirectoryid}` and `{demographicsid}`. A malformed one is `400` `shared.invalid-identifier`, naming that parameter in `errors`. The checks run in order: an unknown entry is `party.party-not-found`, a `demographicsid` that is not the entry's is `party.behavior-qualifier-not-found`, and then (for commands) a stale `If-Match` is `party.version-conflict`.
+- **Update** (`PUT …/Demographics/{demographicsid}/Update`) is a partial update of BIAN's `UpdateDemographics` fields. A field left out keeps its value, an empty one clears it, and text is trimmed. A given `Employment` (`PartyReference`, `InvolvementReference`, free text never checked against the directory) replaces the whole employment. `Socio-EconomicClassification` and the `Employment` parts are at most 140 characters (ISO 20022 Max140Text), and the histories and `ServicingConstraints` at most 2048 (Max2048Text). A longer one is `party.demographics-invalid` with the BIAN field names in `errors`. Every accepted Update appends `DemographicsUpdated`, even when nothing changes.
+- **Exchange** (`PUT …/Demographics/{demographicsid}/Exchange`) verifies or rejects the recorded details, through RimBank's extension field `ExchangeActionType`. The status lifecycle, the ignored body fields and the not-recorded rule are in [ADR 0028](0028-demographics-exchange-as-verification.md).
+- **Retrieve** (`GET …/Demographics/{demographicsid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`. Before the first Update, it answers `200` with the ids and `VerificationStatus` `Unverified` only.
+- **Headers and responses.** Update and Exchange require `Idempotency-Key` and `If-Match`, as in 1.8. All three answer `200` with the same body: BIAN's Demographics fields without `EthnicityReligion`, `VerificationStatus`, `VerificationDate` (left out while unverified), and the entry and Demographics ids. Update and Exchange build it from their acknowledgement.
+
+**Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its semantics are decided in [ADR 0028](0028-demographics-exchange-as-verification.md) (1.9).
 
 ### Domain events
 
@@ -83,8 +90,8 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 |---|---|---|
 | Entry | `PartyRegistered` | `RegisterParty` (carries the singleton BQ ids) |
 | Entry | `PartyReferenceDataDirectoryEntryUpdated` | `UpdatePartyReferenceDataDirectoryEntry` (carries the resulting party type and the `RefreshDate`, 1.8) |
-| Entry | `DemographicsUpdated` | `UpdateDemographics` |
-| Entry | `DemographicsExchanged` | `ExchangeDemographics` |
+| Entry | `DemographicsUpdated` | `UpdateDemographics` (carries the full resulting details and their verification status and date, 1.9) |
+| Entry | `DemographicsExchanged` | `ExchangeDemographics` (carries the verification status and date, 1.9, [ADR 0028](0028-demographics-exchange-as-verification.md)) |
 | Entry | `PartyReferenceUpdated` | `UpdatePartyReference` |
 | Entry | `BankRelationsUpdated` | `UpdateBankRelations` |
 | PartyAssociation | `PartyAssociationRegistered` | `RegisterPartyAssociation` |
@@ -145,6 +152,10 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner |
 | `party.associate-not-registered` | BusinessRule (422) | `AssociateReference` is not an entry of this directory |
 | `party.self-association` | BusinessRule (422) | The associate is the owning entry |
+| `party.demographics-invalid` | Validation (400) | A Demographics Update text is longer than its ISO 20022 type allows; `errors` names each BIAN field (1.9) |
+| `party.exchange-action-type-required` | Validation (400) | A Demographics Exchange has no `ExchangeActionType`, or a blank one (1.9, ADR 0028) |
+| `party.exchange-action-type-invalid` | Validation (400) | An `ExchangeActionType` other than `Verify` or `Reject` (1.9, ADR 0028) |
+| `party.demographics-not-recorded` | BusinessRule (422) | A Demographics Exchange on details that were never recorded, or were all cleared (1.9, ADR 0028) |
 | `party.version-conflict` | Conflict (409) | `If-Match` is not the current stream version (1.8, [ADR 0027](0027-optimistic-concurrency-for-commands.md)) |
 | `shared.if-match-required` | PreconditionRequired (428) | A command on an existing entry or association has no `If-Match` (1.8, ADR 0027) |
 | `shared.if-match-invalid` | Validation (400) | `If-Match` is not exactly one strong version tag (1.8, ADR 0027) |

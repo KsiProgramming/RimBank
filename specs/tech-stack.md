@@ -86,7 +86,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Api/                # the HTTP API of every context, one folder per context (ADR 0025)
 │  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match, If-Match: ADR 0027)
-│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/
+│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/, Demographics/
 │  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
 │  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018); one retry on a lost concurrency race (ADR 0027)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
@@ -144,6 +144,13 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ PartyReferenceDataDirectoryEntryView.cs             # read model (immutable record)
 │  └─ PartyReferenceDataDirectoryEntryViewProjection.cs   # pure evolve: event → view
 ├─ Demographics/                          # Behavior Qualifier: entity of the entry (its own commands and queries)
+│  ├─ DemographicsId.cs
+│  ├─ PartyDemographics.cs                # value objects: the details, Employment, the partial-update DemographicsChanges
+│  ├─ DemographicsRecord.cs               # details + verification status (ADR 0028), in the entry state and its view
+│  ├─ Events.cs                           # DemographicsUpdated, DemographicsExchanged (decided by the entry's Decide)
+│  ├─ UpdateDemographics.cs               # command, with its acknowledgement and handler
+│  ├─ ExchangeDemographics.cs             # command (verify / reject), with its acknowledgement and handler
+│  └─ RetrieveDemographics.cs             # query over the entry's view, with its handler
 ├─ Reference/
 ├─ Associations/                          # Behavior Qualifier as its own aggregate (ADR 0024)
 │  ├─ PartyAssociation.cs                 # state + evolve
