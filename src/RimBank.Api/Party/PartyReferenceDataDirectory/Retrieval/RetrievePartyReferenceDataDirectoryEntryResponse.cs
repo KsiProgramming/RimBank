@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using RimBank.Party.PartyReferenceDataDirectory.Retrieval;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 
 /// <summary>
 /// The body of a successful Retrieve: BIAN's <c>RetrievePartyReferenceDataDirectoryEntry</c> fields and the ids of the

@@ -49,3 +49,10 @@ Every group is written test first, and the solution builds and its tests pass af
 - [x] Docs: ADR 0025; notes in ADR 0018 and ADR 0022; tech-stack §2, §3.1, §3.3, §4, §5, §6; CONTRIBUTING (rules table, adding a context); the `plan-feature` skill example.
 - [x] Lock files regenerated: new `RimBank.Api` and `RimBank.Api.Tests`, `RimBank.Host`, and both runtime lock files of `RimBank.Architecture.Tests`.
 - [x] Locked restore, Release build, full test run and `dotnet format --verify-no-changes`.
+
+## 5. Flat context namespaces (from review, ADR 0026)
+- [x] Every Party core type moves to `RimBank.Party.PartyReferenceDataDirectory`, every HTTP type to `….Api`, and every test to `….Tests` / `….Api.Tests`. Folders stay. The context's own `using` lines and the `using Entry = …;` alias go away; `EntryExamples` fields that had a type's name are renamed (`Demographics`, `Reference`, `BankRelations`).
+- [x] New architecture rule `context-namespaces-stop-at-the-adapter` with its bad fixture; `test-namespaces` applies it to test namespaces; `business-folder-names` keeps its namespace check (fixture moved to `RimBank.SharedKernel.Services`) and gains `BusinessFolderNamesOnDiskTests`.
+- [x] `.editorconfig`: `dotnet_style_namespace_match_folder = false`, IDE0130 off.
+- [x] Docs: ADR 0026; notes in ADR 0011, 0023 and 0025; tech-stack §3.1, §3.3, §3.4; CONTRIBUTING (test namespaces, rules table).
+- [x] Release build, full test run and `dotnet format --verify-no-changes`.

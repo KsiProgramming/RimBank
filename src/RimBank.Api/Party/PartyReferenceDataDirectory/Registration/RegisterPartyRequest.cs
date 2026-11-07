@@ -1,10 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 
 /// <summary>
 /// The body of <c>POST /PartyReferenceDataDirectory/Register</c>: BIAN's <c>RegisterPartyReferenceDataDirectoryEntry</c>

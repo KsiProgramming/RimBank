@@ -25,6 +25,7 @@ Some Definition-of-done items are covered elsewhere. There is no new projection 
 - [x] **Conformance** (existing test): the mapped routes, now including `GET …/{partyreferencedatadirectoryid}/Retrieve`, conform to the BIAN YAML.
 - [x] **Architecture tests** green. The endpoint dispatches only through `IMessageBus`. `.Api` does not reference `.Postgresql`. `MartenPartyDirectoryEnquiry` stays in `.Postgresql`. The query handler still uses only the read port and the view.
 - [x] **One API project (ADR 0025)**: `assembly-names` and the new `http-and-mcp-adapters-live-in-shared-projects` hold for the solution; `SolutionOnlyRulesTests` prove that a per-context `.Api` or `.Mcp` project, an endpoint type outside `RimBank.Api`, and `RimBank.Api` holding a core or `.Postgresql` namespace all fail.
+- [x] **Flat namespaces (ADR 0026)**: `context-namespaces-stop-at-the-adapter` holds for the solution and fires on its bad fixture only; `test-namespaces` refuses `….Registration.Tests`; `BusinessFolderNamesOnDiskTests` finds no technical folder under `src/` or `tests/`.
 - [x] `RimBank.Host.Tests` green: the host starts with the read port, and Register is unchanged.
 - [ ] Locked restore, `dotnet build -c Release` (warnings as errors), `dotnet test --solution RimBank.slnx`, `dotnet format --verify-no-changes` and CodeQL: green in CI.
 
@@ -35,7 +36,7 @@ Some Definition-of-done items are covered elsewhere. There is no new projection 
 ## Merge criteria
 - [ ] All checks above pass in CI
 - [x] Roadmap checkbox 1.7 ticked in the same PR
-- [x] ADR 0025 written (one `RimBank.Api` project); ADR 0024 (Retrieve request), ADR 0017 (`AddReadPort`), ADR 0018 and ADR 0022 amended
+- [x] ADR 0025 (one `RimBank.Api` project) and ADR 0026 (flat context namespaces) written; ADR 0024 (Retrieve request), ADR 0017 (`AddReadPort`), ADR 0018 and ADR 0022 amended
 - [x] tech-stack §3.3 comments updated
 - [ ] The PR notes the one-off `RebuildViewAsync` for development databases with entries from before 1.7
 - [x] No PII in logs, and no new PII returned (`PartyReference` stays omitted until 1.9/1.10)

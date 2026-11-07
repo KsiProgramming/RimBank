@@ -1,5 +1,3 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
 using RimBank.SharedKernel;
 using Wolverine;
 

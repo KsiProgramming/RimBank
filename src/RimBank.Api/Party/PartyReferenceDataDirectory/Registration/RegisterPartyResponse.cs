@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 
 /// <summary>
 /// The body of a successful Register: BIAN's <c>RegisterPartyReferenceDataDirectoryEntry</c> fields and the ids of the

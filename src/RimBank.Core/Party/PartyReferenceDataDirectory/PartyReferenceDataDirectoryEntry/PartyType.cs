@@ -1,4 +1,4 @@
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// The kind of party an entry is about: BIAN <c>Partytypevalues</c> (UK Open Banking <c>OBExternalPartyType1Code</c>,

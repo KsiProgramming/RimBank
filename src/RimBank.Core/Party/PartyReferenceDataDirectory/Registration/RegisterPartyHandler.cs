@@ -1,12 +1,7 @@
 using System.Diagnostics;
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 using RimBank.SharedKernel;
-using Entry = RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntry;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Registration;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>Handles <see cref="RegisterParty"/> on the write side (tech-stack §8.1).</summary>
 public static class RegisterPartyHandler
@@ -39,16 +34,16 @@ public static class RegisterPartyHandler
             BankRelationsId.New(time));
 
         var history = await directory.LoadEntryAsync(register.EntryId, cancellationToken);
-        var state = history.Aggregate(Entry.Initial, Entry.Evolve);
+        var state = history.Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
 
-        return Entry.Decide(register, state).Map(events =>
+        return PartyReferenceDataDirectoryEntry.Decide(register, state).Map(events =>
         {
             directory.StartEntry(register.EntryId, events);
-            return Acknowledge(events.Aggregate(state, Entry.Evolve), history.Count + events.Count);
+            return Acknowledge(events.Aggregate(state, PartyReferenceDataDirectoryEntry.Evolve), history.Count + events.Count);
         });
     }
 
-    private static RegisterPartyAcknowledged Acknowledge(Entry registered, long version) =>
+    private static RegisterPartyAcknowledged Acknowledge(PartyReferenceDataDirectoryEntry registered, long version) =>
         registered switch
         {
             {

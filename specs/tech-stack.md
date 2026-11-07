@@ -42,6 +42,7 @@ RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]
 - `<BusinessDomain>` and `<ServiceDomain>` use BIAN Service Landscape names in PascalCase.
 - **One BIAN service domain = one bounded context.**
 - The **core namespace has no suffix**: `RimBank.Party.PartyReferenceDataDirectory`. Every context's core (domain and application logic) lives in **one project, `RimBank.Core`**, in the folder `<BusinessDomain>/<ServiceDomain>/`. Its root namespace is `RimBank`, so the word `Core` never appears in a namespace ([ADR 0023](../docs/adr/0023-one-core-project.md)).
+- **A context's namespace stops at the context or its adapter** ([ADR 0026](../docs/adr/0026-flat-context-namespaces.md)): every core type is in `RimBank.<BusinessDomain>.<ServiceDomain>` and every adapter type in `….<Adapter>`, whatever its folder. Aggregate, Behavior Qualifier and flow folders (§3.4) organise files but are never namespace segments, so `RimBank.Party.PartyReferenceDataDirectory.Registration` or `….Api.Retrieval` is not allowed (`context-namespaces-stop-at-the-adapter`). A name clash is solved with a better type name, never a namespace segment.
 - A context's adapters add a suffix to its namespace: `.PublishedLanguage`, `.Api`, `.Mcp`, `.Postgresql`, `.Subscriptions`, and later `.RabbitMq` and so on. There is no per-context core project.
 - The **driving adapters are folders of one shared project each** ([ADR 0025](../docs/adr/0025-one-api-project.md)): every context's HTTP adapter is the folder `<BusinessDomain>/<ServiceDomain>/` of **`RimBank.Api`** (namespace `RimBank.<BusinessDomain>.<ServiceDomain>.Api`), and its MCP adapter the same folder of **`RimBank.Mcp`** (namespace `….Mcp`). Each of those projects keeps the conventions its adapters share at its root namespace. There is no per-context `.Api` or `.Mcp` project. `.PublishedLanguage`, `.Postgresql` and `.Subscriptions` are projects of their own, named after their namespace.
 - Integration events that other contexts consume live in `.PublishedLanguage` (a DDD term, and the only shared contract). It contains integration events only, never views or domain types.
@@ -85,11 +86,11 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Api/                # the HTTP API of every context, one folder per context (ADR 0025)
 │  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match)
-│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api: Registration/, Retrieval/
+│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/
 │  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
 │  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
-│  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory (§3.4)
+│  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory for every folder (§3.4, ADR 0026)
 │  │  └─ LoansAndDeposits/CurrentAccount/       # namespace RimBank.LoansAndDeposits.CurrentAccount
 │  └─ Party/                      # a context's own adapter projects, each referencing RimBank.Core
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
@@ -115,14 +116,14 @@ Before a service domain is created, its mapping must be checked against the BIAN
       └─ RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/   # Testcontainers
 ```
 
-**Test namespaces:** a test namespace follows the code under test from the outside in, adds the test folder, and always ends with `.Tests`: `<namespace of the project under test>.<folder>.Tests`. For example `RimBank.SharedKernel.MoneyAndCurrency.Tests` (folder `MoneyAndCurrency/` of `RimBank.SharedKernel.Tests`) or `RimBank.Party.PartyReferenceDataDirectory.Registration.Tests` (folder `Party/PartyReferenceDataDirectory/Registration/` of `RimBank.Core.Tests`); root files use the project name (`RimBank.SharedKernel.Tests`). Never `….Tests.<Folder>`. Shared test libraries such as `RimBank.SharedKernel.Testing` keep their own name.
+**Test namespaces:** a test namespace follows the code under test and always ends with `.Tests`. Inside a context it is exactly the namespace under test plus `.Tests`, whatever the test folder: `RimBank.Party.PartyReferenceDataDirectory.Tests` (every folder of `tests/RimBank.Core.Tests/Party/PartyReferenceDataDirectory/`), `RimBank.Party.PartyReferenceDataDirectory.Api.Tests`, `RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests` ([ADR 0026](../docs/adr/0026-flat-context-namespaces.md)). A composition project's tests add the test folder: `RimBank.SharedKernel.MoneyAndCurrency.Tests` (folder `MoneyAndCurrency/` of `RimBank.SharedKernel.Tests`); root files use the project name (`RimBank.SharedKernel.Tests`). Never `….Tests.<Folder>`. Shared test libraries such as `RimBank.SharedKernel.Testing` keep their own name.
 
 ### 3.4 Inside `RimBank.Core`: business names only
 
 `RimBank.Core` has one folder per context, `<BusinessDomain>/<ServiceDomain>/`. Inside it, folders follow aggregates, BIAN Behavior Qualifiers and business flows. Generic technical folders (`Services`, `Repositories`, `Helpers`, `Managers`, `Utils`, `Dtos`) are forbidden.
 
 ```
-RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.PartyReferenceDataDirectory
+RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.PartyReferenceDataDirectory for every folder below (ADR 0026)
 ├─ PartyReferenceDataDirectoryEntry/      # Control Record (aggregate root)
 │  ├─ PartyReferenceDataDirectoryEntry.cs # state + evolve
 │  ├─ PartyReferenceDataDirectoryEntryId.cs

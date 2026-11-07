@@ -2,13 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using RimBank.Api;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Retrieval;
 using RimBank.Problems;
 using RimBank.SharedKernel;
 using Wolverine;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 
 /// <summary>
 /// <c>GET /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Retrieve</c>: BIAN

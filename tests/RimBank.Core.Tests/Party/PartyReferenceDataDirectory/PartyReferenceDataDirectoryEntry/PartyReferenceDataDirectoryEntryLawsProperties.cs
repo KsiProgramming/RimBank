@@ -1,15 +1,12 @@
 using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 using EntryLaws = RimBank.SharedKernel.Testing.DeciderLaws<
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntry,
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntryCommand,
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntryEvent>;
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry,
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryCommand,
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryEvent>;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // The decider laws on the entry (ADR 0010). Each runs 100 command sequences.
 public sealed class PartyReferenceDataDirectoryEntryLawsProperties

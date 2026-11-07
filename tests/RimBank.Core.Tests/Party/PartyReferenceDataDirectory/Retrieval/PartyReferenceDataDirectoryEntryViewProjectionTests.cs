@@ -1,14 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.SharedKernel;
-using static RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests.EntryExamples;
+using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 using EntryViewSpecification = RimBank.SharedKernel.Testing.ProjectionSpecification<
-    RimBank.Party.PartyReferenceDataDirectory.Retrieval.PartyReferenceDataDirectoryEntryViewProjection,
-    RimBank.Party.PartyReferenceDataDirectory.Retrieval.PartyReferenceDataDirectoryEntryView,
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntryEvent>;
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryViewProjection,
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryView,
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryEvent>;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Retrieval.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // The entry's view (ADR 0024): the fold of the entry's events from no view, so it can always be rebuilt.
 public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
@@ -25,9 +24,9 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 Version: 1,
                 partyType,
                 OpenDate,
-                DemographicsId,
-                PartyReferenceId,
-                BankRelationsId));
+                Demographics,
+                Reference,
+                BankRelations));
 
     [Fact]
     public void An_entry_with_no_events_has_no_view() =>
@@ -41,9 +40,9 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 Version: 3,
                 PartyType.Person,
                 OpenDate,
-                DemographicsId,
-                PartyReferenceId,
-                BankRelationsId));
+                Demographics,
+                Reference,
+                BankRelations));
 
     [Fact]
     public void An_entry_event_before_registration_leaves_no_view() =>

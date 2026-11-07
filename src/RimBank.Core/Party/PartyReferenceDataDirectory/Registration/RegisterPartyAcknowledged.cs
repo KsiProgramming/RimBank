@@ -1,9 +1,5 @@
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Registration;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// The acknowledgement of <see cref="RegisterParty"/>: the entry as the Register decision produced it, never a read

@@ -1,12 +1,9 @@
 using System.Text.Json;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Tests;
 using RimBank.SharedKernel;
 using RimBank.SharedKernel.Testing;
-using static RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests.EntryExamples;
-using Entry = RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntry;
+using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Registration.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // The Register flow on the command side (BIAN PartyReferenceDataDirectoryEntry/Register, ADR 0024): the handler creates
 // the ids and the open date, decides against the stored history, starts the stream and acknowledges from the decision.
@@ -64,8 +61,8 @@ public sealed class RegisterPartyHandlerTests
     {
         var acknowledged = (await Register(PartyType.Organisation)).Value;
 
-        var state = _directory.StreamOf(acknowledged.EntryId).Aggregate(Entry.Initial, Entry.Evolve);
-        state.ShouldBe(new Entry(
+        var state = _directory.StreamOf(acknowledged.EntryId).Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
+        state.ShouldBe(new PartyReferenceDataDirectoryEntry(
             acknowledged.EntryId,
             acknowledged.PartyType,
             acknowledged.OpenDate,

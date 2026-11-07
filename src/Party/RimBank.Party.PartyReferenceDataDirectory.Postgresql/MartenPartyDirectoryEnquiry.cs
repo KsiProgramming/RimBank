@@ -1,5 +1,3 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Retrieval;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Postgresql;
 

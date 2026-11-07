@@ -30,6 +30,14 @@ public static partial class ArchitectureRules
             .Where(type => !NamespaceIsAllowed(type.NamespaceName(), code.Catalogue))
             .Select(type => new Violation(type.Display(), $"namespace '{type.NamespaceName()}' is not a composition project or a catalogued RimBank.<BusinessDomain>.<ServiceDomain>")));
 
+    public static ArchitectureRule ContextNamespacesStopAtTheAdapter { get; } = new(
+        "context-namespaces-stop-at-the-adapter",
+        "tech-stack §3.1 and ADR 0026: a context's namespace is RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]; aggregate, Behavior Qualifier and flow folders are never namespace segments",
+        code => code.Types
+            .Select(type => (Type: type, Problem: ContextNamespaceProblem(type.NamespaceName())))
+            .Where(checkedType => checkedType.Problem is not null)
+            .Select(checkedType => new Violation(checkedType.Type.Display(), checkedType.Problem!)));
+
     public static ArchitectureRule AssemblyNames { get; } = new(
         "assembly-names",
         "tech-stack §3.1, ADR 0011, ADR 0023 and ADR 0025: a project is a composition project, RimBank.Core holding only catalogued core namespaces, RimBank.Api or RimBank.Mcp holding their conventions and catalogued .Api or .Mcp namespaces, or a context adapter named after its root namespace with an allowed suffix",
@@ -75,7 +83,7 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule TestNamespaces { get; } = new(
         "test-namespaces",
-        "tech-stack §3.3: a test namespace is <namespace under test>.<folder>.Tests and always ends with .Tests",
+        "tech-stack §3.3 and ADR 0026: a test namespace always ends with .Tests, and inside a context it is the namespace under test plus .Tests",
         code => code.TestAssemblies.SelectMany(assembly => TestNamespaceProblems(assembly.Types.Select(type => (type.Display(), type.NamespaceName())))),
         SolutionOnly: true);
 
@@ -147,11 +155,45 @@ public static partial class ArchitectureRules
             && catalogue.Contains(address.BusinessDomain, address.ServiceDomain)
         select new Violation(type.TypeName, $"is in the {address.Part} adapter of {address.Context} but lives in {type.AssemblyName}, not {SharedAdapterProjects[address.Part]}");
 
-    /// <summary>The test namespace rule as a pure function over (type, namespace) pairs.</summary>
+    /// <summary>
+    /// The flat context namespace rule as a pure function (ADR 0026): <c>null</c> when the namespace is not in a context,
+    /// or is exactly the context's core or one of its adapters; otherwise why it is not.
+    /// </summary>
+    public static string? ContextNamespaceProblem(string namespaceName)
+    {
+        if (ContextAddress.Parse(namespaceName) is not { } address)
+        {
+            return null;
+        }
+
+        var expected = address.Part is ContextPart.Core
+            ? address.Context
+            : $"{address.Context}.{ContextAddress.AdapterSuffixes.Single(suffix => suffix.Value == address.Part).Key}";
+        return namespaceName == expected
+            ? null
+            : $"namespace '{namespaceName}' goes below '{expected}': folders such as aggregates, Behavior Qualifiers and flows are not namespace segments";
+    }
+
+    /// <summary>
+    /// The test namespace rule as a pure function over (type, namespace) pairs: a test namespace ends with <c>.Tests</c>,
+    /// and inside a context it is exactly the namespace under test plus <c>.Tests</c> (ADR 0026).
+    /// </summary>
     public static IEnumerable<Violation> TestNamespaceProblems(IEnumerable<(string TypeName, string NamespaceName)> types) =>
-        types
-            .Where(type => !type.NamespaceName.EndsWith(".Tests", StringComparison.Ordinal))
-            .Select(type => new Violation(type.TypeName, $"namespace '{type.NamespaceName}' does not end with .Tests"));
+        types.SelectMany(type => TestNamespaceProblems(type.TypeName, type.NamespaceName));
+
+    private static IEnumerable<Violation> TestNamespaceProblems(string typeName, string namespaceName)
+    {
+        if (!namespaceName.EndsWith(".Tests", StringComparison.Ordinal))
+        {
+            yield return new Violation(typeName, $"namespace '{namespaceName}' does not end with .Tests");
+            yield break;
+        }
+
+        if (ContextNamespaceProblem(namespaceName[..^".Tests".Length]) is { } problem)
+        {
+            yield return new Violation(typeName, $"test {problem}");
+        }
+    }
 
     private static bool IsCataloguedCore(string namespaceName, ServiceDomainCatalogue catalogue) =>
         IsCataloguedPart(namespaceName, ContextPart.Core, catalogue);

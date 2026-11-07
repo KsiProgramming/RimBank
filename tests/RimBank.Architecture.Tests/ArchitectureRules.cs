@@ -38,6 +38,7 @@ public static partial class ArchitectureRules
         ProjectionsArePure,
         AggregatesImplementDecider,
         NamespaceRule,
+        ContextNamespacesStopAtTheAdapter,
         AssemblyNames,
         CoresLiveInRimBankCore,
         HttpAndMcpAdaptersLiveInSharedProjects,

@@ -1,4 +1,4 @@
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // Roadmap 1.5, moved to the core in 1.7: the BIAN party type names every adapter (HTTP, MCP) accepts, and the errors
 // for a missing or unknown one (ADR 0024).

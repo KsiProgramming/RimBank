@@ -1,9 +1,7 @@
 using System.Text.Json;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
 public sealed class RegisterPartyRequestTests
 {

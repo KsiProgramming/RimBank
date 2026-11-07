@@ -1,9 +1,7 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Tests;
 using RimBank.SharedKernel;
-using static RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests.EntryExamples;
+using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Retrieval.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // The Retrieve flow on the query side (BIAN PartyReferenceDataDirectoryEntry/Retrieve, ADR 0024): the handler only
 // reads the entry's view, and an unknown entry is party.party-not-found.
@@ -23,9 +21,9 @@ public sealed class RetrievePartyReferenceDataDirectoryEntryHandlerTests
             Version: 1,
             PartyType.Organisation,
             OpenDate,
-            DemographicsId,
-            PartyReferenceId,
-            BankRelationsId));
+            Demographics,
+            Reference,
+            BankRelations));
     }
 
     [Fact]

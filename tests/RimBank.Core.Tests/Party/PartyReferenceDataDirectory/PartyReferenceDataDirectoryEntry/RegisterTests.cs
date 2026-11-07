@@ -1,11 +1,11 @@
 using RimBank.SharedKernel;
-using static RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests.EntryExamples;
+using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 using EntrySpecification = RimBank.SharedKernel.Testing.DeciderSpecification<
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntry,
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntryCommand,
-    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyReferenceDataDirectoryEntryEvent>;
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry,
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryCommand,
+    RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryEvent>;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // The Register decision (BIAN PartyReferenceDataDirectoryEntry/Register, ADR 0024).
 public sealed class RegisterTests

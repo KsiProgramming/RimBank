@@ -2,12 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using RimBank.Api;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
 using RimBank.Problems;
 using RimBank.SharedKernel;
 using Wolverine;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 
 /// <summary>
 /// <c>POST /PartyReferenceDataDirectory/Register</c>: BIAN <c>PartyReferenceDataDirectoryEntry/Register</c>, a command

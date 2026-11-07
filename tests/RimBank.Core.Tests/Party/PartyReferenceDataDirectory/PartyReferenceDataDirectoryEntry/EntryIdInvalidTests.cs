@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // Roadmap 1.7: an entry id the directory never issues is one validation error, defined in the core so that the HTTP
 // (1.7) and MCP (1.16) adapters answer it the same way (ADR 0024).

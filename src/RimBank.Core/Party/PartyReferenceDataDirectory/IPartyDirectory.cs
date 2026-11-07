@@ -1,4 +1,3 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.SharedKernel;
 
 namespace RimBank.Party.PartyReferenceDataDirectory;

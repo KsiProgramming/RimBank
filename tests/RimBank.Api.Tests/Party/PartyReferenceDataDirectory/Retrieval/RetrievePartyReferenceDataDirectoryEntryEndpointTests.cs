@@ -2,10 +2,8 @@ using System.Text.Json;
 using Alba;
 using Microsoft.Net.Http.Headers;
 using RimBank.Host.Testing;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
 // Roadmap 1.7: BIAN PartyReferenceDataDirectoryEntry/Retrieve over HTTP, answered from the inline entry view with the
 // entry's version as ETag; every error is Problem Details (specs/tech-stack.md §5, ADR 0024).

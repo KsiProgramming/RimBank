@@ -1,4 +1,3 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 

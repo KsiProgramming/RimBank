@@ -1,7 +1,3 @@
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests;
 

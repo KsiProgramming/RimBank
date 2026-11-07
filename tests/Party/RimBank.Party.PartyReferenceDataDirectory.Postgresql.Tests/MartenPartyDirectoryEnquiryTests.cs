@@ -1,6 +1,3 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
-using RimBank.Party.PartyReferenceDataDirectory.Retrieval;
 using RimBank.Postgresql;
 using RimBank.SharedKernel;
 

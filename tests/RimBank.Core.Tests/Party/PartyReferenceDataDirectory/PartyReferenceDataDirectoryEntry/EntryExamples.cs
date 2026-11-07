@@ -1,8 +1,5 @@
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // Fixed values for the entry's tests, so every run decides the same commands.
 internal static class EntryExamples
@@ -12,15 +9,15 @@ internal static class EntryExamples
     public static readonly PartyReferenceDataDirectoryEntryId EntryId =
         PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(OpenDate));
 
-    public static readonly DemographicsId DemographicsId = DemographicsId.From(Guid.CreateVersion7(OpenDate));
+    public static readonly DemographicsId Demographics = DemographicsId.From(Guid.CreateVersion7(OpenDate));
 
-    public static readonly PartyReferenceId PartyReferenceId = PartyReferenceId.From(Guid.CreateVersion7(OpenDate));
+    public static readonly PartyReferenceId Reference = PartyReferenceId.From(Guid.CreateVersion7(OpenDate));
 
-    public static readonly BankRelationsId BankRelationsId = BankRelationsId.From(Guid.CreateVersion7(OpenDate));
+    public static readonly BankRelationsId BankRelations = BankRelationsId.From(Guid.CreateVersion7(OpenDate));
 
     public static RegisterPartyReferenceDataDirectoryEntry Register(PartyType partyType = PartyType.Person) =>
-        new(EntryId, partyType, OpenDate, DemographicsId, PartyReferenceId, BankRelationsId);
+        new(EntryId, partyType, OpenDate, Demographics, Reference, BankRelations);
 
     public static PartyRegistered Registered(PartyType partyType = PartyType.Person) =>
-        new(EntryId, partyType, OpenDate, DemographicsId, PartyReferenceId, BankRelationsId);
+        new(EntryId, partyType, OpenDate, Demographics, Reference, BankRelations);
 }

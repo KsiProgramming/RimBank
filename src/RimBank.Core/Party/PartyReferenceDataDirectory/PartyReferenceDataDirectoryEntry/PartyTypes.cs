@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// Reads a <see cref="PartyType"/> from the BIAN name a caller sends (<c>Partytypevalues</c>), so every adapter (HTTP,

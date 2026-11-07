@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>The entry's business errors; their codes are documented in ADR 0024.</summary>
 public static class PartyReferenceDataDirectoryEntryErrors

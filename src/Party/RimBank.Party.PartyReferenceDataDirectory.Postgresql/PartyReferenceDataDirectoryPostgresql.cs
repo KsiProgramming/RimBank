@@ -1,7 +1,5 @@
 using Marten;
 using Microsoft.Extensions.Hosting;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Retrieval;
 using RimBank.Postgresql;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Postgresql;

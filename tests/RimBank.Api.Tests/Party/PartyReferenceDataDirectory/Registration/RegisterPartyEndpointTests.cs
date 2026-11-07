@@ -2,9 +2,8 @@ using System.Text.Json;
 using Alba;
 using Microsoft.Net.Http.Headers;
 using RimBank.Host.Testing;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
 public sealed class RegisterPartyEndpointTests(PostgresqlServer server)
 {

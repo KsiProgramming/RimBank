@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using RimBank.Conformance.Testing;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 

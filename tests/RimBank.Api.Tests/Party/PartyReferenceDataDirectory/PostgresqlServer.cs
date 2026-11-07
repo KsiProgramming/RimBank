@@ -5,12 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using RimBank.Host.Security;
 using RimBank.Host.Testing;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 using RimBank.Postgresql;
 using RimBank.SharedKernel.Testing;
 using Testcontainers.PostgreSql;
 
-[assembly: AssemblyFixture(typeof(PostgresqlServer))]
+[assembly: AssemblyFixture(typeof(RimBank.Party.PartyReferenceDataDirectory.Api.Tests.PostgresqlServer))]
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 

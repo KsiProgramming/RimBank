@@ -9,10 +9,19 @@ namespace RimBank.UnknownBanking.StrayLedger
     public sealed record StrayLedgerEntry(Guid Id);
 }
 
-// business-folder-names: no technical folders such as Services in a core (tech-stack §3.4).
-namespace RimBank.SampleBanking.FolderNamedServices.Services
+// business-folder-names: no technical folders such as Services, here in a shared project (tech-stack §3.4). A
+// context cannot show it in a namespace at all (context-namespaces-stop-at-the-adapter), so its folders are checked on
+// disk by BusinessFolderNamesOnDiskTests.
+namespace RimBank.SharedKernel.Services
 {
     public sealed record FolderNamedServicesEntry(Guid Id);
+}
+
+// context-namespaces-stop-at-the-adapter: a flow folder such as Registration is a folder, not a namespace segment
+// (ADR 0026).
+namespace RimBank.SampleBanking.FlowFolderNamespace.Registration
+{
+    public sealed record FlowFolderNamespaceEntry(Guid Id);
 }
 
 // no-binary-floating-point: amounts and rates are decimal, never double or float (ADR 0009).

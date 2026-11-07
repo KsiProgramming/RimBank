@@ -1,11 +1,6 @@
 using System.Text.Json;
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
-using RimBank.Party.PartyReferenceDataDirectory.Registration;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
 public sealed class RegisterPartyResponseTests
 {

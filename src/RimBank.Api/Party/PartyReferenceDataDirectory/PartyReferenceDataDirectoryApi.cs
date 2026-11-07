@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Routing;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
-using RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 

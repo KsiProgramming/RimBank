@@ -1,10 +1,7 @@
 using System.Diagnostics;
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// An input to the entry's <see cref="PartyReferenceDataDirectoryEntry.Decide"/>. It is not an <see cref="ICommand"/>:
