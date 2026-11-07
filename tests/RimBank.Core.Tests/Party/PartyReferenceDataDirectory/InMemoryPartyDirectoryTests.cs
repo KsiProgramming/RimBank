@@ -38,6 +38,34 @@ public sealed class InMemoryPartyDirectoryTests
     }
 
     [Fact]
+    public async Task An_append_at_the_expected_version_adds_the_events_after_the_history()
+    {
+        var directory = new InMemoryPartyDirectory();
+        directory.Seed(EntryId, Registered());
+
+        directory.AppendToEntry(EntryId, 1, [Updated()]);
+
+        var history = await directory.LoadEntryAsync(EntryId, TestContext.Current.CancellationToken);
+        history.ShouldBe([Registered(), Updated()]);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public void An_append_at_another_version_fails_like_the_event_store(long expectedVersion)
+    {
+        var directory = new InMemoryPartyDirectory();
+        directory.Seed(EntryId, Registered());
+
+        Should.Throw<InvalidOperationException>(() => directory.AppendToEntry(EntryId, expectedVersion, [Updated()]));
+        directory.StreamOf(EntryId).ShouldBe([Registered()]);
+    }
+
+    [Fact]
+    public void An_append_to_an_unknown_entry_fails() =>
+        Should.Throw<InvalidOperationException>(() => new InMemoryPartyDirectory().AppendToEntry(EntryId, 0, [Updated()]));
+
+    [Fact]
     public async Task A_seeded_entry_loads_its_history()
     {
         var directory = new InMemoryPartyDirectory();

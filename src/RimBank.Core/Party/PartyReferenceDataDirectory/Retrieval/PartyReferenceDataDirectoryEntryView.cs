@@ -14,6 +14,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="DemographicsId">The entry's Demographics Behavior Qualifier.</param>
 /// <param name="PartyReferenceId">The entry's Reference Behavior Qualifier.</param>
 /// <param name="BankRelationsId">The entry's BankRelations Behavior Qualifier.</param>
+/// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update, if any.</param>
 public sealed record PartyReferenceDataDirectoryEntryView(
     Guid Id,
     long Version,
@@ -21,7 +22,8 @@ public sealed record PartyReferenceDataDirectoryEntryView(
     DateTimeOffset OpenDate,
     DemographicsId DemographicsId,
     PartyReferenceId PartyReferenceId,
-    BankRelationsId BankRelationsId)
+    BankRelationsId BankRelationsId,
+    DateTimeOffset? RefreshDate = null)
 {
     /// <summary>The entry, as its typed id. Computed from <see cref="Id"/>, so it is not stored.</summary>
     [JsonIgnore]

@@ -29,6 +29,27 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 BankRelations));
 
     [Fact]
+    public void An_updated_entry_shows_the_new_party_type_and_refresh_date_at_the_next_version() =>
+        EntryViewSpecification.Given(Registered(PartyType.Person), Updated(PartyType.Organisation))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 2,
+                PartyType.Organisation,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                RefreshDate));
+
+    [Fact]
+    public void A_registered_entry_has_no_refresh_date_in_its_view() =>
+        PartyReferenceDataDirectoryEntryViewProjection.Project(null, Registered()).ShouldNotBeNull().RefreshDate.ShouldBeNull();
+
+    [Fact]
+    public void An_update_before_registration_leaves_no_view() =>
+        EntryViewSpecification.Given(Updated()).ThenNoView();
+
+    [Fact]
     public void An_entry_with_no_events_has_no_view() =>
         EntryViewSpecification.Given().ThenNoView();
 
@@ -59,7 +80,9 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
     [Fact]
     public void The_view_survives_a_json_round_trip_without_storing_the_typed_id()
     {
-        var view = PartyReferenceDataDirectoryEntryViewProjection.Project(null, Registered(PartyType.Organisation)).ShouldNotBeNull();
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated() }
+            .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
+            .ShouldNotBeNull();
 
         var json = JsonSerializer.Serialize(view, _json);
 
@@ -67,6 +90,6 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
         JsonNode.Parse(json).ShouldNotBeNull().AsObject().ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.EntryId)).ShouldBeFalse();
     }
 
-    // Stands in for the entry's later events (Update, 1.8, and the Behavior Qualifier updates) until they exist.
+    // Stands in for the entry's later events whose data the view does not show (the Behavior Qualifier updates) until they exist.
     private sealed record LaterEntryEvent : PartyReferenceDataDirectoryEntryEvent;
 }

@@ -18,6 +18,14 @@ internal static class EntryExamples
     public static RegisterPartyReferenceDataDirectoryEntry Register(PartyType partyType = PartyType.Person) =>
         new(EntryId, partyType, OpenDate, Demographics, Reference, BankRelations);
 
+    public static readonly DateTimeOffset RefreshDate = OpenDate.AddDays(30);
+
     public static PartyRegistered Registered(PartyType partyType = PartyType.Person) =>
         new(EntryId, partyType, OpenDate, Demographics, Reference, BankRelations);
+
+    public static UpdatePartyReferenceDataDirectoryEntryDetails Update(PartyType? partyType = PartyType.Organisation) =>
+        new(partyType, RefreshDate);
+
+    public static PartyReferenceDataDirectoryEntryUpdated Updated(PartyType partyType = PartyType.Organisation) =>
+        new(EntryId, partyType, RefreshDate);
 }

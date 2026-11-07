@@ -31,4 +31,24 @@ public sealed class PartyTypesTests
     [InlineData(" Person")]
     public void Any_other_name_is_invalid(string name) =>
         PartyTypes.FromBianName(name).Error.ShouldBe(PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid);
+
+    // Roadmap 1.8: an Update may leave the party type out to keep the current one.
+    [Fact]
+    public void An_update_without_a_name_asks_for_no_party_type() =>
+        PartyTypes.FromOptionalBianName(null).ShouldBeNull();
+
+    [Theory]
+    [InlineData("Person", PartyType.Person)]
+    [InlineData("Organisation", PartyType.Organisation)]
+    public void An_update_with_a_BIAN_name_asks_for_its_party_type(string name, PartyType expected) =>
+        PartyTypes.FromOptionalBianName(name).ShouldNotBeNull().Value.ShouldBe(expected);
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("person")]
+    [InlineData("Alien")]
+    [InlineData("1")]
+    public void An_update_with_a_blank_or_unknown_name_is_invalid(string name) =>
+        PartyTypes.FromOptionalBianName(name).ShouldNotBeNull().Error.ShouldBe(PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid);
 }

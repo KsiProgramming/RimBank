@@ -28,13 +28,24 @@ public sealed record RegisterPartyReferenceDataDirectoryEntry(
     PartyReferenceId PartyReferenceId,
     BankRelationsId BankRelationsId) : PartyReferenceDataDirectoryEntryCommand;
 
+/// <summary>
+/// Update the entry's details (BIAN <c>PartyReferenceDataDirectoryEntry/Update</c>). The handler takes
+/// <paramref name="RefreshDate"/> from its <see cref="TimeProvider"/> and has already checked the expected version.
+/// </summary>
+/// <param name="PartyType">The new party type, or <c>null</c> to keep the current one.</param>
+/// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: the time of the update.</param>
+public sealed record UpdatePartyReferenceDataDirectoryEntryDetails(
+    PartyType? PartyType,
+    DateTimeOffset RefreshDate) : PartyReferenceDataDirectoryEntryCommand;
+
 public sealed partial record PartyReferenceDataDirectoryEntry
 {
     /// <inheritdoc />
     /// <remarks>
     /// Register is accepted once per entry: a registered entry refuses it with
     /// <c>party.party-already-registered</c>, and a party type other than <see cref="PartyType.Person"/> or
-    /// <see cref="PartyType.Organisation"/> is <c>party.party-type-invalid</c>.
+    /// <see cref="PartyType.Organisation"/> is <c>party.party-type-invalid</c>. Update needs a registered entry
+    /// (<c>party.party-not-found</c> otherwise) and always records the refresh, even when the party type is unchanged.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -53,6 +64,15 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                     register.DemographicsId,
                     register.PartyReferenceId,
                     register.BankRelationsId)),
+            (UpdatePartyReferenceDataDirectoryEntryDetails, { Id: null }) =>
+                PartyReferenceDataDirectoryEntryErrors.PartyNotFound,
+            (UpdatePartyReferenceDataDirectoryEntryDetails { PartyType: { } partyType }, _) when !Enum.IsDefined(partyType) =>
+                PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid,
+            (UpdatePartyReferenceDataDirectoryEntryDetails update, { Id: { } entryId, PartyType: { } current }) =>
+                Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new PartyReferenceDataDirectoryEntryUpdated(
+                    entryId,
+                    update.PartyType ?? current,
+                    update.RefreshDate)),
             _ => throw new UnreachableException($"The entry does not decide {command}."),
         };
 }

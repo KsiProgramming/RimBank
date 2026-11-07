@@ -144,5 +144,11 @@ public sealed class RegisterPartyHandlerTests
 
         public void StartEntry(PartyReferenceDataDirectoryEntryId entryId, IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events) =>
             Started = true;
+
+        public void AppendToEntry(
+            PartyReferenceDataDirectoryEntryId entryId,
+            long expectedVersion,
+            IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events) =>
+            Started = true;
     }
 }

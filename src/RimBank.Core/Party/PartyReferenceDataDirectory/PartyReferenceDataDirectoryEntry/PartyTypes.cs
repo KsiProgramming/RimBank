@@ -26,4 +26,20 @@ public static class PartyTypes
             nameof(PartyType.Organisation) => PartyType.Organisation,
             _ => PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid,
         };
+
+    /// <summary>
+    /// The party type an Update asks for. No name means "keep the current type", so it has no result; any name sent is
+    /// read like <see cref="FromBianName"/>, except that a blank one is invalid rather than missing.
+    /// </summary>
+    /// <param name="name">The name the caller sent, if any.</param>
+    /// <returns>
+    /// <c>null</c> when no name was sent, otherwise the party type or <c>party.party-type-invalid</c>.
+    /// </returns>
+    public static Result<PartyType>? FromOptionalBianName(string? name) =>
+        name switch
+        {
+            null => null,
+            var blank when string.IsNullOrWhiteSpace(blank) => PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid,
+            _ => FromBianName(name),
+        };
 }

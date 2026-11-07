@@ -29,6 +29,12 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjection
                 registered.PartyReferenceId,
                 registered.BankRelationsId),
             (null, _) => null,
+            (_, PartyReferenceDataDirectoryEntryUpdated updated) => view with
+            {
+                Version = view.Version + 1,
+                PartyType = updated.PartyType,
+                RefreshDate = updated.RefreshDate,
+            },
             (_, _) => view with { Version = view.Version + 1 },
         };
 }

@@ -31,6 +31,14 @@ public static class PartyReferenceDataDirectoryEntryErrors
         "party.party-not-found",
         "This party is not registered in the directory.");
 
+    /// <summary>
+    /// The version a command expected (its <c>If-Match</c>) is not the entry's current stream version: someone else
+    /// changed the entry since the caller read it (409, ADR 0027).
+    /// </summary>
+    public static Error VersionConflict { get; } = Error.Conflict(
+        "party.version-conflict",
+        "The entry has changed since it was read; retrieve it again and retry with its current version.");
+
     /// <summary>A Register with no party type, or an empty one (400).</summary>
     public static Error PartyTypeRequired { get; } = Error.Validation(
         "party.party-type-required",
