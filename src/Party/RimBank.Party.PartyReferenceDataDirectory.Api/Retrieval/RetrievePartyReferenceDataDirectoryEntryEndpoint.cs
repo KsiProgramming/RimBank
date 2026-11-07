@@ -64,7 +64,7 @@ public static class RetrievePartyReferenceDataDirectoryEntryEndpoint
         var entryId = PartyReferenceDataDirectoryEntryId.TryCreate(partyreferencedatadirectoryid);
         if (entryId.IsFailure)
         {
-            return RetrievePartyReferenceDataDirectoryEntryRequestErrors.EntryIdInvalid.ToHttpResult();
+            return PartyReferenceDataDirectoryEntryErrors.EntryIdInvalid.ToHttpResult();
         }
 
         var view = await bus.InvokeAsync<Result<PartyReferenceDataDirectoryEntryView>>(

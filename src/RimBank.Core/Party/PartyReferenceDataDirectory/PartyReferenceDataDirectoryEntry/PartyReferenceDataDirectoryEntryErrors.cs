@@ -10,6 +10,22 @@ public static class PartyReferenceDataDirectoryEntryErrors
         "party.party-already-registered",
         "This party is already registered in the directory.");
 
+    /// <summary>The BIAN parameter that names an entry in every operation on it.</summary>
+    public const string EntryIdField = "partyreferencedatadirectoryid";
+
+    /// <summary>
+    /// The entry id a caller sent is not an id the directory issues: not a GUID, empty, or not a version 7 GUID (400).
+    /// It keeps the shared <c>shared.invalid-identifier</c> code of <see cref="TypedId"/> and names
+    /// <see cref="EntryIdField"/>, so HTTP and MCP answer it the same way.
+    /// </summary>
+    public static Error EntryIdInvalid { get; } = Error.Validation(
+        TypedId.InvalidIdentifierCode,
+        "The value is not a valid identifier.",
+        new Dictionary<string, IReadOnlyList<string>>
+        {
+            [EntryIdField] = ["The party reference data directory id must be the id returned by Register."],
+        });
+
     /// <summary>The entry a command or a query names does not exist (404).</summary>
     public static Error PartyNotFound { get; } = Error.NotFound(
         "party.party-not-found",
