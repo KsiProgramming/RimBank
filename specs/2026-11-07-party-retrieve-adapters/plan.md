@@ -34,10 +34,10 @@ Every group is written test first, and the solution builds and its tests pass af
 - [x] Run the Party `.Api.Tests`, `RimBank.Http.Tests`, `RimBank.Architecture.Tests` (`adapters-dispatch-through-the-message-bus`, `http-dependencies`) and `RimBank.Host.Tests`.
 
 ## 3. Docs and roadmap
-- [ ] ADR 0024: "Retrieve request (1.7)" paragraph next to "Register request (1.5)".
-- [ ] ADR 0016: the `AddReadPort` convention (query session of the context's store, singleton, no transaction).
-- [ ] tech-stack §3.3 tree comments: `RimBank.Http` (Idempotency-Key header and stream-version entity tags), `RimBank.Postgresql` (adds read ports).
-- [ ] `PartyReferenceDataDirectoryModule` XML doc: "store, write port and read port … its HTTP endpoints".
+- [x] ADR 0024: "Retrieve request (1.7)" paragraph next to "Register request (1.5)".
+- [x] ADR 0017 (where write ports live; planned as 0016): the `AddReadPort` convention (query session of the context's store, singleton, no transaction).
+- [x] tech-stack §3.3 tree comments: `RimBank.Http` (Idempotency-Key header and stream-version entity tags), `RimBank.Postgresql` (adds read ports).
+- [x] `PartyReferenceDataDirectoryModule` XML doc: "store, write port and read port … its HTTP endpoints".
 - [ ] PR note: a development database with entries from before 1.7 needs `RebuildViewAsync` once for `PartyReferenceDataDirectoryEntryViewProjection`.
-- [ ] Roadmap: tick **1.7**.
-- [ ] Run `dotnet format --verify-no-changes` and the full `dotnet test --solution RimBank.slnx` locally.
+- [x] Roadmap: tick **1.7**.
+- [x] Run `dotnet format --verify-no-changes` and the full `dotnet test --solution RimBank.slnx` locally.

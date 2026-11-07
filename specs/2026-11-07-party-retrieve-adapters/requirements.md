@@ -26,7 +26,7 @@ Drivers: mission principles 5 (a query reads a read model and never changes stat
   - `Retrieval/RetrievePartyReferenceDataDirectoryEntryResponse`: BIAN fields `PartyType`, `DirectoryEntryDateType` (`OpenDate`), `DirectoryEntryDate`, plus `PartyReferenceDataDirectoryEntryId`, `DemographicsId`, `ReferenceId` and `BankRelationsId` (plain GUIDs), mapped from the view. Same names and shape as the Register response (1.5). `PartyReference` is omitted until 1.9/1.10 store it.
   - `PartyReferenceDataDirectoryApi` maps it.
 - Conformance test: `_implemented` gains the Retrieve operation id (the existing test fails otherwise).
-- Docs: ADR 0024 gets a "Retrieve request (1.7)" paragraph. ADR 0016 gets a short `AddReadPort` note. The tech-stack §3.3 tree comments for `RimBank.Http` and `RimBank.Postgresql` are updated.
+- Docs: ADR 0024 gets a "Retrieve request (1.7)" paragraph. ADR 0017 gets a short `AddReadPort` note. The tech-stack §3.3 tree comments for `RimBank.Http` and `RimBank.Postgresql` are updated.
 
 ### Out of scope
 - `If-Match`, `party.version-conflict` and the Update command: **1.8**.
@@ -51,7 +51,7 @@ Drivers: mission principles 5 (a query reads a read model and never changes stat
 | Invalid-id error | `RetrievePartyReferenceDataDirectoryEntryRequestErrors.EntryIdInvalid` in `.Api`: `shared.invalid-identifier` plus `errors["partyreferencedatadirectoryid"]` | `TypedId.TryCreate` gives the code without a field; the adapter names the route value, as Register names `PartyType` |
 
 ## ADRs to write
-- None new. **Amend ADR 0024** with a "Retrieve request (1.7)" paragraph: the route value is validated with `shared.invalid-identifier`, the response shape (BIAN fields + ids, no `PartyReference` yet), `ETag` and `If-None-Match` → 304. **Amend ADR 0016** with the `AddReadPort` convention (a read port reads through a query session of the context's store, with no transaction).
+- None new. **Amend ADR 0024** with a "Retrieve request (1.7)" paragraph: the route value is validated with `shared.invalid-identifier`, the response shape (BIAN fields + ids, no `PartyReference` yet), `ETag` and `If-None-Match` → 304. **Amend ADR 0017** (where write ports are documented) with the `AddReadPort` convention (a read port reads through a query session of the context's store, with no transaction).
 
 ## Open questions
 - None.

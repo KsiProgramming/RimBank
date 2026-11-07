@@ -82,9 +82,9 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration: PostgreSQL, Keycloak with the dev-only realm (Realms/, ADR 0019), the host
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
-│  ├─ RimBank.Http/               # HTTP conventions every .Api shares: the Idempotency-Key header (ADR 0018)
+│  ├─ RimBank.Http/               # HTTP conventions every .Api shares: the Idempotency-Key header (ADR 0018) and stream-version entity tags (ETag, If-None-Match)
 │  ├─ RimBank.Mcp/                # MCP conventions every .Mcp shares: Error → isError Problem Details, the tool error filter (ADR 0022)
-│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring (ADR 0017); command idempotency (ADR 0018)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
 │  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory (§3.4)
 │  │  └─ LoansAndDeposits/CurrentAccount/       # namespace RimBank.LoansAndDeposits.CurrentAccount
