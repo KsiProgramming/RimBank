@@ -1,8 +1,5 @@
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>A domain event of a Party Reference Data Directory entry (ADR 0024). Internal to this context.</summary>
 public abstract record PartyReferenceDataDirectoryEntryEvent;

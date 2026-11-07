@@ -1,7 +1,6 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Retrieval;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// Retrieve details about a party's directory entry: BIAN <c>PartyReferenceDataDirectoryEntry/Retrieve</c> (ADR 0024).

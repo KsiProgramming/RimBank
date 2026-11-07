@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.FakeContexts.Tests;
+namespace RimBank.Conformance.Tests;
 
 /// <summary>
 /// A test-only fake context: a slim application that maps the given routes with no-op handlers, read back through

@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RimBank.Host.Modules;
 using RimBank.Problems;
 using RimBank.SharedKernel;
 
-namespace RimBank.Host.Errors.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>
 /// A test-only module whose endpoints fail on purpose: one throws, and two return an <see cref="Error"/> the way a

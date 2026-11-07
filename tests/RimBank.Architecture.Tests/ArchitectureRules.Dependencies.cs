@@ -8,6 +8,10 @@ namespace RimBank.Architecture.Tests;
 public static partial class ArchitectureRules
 {
     private const string AspNetCore = "Microsoft.AspNetCore";
+
+    // The typed HTTP headers (ETag, If-None-Match) of the ASP.NET Core shared framework, outside its Microsoft.AspNetCore
+    // namespaces.
+    private const string AspNetCoreHeaders = "Microsoft.Net.Http.Headers";
     private const string Marten = "Marten";
     private const string Wolverine = "Wolverine";
     private const string WolverineMarten = "Wolverine.Marten";

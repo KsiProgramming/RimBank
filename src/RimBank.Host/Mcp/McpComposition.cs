@@ -2,11 +2,9 @@ using System.Reflection;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using RimBank.Host.Modules;
-using RimBank.Host.Security;
 using RimBank.Mcp;
 
-namespace RimBank.Host.Mcp;
+namespace RimBank.Host;
 
 /// <summary>
 /// The host's single MCP server: Streamable HTTP at <see cref="EndpointPath"/>, stateless, with the tools each

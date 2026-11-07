@@ -11,6 +11,9 @@ public sealed class PartyHost(IHost host, NpgsqlDataSource administrator) : IAsy
     /// <summary>The context's own store.</summary>
     public IPartyReferenceDataDirectoryStore Store => host.Services.GetRequiredService<IPartyReferenceDataDirectoryStore>();
 
+    /// <summary>The context's read port, as the host registers it for query handlers.</summary>
+    public IPartyDirectoryEnquiry Enquiry => host.Services.GetRequiredService<IPartyDirectoryEnquiry>();
+
     /// <summary>The host's message bus, as an <c>.Api</c> or <c>.Mcp</c> adapter uses it.</summary>
     public IMessageBus Bus => host.Services.GetRequiredService<IMessageBus>();
 

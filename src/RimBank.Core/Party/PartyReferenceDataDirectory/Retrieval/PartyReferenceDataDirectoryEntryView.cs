@@ -1,10 +1,6 @@
 using System.Text.Json.Serialization;
-using RimBank.Party.PartyReferenceDataDirectory.BankRelations;
-using RimBank.Party.PartyReferenceDataDirectory.Demographics;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using RimBank.Party.PartyReferenceDataDirectory.Reference;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Retrieval;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// The read model of a Party Reference Data Directory entry, served by BIAN

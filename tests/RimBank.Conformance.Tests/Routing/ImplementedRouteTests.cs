@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.Routing.Tests;
+namespace RimBank.Conformance.Tests;
 
 // ADR 0020: the harness reads routes from the real routing table, before start-up or from a running host.
 public sealed class ImplementedRouteTests

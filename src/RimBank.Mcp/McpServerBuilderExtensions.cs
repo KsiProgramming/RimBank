@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using RimBank.Mcp.Errors;
 
 namespace RimBank.Mcp;
 

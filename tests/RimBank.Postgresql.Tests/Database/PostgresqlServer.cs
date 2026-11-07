@@ -2,14 +2,13 @@ using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 using Testcontainers.PostgreSql;
 
-[assembly: AssemblyFixture(typeof(PostgresqlServer))]
+[assembly: AssemblyFixture(typeof(RimBank.Postgresql.Tests.PostgresqlServer))]
 
-namespace RimBank.Postgresql.Database.Tests;
+namespace RimBank.Postgresql.Tests;
 
 /// <summary>
 /// One PostgreSQL container for the whole test assembly. Each test gets its own database, so tests never share

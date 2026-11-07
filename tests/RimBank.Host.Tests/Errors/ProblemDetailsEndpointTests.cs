@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 
-namespace RimBank.Host.Errors.Tests;
+namespace RimBank.Host.Tests;
 
 // Every non-2xx response of the host is RFC 9457 Problem Details, in every environment (tech-stack §5, ADR 0015). The
 // requests are authenticated; the 401 and 403 are covered by AuthenticationTests (ADR 0019).

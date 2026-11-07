@@ -4,7 +4,7 @@ using Npgsql;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
-namespace RimBank.Postgresql.Database.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Each store's ready check logs in as the context's own role (ADR 0016).
 public sealed class StoreHealthCheckTests(PostgresqlServer server)

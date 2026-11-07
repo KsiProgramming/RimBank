@@ -1,5 +1,4 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
-using static RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests.EntryExamples;
+using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 

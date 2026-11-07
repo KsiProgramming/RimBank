@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // Pure decisions of the sample ledger: Decide(command, state) → events or a business error.
 public sealed partial record SampleLedger

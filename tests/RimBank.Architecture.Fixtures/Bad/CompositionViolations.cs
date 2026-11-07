@@ -22,7 +22,7 @@ namespace RimBank.SampleBanking.PostgresqlUsesAppHost.Postgresql
 // lives in RimBank.Host/Modules/<BusinessDomain>/ and calls the adapter's extension methods.
 namespace RimBank.SampleBanking.ApiImplementsHostModule.Api
 {
-    public sealed class ApiImplementsHostModuleModule : RimBank.Host.Modules.IServiceDomainModule
+    public sealed class ApiImplementsHostModuleModule : RimBank.Host.IServiceDomainModule
     {
         public string ServiceDomain => "ApiImplementsHostModule";
     }
@@ -57,7 +57,7 @@ namespace RimBank.SampleBanking.CoreUsesHttp
 {
     public static class CoreUsesHttpEntry
     {
-        public static string Header() => RimBank.Http.IdempotencyKeyHeader.HeaderName;
+        public static string Header() => RimBank.Api.IdempotencyKeyHeader.HeaderName;
     }
 }
 
@@ -66,12 +66,12 @@ namespace RimBank.SampleBanking.McpUsesHttp.Mcp
 {
     public static class McpUsesHttpTools
     {
-        public static string Header() => RimBank.Http.IdempotencyKeyHeader.HeaderName;
+        public static string Header() => RimBank.Api.IdempotencyKeyHeader.HeaderName;
     }
 }
 
-// http-dependencies: RimBank.Http reads requests; it never touches a store.
-namespace RimBank.Http.FixtureViolations
+// http-dependencies: the HTTP conventions of RimBank.Api read requests; it never touches a store.
+namespace RimBank.Api.FixtureViolations
 {
     public sealed record HttpUsesMarten(Marten.IDocumentSession Session);
 }
@@ -98,7 +98,7 @@ namespace RimBank.SampleBanking.CoreUsesSharedMcp
 {
     public static class CoreUsesSharedMcpEntry
     {
-        public static string Code() => RimBank.Mcp.Errors.ToolErrors.ArgumentsInvalidCode;
+        public static string Code() => RimBank.Mcp.ToolErrors.ArgumentsInvalidCode;
     }
 }
 
@@ -107,7 +107,7 @@ namespace RimBank.SampleBanking.ApiUsesSharedMcp.Api
 {
     public static class ApiUsesSharedMcpEndpoints
     {
-        public static string Code() => RimBank.Mcp.Errors.ToolErrors.ArgumentsInvalidCode;
+        public static string Code() => RimBank.Mcp.ToolErrors.ArgumentsInvalidCode;
     }
 }
 

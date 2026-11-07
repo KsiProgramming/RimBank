@@ -3,10 +3,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RimBank.Host.Modules;
 using Wolverine;
 
-namespace RimBank.Host.Security.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>
 /// A test-only module that maps endpoints the way a context's <c>.Api</c> will, without opting in to authentication:

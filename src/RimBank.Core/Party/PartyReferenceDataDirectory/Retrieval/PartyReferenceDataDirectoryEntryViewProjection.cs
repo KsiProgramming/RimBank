@@ -1,7 +1,6 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Retrieval;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// Projects an entry's events into its <see cref="PartyReferenceDataDirectoryEntryView"/> (tech-stack §8.2, ADR 0024).

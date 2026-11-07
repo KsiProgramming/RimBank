@@ -7,12 +7,11 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Party/RimBank.Party.PartyReferenceDataDirectory.Api/RimBank.Party.PartyReferenceDataDirectory.Api.csproj" />
     <Project Path="src/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql/RimBank.Party.PartyReferenceDataDirectory.Postgresql.csproj" />
+    <Project Path="src/RimBank.Api/RimBank.Api.csproj" />
     <Project Path="src/RimBank.AppHost/RimBank.AppHost.csproj" />
     <Project Path="src/RimBank.Core/RimBank.Core.csproj" />
     <Project Path="src/RimBank.Host/RimBank.Host.csproj" />
-    <Project Path="src/RimBank.Http/RimBank.Http.csproj" />
     <Project Path="src/RimBank.Mcp/RimBank.Mcp.csproj" />
     <Project Path="src/RimBank.Postgresql/RimBank.Postgresql.csproj" />
     <Project Path="src/RimBank.Problems/RimBank.Problems.csproj" />
@@ -20,8 +19,8 @@
     <Project Path="src/RimBank.SharedKernel/RimBank.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Party/RimBank.Party.PartyReferenceDataDirectory.Api.Tests/RimBank.Party.PartyReferenceDataDirectory.Api.Tests.csproj" />
     <Project Path="tests/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests.csproj" />
+    <Project Path="tests/RimBank.Api.Tests/RimBank.Api.Tests.csproj" />
     <Project Path="tests/RimBank.AppHost.Tests/RimBank.AppHost.Tests.csproj" />
     <Project Path="tests/RimBank.Architecture.Fixtures/RimBank.Architecture.Fixtures.csproj" />
     <Project Path="tests/RimBank.Architecture.Tests/RimBank.Architecture.Tests.csproj" />
@@ -30,7 +29,6 @@
     <Project Path="tests/RimBank.Core.Tests/RimBank.Core.Tests.csproj" />
     <Project Path="tests/RimBank.Host.Testing/RimBank.Host.Testing.csproj" />
     <Project Path="tests/RimBank.Host.Tests/RimBank.Host.Tests.csproj" />
-    <Project Path="tests/RimBank.Http.Tests/RimBank.Http.Tests.csproj" />
     <Project Path="tests/RimBank.Mcp.Tests/RimBank.Mcp.Tests.csproj" />
     <Project Path="tests/RimBank.Postgresql.Tests/RimBank.Postgresql.Tests.csproj" />
     <Project Path="tests/RimBank.Problems.Tests/RimBank.Problems.Tests.csproj" />

@@ -29,7 +29,7 @@
 - Each service domain is a fully isolated bounded context with its own PostgreSQL schema **and database role** (it has no grants on other schemas), its own Marten store (event streams, read models and async daemon), no shared tables or views, and no use of another context's core. Every context's core is a folder of the one `RimBank.Core` project, so this isolation is enforced by namespace through the architecture tests, not by project references ([ADR 0023](../docs/adr/0023-one-core-project.md)). Every context's `.Postgresql` registers its store the same way, through `AddServiceDomainStore<TStore>` in `RimBank.Postgresql`: schema `<service_domain>`, login role `rimbank_<service_domain>`, connection string `ConnectionStrings:<ServiceDomain>` ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md)).
 - Each context registers itself in the host through a single module entry point, so the host composes contexts without knowing their internals: one `IServiceDomainModule` class per context under `RimBank.Host/Modules/<BusinessDomain>/`, listed explicitly in `ServiceDomainModules.All`, which only calls the context's adapter extension methods ([ADR 0014](../docs/adr/0014-host-composition-and-module-entry-point.md)).
 - Contexts communicate **asynchronously through integration events** (Wolverine durable local queues with an outbox). The host runs one Wolverine bus; each context's outbox and inbox tables live in its own schema, its handlers commit through its own store, and its messages go to its own durable local queue. Wolverine's own node bookkeeping lives in the host's `wolverine` schema, on which no context has grants ([ADR 0017](../docs/adr/0017-wolverine-wiring.md)). Synchronous cross-context calls are allowed only through an explicit port and need an ADR.
-- Extracting a context into its own service changes only adapters and host wiring, **never the core's code**: the context's folder moves out of `RimBank.Core` into the new service's own core project with unchanged namespaces ([ADR 0023](../docs/adr/0023-one-core-project.md)).
+- Extracting a context into its own service changes only adapters and host wiring, **never the core's code**: the context's folder moves out of `RimBank.Core` into the new service's own core project with unchanged namespaces ([ADR 0023](../docs/adr/0023-one-core-project.md)), and its HTTP and MCP folders move out of `RimBank.Api` and `RimBank.Mcp` the same way ([ADR 0025](../docs/adr/0025-one-api-project.md)).
 
 ## 3. Naming & solution layout
 
@@ -42,7 +42,9 @@ RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]
 - `<BusinessDomain>` and `<ServiceDomain>` use BIAN Service Landscape names in PascalCase.
 - **One BIAN service domain = one bounded context.**
 - The **core namespace has no suffix**: `RimBank.Party.PartyReferenceDataDirectory`. Every context's core (domain and application logic) lives in **one project, `RimBank.Core`**, in the folder `<BusinessDomain>/<ServiceDomain>/`. Its root namespace is `RimBank`, so the word `Core` never appears in a namespace ([ADR 0023](../docs/adr/0023-one-core-project.md)).
-- A context's other projects add a suffix: `.PublishedLanguage`, `.Api`, `.Mcp`, `.Postgresql`, `.Subscriptions`, and later `.RabbitMq` and so on. There is no per-context core project.
+- **A context's namespace stops at the context or its adapter** ([ADR 0026](../docs/adr/0026-flat-context-namespaces.md)): every core type is in `RimBank.<BusinessDomain>.<ServiceDomain>` and every adapter type in `….<Adapter>`, whatever its folder. Aggregate, Behavior Qualifier and flow folders (§3.4) organise files but are never namespace segments, so `RimBank.Party.PartyReferenceDataDirectory.Registration` or `….Api.Retrieval` is not allowed (`context-namespaces-stop-at-the-adapter`). A name clash is solved with a better type name, never a namespace segment. **Composition projects** (`RimBank.Host`, `RimBank.Mcp`, `RimBank.Api`, `RimBank.SharedKernel`, …) likewise have one namespace each, their own: `Host/Security/` is a folder of the namespace `RimBank.Host` (`assembly-names`).
+- A context's adapters add a suffix to its namespace: `.PublishedLanguage`, `.Api`, `.Mcp`, `.Postgresql`, `.Subscriptions`, and later `.RabbitMq` and so on. There is no per-context core project.
+- The **driving adapters are folders of one shared project each** ([ADR 0025](../docs/adr/0025-one-api-project.md)): every context's HTTP adapter is the folder `<BusinessDomain>/<ServiceDomain>/` of **`RimBank.Api`** (namespace `RimBank.<BusinessDomain>.<ServiceDomain>.Api`), and its MCP adapter the same folder of **`RimBank.Mcp`** (namespace `….Mcp`). Each of those projects keeps the conventions its adapters share at its root namespace. There is no per-context `.Api` or `.Mcp` project. `.PublishedLanguage`, `.Postgresql` and `.Subscriptions` are projects of their own, named after their namespace.
 - Integration events that other contexts consume live in `.PublishedLanguage` (a DDD term, and the only shared contract). It contains integration events only, never views or domain types.
 - `.Subscriptions` is the consuming side (DDD's anti-corruption layer): it subscribes to other contexts' published integration events and translates them into this context's own language (local commands or local reference events). It is the only part of a context allowed to use another context's `.PublishedLanguage` (`RimBank.Core` references every context's `.PublishedLanguage` project, but each core may use only its own).
 
@@ -82,16 +84,16 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration: PostgreSQL, Keycloak with the dev-only realm (Realms/, ADR 0019), the host
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
-│  ├─ RimBank.Http/               # HTTP conventions every .Api shares: the Idempotency-Key header (ADR 0018)
-│  ├─ RimBank.Mcp/                # MCP conventions every .Mcp shares: Error → isError Problem Details, the tool error filter (ADR 0022)
-│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring (ADR 0017); command idempotency (ADR 0018)
+│  ├─ RimBank.Api/                # the HTTP API of every context, one folder per context (ADR 0025)
+│  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match)
+│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/
+│  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
-│  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory (§3.4)
+│  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory for every folder (§3.4, ADR 0026)
 │  │  └─ LoansAndDeposits/CurrentAccount/       # namespace RimBank.LoansAndDeposits.CurrentAccount
-│  └─ Party/                      # a context's adapters, each referencing RimBank.Core
+│  └─ Party/                      # a context's own adapter projects, each referencing RimBank.Core
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
-│     ├─ RimBank.Party.PartyReferenceDataDirectory.Api/
-│     ├─ RimBank.Party.PartyReferenceDataDirectory.Mcp/
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
@@ -100,29 +102,28 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Architecture.Tests/      # ArchUnitNET rules (CONTRIBUTING "Architecture rules", ADR 0011, ADR 0012)
    ├─ RimBank.Architecture.Fixtures/   # good and bad fake contexts that prove each rule bites (never referenced by src/)
    ├─ RimBank.Problems.Tests/         # the Error → Problem Details mapping (ADR 0015)
-   ├─ RimBank.Http.Tests/             # the Idempotency-Key header and its Problem Details (ADR 0018)
-   ├─ RimBank.Mcp.Tests/              # the Error → tool result mapping (ADR 0022)
+   ├─ RimBank.Api.Tests/              # same folders as RimBank.Api (ADR 0025): the HTTP conventions at the root; per context, HTTP through the real host (Alba, Testcontainers), Problem Details and BIAN conformance
+   │  └─ Party/PartyReferenceDataDirectory/
+   ├─ RimBank.Mcp.Tests/              # the Error → tool result mapping (ADR 0022); per context from 1.16: MCP client → tools, Problem Details errors, parity with the HTTP API
    ├─ RimBank.Postgresql.Tests/       # store, messaging and idempotency conventions with two test-only fake contexts, Testcontainers (ADR 0016–0018)
-   ├─ RimBank.Host.Testing/           # shared helpers for in-memory host tests: test-signed access tokens (ADR 0019), used by Host.Tests and each .Api.Tests / .Mcp.Tests
+   ├─ RimBank.Host.Testing/           # shared helpers for in-memory host tests: test-signed access tokens (ADR 0019), used by Host.Tests, Api.Tests and Mcp.Tests
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
-   ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by every .Api.Tests: spec loaders, route and channel assertions (ADR 0020)
+   ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by RimBank.Api.Tests: spec loaders, route and channel assertions (ADR 0020)
    ├─ RimBank.Conformance.Tests/      # the harness on the real Party YAML and a test-only fake context (ADR 0020)
    ├─ RimBank.Core.Tests/             # domain + application of every context (no I/O), same folders as RimBank.Core (ADR 0023)
    │  └─ Party/PartyReferenceDataDirectory/
    └─ Party/
-      ├─ RimBank.Party.PartyReferenceDataDirectory.Api.Tests/          # HTTP + Problem Details + BIAN conformance
-      ├─ RimBank.Party.PartyReferenceDataDirectory.Mcp.Tests/          # MCP client → tools, Problem Details errors, parity with Api
       └─ RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/   # Testcontainers
 ```
 
-**Test namespaces:** a test namespace follows the code under test from the outside in, adds the test folder, and always ends with `.Tests`: `<namespace of the project under test>.<folder>.Tests`. For example `RimBank.SharedKernel.MoneyAndCurrency.Tests` (folder `MoneyAndCurrency/` of `RimBank.SharedKernel.Tests`) or `RimBank.Party.PartyReferenceDataDirectory.Registration.Tests` (folder `Party/PartyReferenceDataDirectory/Registration/` of `RimBank.Core.Tests`); root files use the project name (`RimBank.SharedKernel.Tests`). Never `….Tests.<Folder>`. Shared test libraries such as `RimBank.SharedKernel.Testing` keep their own name.
+**Test namespaces:** a test namespace follows the code under test and always ends with `.Tests`. Inside a context it is exactly the namespace under test plus `.Tests`, whatever the test folder: `RimBank.Party.PartyReferenceDataDirectory.Tests` (every folder of `tests/RimBank.Core.Tests/Party/PartyReferenceDataDirectory/`), `RimBank.Party.PartyReferenceDataDirectory.Api.Tests`, `RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests` ([ADR 0026](../docs/adr/0026-flat-context-namespaces.md)). A composition project's tests are all in `<project>.Tests` (`RimBank.SharedKernel.Tests`, `RimBank.Host.Tests`), whatever the folder. A test-only fake context keeps its own namespace, `<test project>.FakeContexts.<Name>.Tests`, because handlers are bound to a store by namespace. Never `….Tests.<Folder>`. Shared test libraries such as `RimBank.SharedKernel.Testing` keep their own name.
 
 ### 3.4 Inside `RimBank.Core`: business names only
 
 `RimBank.Core` has one folder per context, `<BusinessDomain>/<ServiceDomain>/`. Inside it, folders follow aggregates, BIAN Behavior Qualifiers and business flows. Generic technical folders (`Services`, `Repositories`, `Helpers`, `Managers`, `Utils`, `Dtos`) are forbidden.
 
 ```
-RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.PartyReferenceDataDirectory
+RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.PartyReferenceDataDirectory for every folder below (ADR 0026)
 ├─ PartyReferenceDataDirectoryEntry/      # Control Record (aggregate root)
 │  ├─ PartyReferenceDataDirectoryEntry.cs # state + evolve
 │  ├─ PartyReferenceDataDirectoryEntryId.cs
@@ -164,11 +165,11 @@ Value objects that belong to one context (for example party identifiers, names, 
 | `RimBank.Core` | SharedKernel, each context's own `.PublishedLanguage`. Inside it, a context's core (namespace `RimBank.X.Y`) uses only its own namespace, SharedKernel and its own `.PublishedLanguage` | ASP.NET Core, Marten, Wolverine, Npgsql, any adapter; for each context, **any other context's** core or `.PublishedLanguage` |
 | `.PublishedLanguage` | BCL only | Everything else |
 | `.Subscriptions` | Its own core, SharedKernel, other contexts' `.PublishedLanguage`, Wolverine | Other contexts' cores or adapters, its own `.Api`, `.Mcp`, `.Postgresql` |
-| `.Api` | Its own core, SharedKernel, `RimBank.Problems`, `RimBank.Http`, ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
-| `.Mcp` | Its own core, SharedKernel, `RimBank.Problems`, `RimBank.Mcp`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
+| `.Api` (a context's folder of `RimBank.Api`, ADR 0025) | Its own core, SharedKernel, `RimBank.Problems`, the HTTP conventions (namespace `RimBank.Api`), ASP.NET Core, Wolverine (`IMessageBus`) | `.Postgresql`, other contexts' adapters |
+| `.Mcp` (a context's folder of `RimBank.Mcp` from 1.16, ADR 0025) | Its own core, SharedKernel, `RimBank.Problems`, `RimBank.Mcp`, MCP C# SDK, Wolverine (`IMessageBus`) | `.Api`, `.Postgresql`, other contexts' adapters |
 | `.Postgresql` | Its own core, SharedKernel, `RimBank.Postgresql`, Marten, Wolverine.Marten | `.Api`, `.Mcp`, other contexts |
 | `RimBank.Problems` | SharedKernel, ASP.NET Core | Cores, adapters, other composition projects ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)) |
-| `RimBank.Http` | SharedKernel, `RimBank.Problems`, ASP.NET Core; used only by `.Api` adapters and `RimBank.Host` | Cores, other adapters, Marten, Wolverine ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)) |
+| `RimBank.Api` (root namespace: the HTTP conventions) | SharedKernel, `RimBank.Problems`, ASP.NET Core; used only by `.Api` folders and `RimBank.Host` | Cores, other adapters, Marten, Wolverine ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md), [ADR 0025](../docs/adr/0025-one-api-project.md)) |
 | `RimBank.Mcp` | SharedKernel, `RimBank.Problems`, ASP.NET Core, MCP C# SDK; used only by `.Mcp` adapters and `RimBank.Host` | Cores, other adapters, Marten, Wolverine ([ADR 0022](../docs/adr/0022-mcp-authorization-and-tool-errors.md)) |
 | `RimBank.Postgresql` | SharedKernel, Marten (with JasperFx, Weasel, Npgsql), Wolverine (`Wolverine.Marten`, `Wolverine.Postgresql`), Microsoft.Extensions abstractions; used only by `.Postgresql` adapters and by `RimBank.Host` for its own message store. It also adds the idempotency policy to every command handler ([ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)) | Cores, other adapters, other composition projects, ASP.NET Core ([ADR 0016](../docs/adr/0016-per-context-marten-stores.md), [ADR 0017](../docs/adr/0017-wolverine-wiring.md)) |
 | `RimBank.Host` | All adapters and `RimBank.Core` (composition only) | Business logic |
@@ -190,7 +191,7 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
 ## 5. API & error contract
 
 - Routes, operation names and resource names follow BIAN, for example `POST /PartyReferenceDataDirectory/Register` and `GET /PartyReferenceDataDirectory/{id}/Retrieve`.
-- Request and response models live in `.Api` and are mapped to and from the core. Domain types are never serialised directly.
+- Request and response models live in the context's `.Api` folder of `RimBank.Api` ([ADR 0025](../docs/adr/0025-one-api-project.md)) and are mapped to and from the core. Domain types are never serialised directly.
 - **Commands vs queries over HTTP:** BIAN `Retrieve` operations are `GET` endpoints that dispatch a query. All other BIAN operations (`Register`, `Initiate`, `Update`, `Control`, `Execute`, `Exchange`, `Request`, …) are `POST`/`PUT` endpoints that dispatch a command.
 - **Command responses** come from the command's outcome (the identifier, stream version and the state produced by the decision). They never read a read model, so they do not depend on projection lag. Where BIAN's response schema expects the full Control Record, it is built from the aggregate state produced by the decision.
 - **Query responses** come only from read models. A stream version is returned in an `ETag` header, and a command may send it back in `If-Match` for optimistic concurrency.
@@ -200,11 +201,11 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
   - extensions: `errorCode`, `traceId`, and `errors` (field → messages) for validation failures
 - Each core `Error` maps to a Problem Details response in one place for the whole solution, `RimBank.Problems`, which every `.Api` and `.Mcp` uses (`error.ToHttpResult()`); the host emits `shared.not-found` and `shared.unexpected` itself ([ADR 0015](../docs/adr/0015-problem-details-mapping.md)). Unhandled exceptions become a generic 500 Problem Details response with no internal details exposed.
 - BIAN-declared statuses are honoured: 400, 401, 403, 404, 429 and 500, plus 409 for concurrency and idempotency conflicts. A missing or invalid token is a 401 `shared.unauthenticated` and a refused policy a 403 `shared.forbidden` ([ADR 0019](../docs/adr/0019-authentication-baseline.md)).
-- Every state-changing endpoint requires an `Idempotency-Key` header: a missing or invalid one is a 400, and a key reused with a different payload or still in use is a 409 (`RequireIdempotencyKey()` and `IdempotencyKeyHeader` in `RimBank.Http`, [ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
+- Every state-changing endpoint requires an `Idempotency-Key` header: a missing or invalid one is a 400, and a key reused with a different payload or still in use is a 409 (`RequireIdempotencyKey()` and `IdempotencyKeyHeader` in `RimBank.Api`, [ADR 0018](../docs/adr/0018-idempotency-keys-for-commands.md)).
 
 ## 6. MCP (Model Context Protocol) adapter
 
-- **MCP is a driving adapter alongside `.Api`.** The `.Mcp` project sends the same core commands and queries through `IMessageBus`. It never calls the HTTP API and never contains business logic, so the HTTP and MCP channels cannot drift apart.
+- **MCP is a driving adapter alongside `.Api`.** A context's `.Mcp` adapter (its folder of `RimBank.Mcp`, [ADR 0025](../docs/adr/0025-one-api-project.md)) sends the same core commands and queries through `IMessageBus`. It never calls the HTTP API and never contains business logic, so the HTTP and MCP channels cannot drift apart.
 - **Hosting:** all contexts' MCP tools are registered in `RimBank.Host` and exposed at a single `/mcp` endpoint over Streamable HTTP in stateless mode. Each context hands its tools to the host through its module's `AddMcpTools(IMcpServerBuilder)`, which calls the one extension its `.Mcp` adapter exposes; contexts never configure the transport or map the route, and a tool name registered twice stops the host ([ADR 0021](../docs/adr/0021-mcp-wiring-and-tool-conventions.md)). When a context is extracted, its `.Mcp` adapter moves with it.
 - **Naming:** each tool maps 1:1 to a BIAN operation, named `<service_domain>_<operation>[_<behavior_qualifier>]` in snake_case (for example `party_reference_data_directory_register` and `current_account_retrieve_payment`). Descriptions come from the BIAN operation description, and input schemas reuse the `.Api` request models.
 - **Tool annotations:** every tool sets `readOnly`, `destructive`, `idempotent` and `openWorld` explicitly (table in ADR 0021). Retrieve tools dispatch queries and are marked `readOnly`; every other tool dispatches a command. Operations that move money or close facilities are marked `destructive` and are not `idempotent` unless an idempotency key is supplied.

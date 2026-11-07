@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace RimBank.Host.Modules.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>
 /// A stand-in for a real context's module: it registers a marker service, maps <c>GET /{route}/ping</c> and records

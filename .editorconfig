@@ -81,6 +81,11 @@ dotnet_code_quality_unused_parameters = all:warning
 csharp_style_unused_value_assignment_preference = discard_variable:suggestion
 dotnet_diagnostic.IDE0005.severity = warning
 
+# Namespaces: a context's namespace is RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>], whatever folder a file is
+# in; folders organise files but are not namespace segments (ADR 0026, rule context-namespaces-stop-at-the-adapter).
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = none
+
 # Naming: interfaces start with I
 dotnet_naming_rule.interfaces_start_with_i.symbols = interfaces
 dotnet_naming_rule.interfaces_start_with_i.style = prefix_i

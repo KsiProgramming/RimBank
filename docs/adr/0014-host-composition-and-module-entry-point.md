@@ -29,7 +29,7 @@ For the health probes:
 
 **Module entry point: option 3.**
 
-- `RimBank.Host.Modules.IServiceDomainModule` has `ServiceDomain` (the BIAN service domain name), `AddServices(IHostApplicationBuilder)` and `MapEndpoints(IEndpointRouteBuilder)`.
+- `RimBank.Host.Modules.IServiceDomainModule` (namespace `RimBank.Host` since [ADR 0026](0026-flat-context-namespaces.md); the file stays in `Modules/`) has `ServiceDomain` (the BIAN service domain name), `AddServices(IHostApplicationBuilder)` and `MapEndpoints(IEndpointRouteBuilder)`.
 - Each context has one module class at `src/RimBank.Host/Modules/<BusinessDomain>/<ServiceDomain>Module.cs`. It only calls the `Add…` / `Map…` extension methods that the context's own adapters expose (for example `.Postgresql`'s store registration, `.Api`'s endpoints, `.Mcp`'s tools). It holds no business logic and no wiring of its own.
 - `ServiceDomainModules.All` is the explicit, ordered list of modules. There is no assembly scanning. `HostComposition.Build(builder, modules)` applies the service defaults, then each module's `AddServices` in list order, builds the application, maps the probes, then each module's `MapEndpoints` in list order. A service domain listed twice stops the host at startup, with its name in the message.
 - The composition takes the module list as a parameter, so tests compose the host with fake modules (`tests/RimBank.Host.Tests/Modules`).

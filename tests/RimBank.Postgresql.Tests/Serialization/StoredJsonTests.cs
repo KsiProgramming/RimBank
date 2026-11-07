@@ -1,9 +1,8 @@
 using System.Text.Json;
 using Npgsql;
-using RimBank.Postgresql.Database.Tests;
 using RimBank.SharedKernel;
 
-namespace RimBank.Postgresql.Serialization.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 1.4: every store writes typed ids as plain GUID strings (ADR 0008) and enums as their names, in its events,
 // its documents and the acknowledgements it remembers for idempotency (ADR 0016, Serialization).

@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Demographics;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// Identifies the Demographics Behavior Qualifier of an entry: one per entry, created when the entry is

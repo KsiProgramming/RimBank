@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace RimBank.AppHost.Startup.Tests;
+namespace RimBank.AppHost.Tests;
 
 /// <summary>
 /// Container tests always run in CI. On a developer machine without a reachable Docker engine they are skipped with

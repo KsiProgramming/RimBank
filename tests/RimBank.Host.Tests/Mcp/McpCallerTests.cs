@@ -1,6 +1,6 @@
 using ModelContextProtocol.Protocol;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 // Roadmap 0.16: a tool call carries its caller to the message bus as an HTTP call does, so command idempotency is
 // scoped to the caller and the audit trail can name it (specs/tech-stack.md §6 "Audit", ADR 0019, ADR 0022).

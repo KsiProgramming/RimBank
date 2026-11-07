@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using static RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests.EntryExamples;
+using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.Tests;
+namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
 // The entry's state and Evolve (ADR 0010, ADR 0024).
 public sealed class PartyReferenceDataDirectoryEntryTests
@@ -22,7 +22,7 @@ public sealed class PartyReferenceDataDirectoryEntryTests
 
         entry.IsRegistered.ShouldBeTrue();
         entry.ShouldBe(new PartyReferenceDataDirectoryEntry(
-            EntryId, PartyType.Organisation, OpenDate, DemographicsId, PartyReferenceId, BankRelationsId));
+            EntryId, PartyType.Organisation, OpenDate, Demographics, Reference, BankRelations));
     }
 
     [Fact]

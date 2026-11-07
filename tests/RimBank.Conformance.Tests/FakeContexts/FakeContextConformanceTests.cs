@@ -1,6 +1,6 @@
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.FakeContexts.Tests;
+namespace RimBank.Conformance.Tests;
 
 // Roadmap 0.14: the harness passes a conforming fake context and fails each kind of non-conformance with a message
 // that names the BIAN operation, route or channel (ADR 0020). The fake maps routes against the real Party spec.

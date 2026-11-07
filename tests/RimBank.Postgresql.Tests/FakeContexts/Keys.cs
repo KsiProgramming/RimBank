@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Postgresql.FakeContexts.Tests;
+namespace RimBank.Postgresql.Tests;
 
 /// <summary>Fresh idempotency keys for the fake contexts' commands, as a caller sends a new UUID per request.</summary>
 public static class Keys

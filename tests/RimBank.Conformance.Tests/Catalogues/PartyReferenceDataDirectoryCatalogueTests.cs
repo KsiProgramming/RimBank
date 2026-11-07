@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.Catalogues.Tests;
+namespace RimBank.Conformance.Tests;
 
 // Roadmap 1.1: the ADR 0024 catalogue matches the BIAN v14 ext-DDD specifications of Party Reference Data Directory
 // row for row, so the ADR cannot drift from the spec it interprets.

@@ -1,7 +1,6 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Retrieval;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>Handles <see cref="RetrievePartyReferenceDataDirectoryEntry"/> on the read side (tech-stack §8.2).</summary>
 public static class RetrievePartyReferenceDataDirectoryEntryHandler

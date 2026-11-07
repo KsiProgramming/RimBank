@@ -2,7 +2,7 @@ using ModelContextProtocol.Protocol;
 using RimBank.SharedKernel;
 using Result = RimBank.SharedKernel.Result;
 
-namespace RimBank.Mcp.Errors;
+namespace RimBank.Mcp;
 
 /// <summary>
 /// Turns the <see cref="Result{T}"/> of a command or a query into a tool result. A <c>.Mcp</c> adapter returns its

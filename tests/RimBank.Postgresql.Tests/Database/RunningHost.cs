@@ -6,7 +6,7 @@ using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 using Wolverine;
 
-namespace RimBank.Postgresql.Database.Tests;
+namespace RimBank.Postgresql.Tests;
 
 /// <summary>A started host with both fake contexts on its own database; disposing it stops the daemons first.</summary>
 public sealed class RunningHost(IHost host, string database) : IAsyncDisposable

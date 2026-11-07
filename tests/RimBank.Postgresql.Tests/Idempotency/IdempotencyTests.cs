@@ -1,10 +1,8 @@
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 
-namespace RimBank.Postgresql.Idempotency.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 0.12: every command is handled once per idempotency key, through its own context's store and in the same
 // transaction as its events (ADR 0018). The same key and payload give the same result; a different payload gives a

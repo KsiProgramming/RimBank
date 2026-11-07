@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // A tiny aggregate that exists only to exercise IDecider, IProjection and the test helpers (ADR 0010),
 // like SampleId for typed identifiers. Real aggregates live in a context's core, for example

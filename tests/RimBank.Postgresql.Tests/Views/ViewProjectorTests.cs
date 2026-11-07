@@ -3,7 +3,7 @@ using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.Postgresql.Views.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // The Marten adapter must add nothing to the core's pure projection (ADR 0016): for the same events it gives the same
 // view as the ProjectionSpecification Given/Then helper, and a null view deletes the document.

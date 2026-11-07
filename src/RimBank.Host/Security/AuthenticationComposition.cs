@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol.AspNetCore.Authentication;
 using ModelContextProtocol.Authentication;
 
-namespace RimBank.Host.Security;
+namespace RimBank.Host;
 
 /// <summary>
 /// Authentication of every request to the host: JWT bearer tokens issued by Keycloak, and deny by default
@@ -110,7 +110,7 @@ public static class AuthenticationComposition
             // to the protected-resource metadata, which it serves itself. The resource is the requested /mcp address.
             .AddMcp(options => options.ResourceMetadata = new ProtectedResourceMetadata
             {
-                ResourceName = Mcp.McpComposition.ServerName,
+                ResourceName = McpComposition.ServerName,
                 AuthorizationServers = authorizationServers,
                 BearerMethodsSupported = ["header"],
             });

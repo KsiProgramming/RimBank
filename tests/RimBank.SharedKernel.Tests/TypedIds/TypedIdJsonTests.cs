@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace RimBank.SharedKernel.TypedIds.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 public sealed class TypedIdJsonTests
 {

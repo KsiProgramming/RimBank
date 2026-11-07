@@ -3,11 +3,9 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
-using RimBank.Host.Modules;
-using RimBank.Host.Security.Tests;
 using Wolverine;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>
 /// A test-only module whose tool dispatches through the message bus, as a context's <c>.Mcp</c> adapter will, and

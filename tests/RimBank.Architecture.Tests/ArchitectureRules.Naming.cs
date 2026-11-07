@@ -8,6 +8,17 @@ public static partial class ArchitectureRules
     /// <summary>The one project that holds every context's core (ADR 0023). Its root namespace is <c>RimBank</c>.</summary>
     public const string CoreProject = "RimBank.Core";
 
+    /// <summary>
+    /// The adapter parts every context keeps in one shared project, as a folder of it (ADR 0025): the HTTP adapter in
+    /// <c>RimBank.Api</c> and the MCP adapter in <c>RimBank.Mcp</c>. Each project also holds, under its own root
+    /// namespace, the conventions its adapters share. No context has a project of its own for these parts.
+    /// </summary>
+    public static IReadOnlyDictionary<ContextPart, string> SharedAdapterProjects { get; } = new Dictionary<ContextPart, string>
+    {
+        [ContextPart.Api] = "RimBank.Api",
+        [ContextPart.Mcp] = "RimBank.Mcp",
+    };
+
     /// <summary>Technical folder names a business-first codebase never uses (mission principle 1, tech-stack §3.4).</summary>
     public static IReadOnlyList<string> ForbiddenFolderNames { get; } =
         ["Services", "Repositories", "Helpers", "Managers", "Utils", "Dtos", "Commands", "Queries"];
@@ -19,9 +30,17 @@ public static partial class ArchitectureRules
             .Where(type => !NamespaceIsAllowed(type.NamespaceName(), code.Catalogue))
             .Select(type => new Violation(type.Display(), $"namespace '{type.NamespaceName()}' is not a composition project or a catalogued RimBank.<BusinessDomain>.<ServiceDomain>")));
 
+    public static ArchitectureRule ContextNamespacesStopAtTheAdapter { get; } = new(
+        "context-namespaces-stop-at-the-adapter",
+        "tech-stack §3.1 and ADR 0026: a context's namespace is RimBank.<BusinessDomain>.<ServiceDomain>[.<Adapter>]; aggregate, Behavior Qualifier and flow folders are never namespace segments",
+        code => code.Types
+            .Select(type => (Type: type, Problem: ContextNamespaceProblem(type.NamespaceName())))
+            .Where(checkedType => checkedType.Problem is not null)
+            .Select(checkedType => new Violation(checkedType.Type.Display(), checkedType.Problem!)));
+
     public static ArchitectureRule AssemblyNames { get; } = new(
         "assembly-names",
-        "tech-stack §3.1, ADR 0011 and ADR 0023: a project is a composition project, RimBank.Core holding only catalogued core namespaces, or a context adapter named after its root namespace with an allowed suffix",
+        "tech-stack §3.1, ADR 0011, ADR 0023 and ADR 0025: a project is a composition project, RimBank.Core holding only catalogued core namespaces, RimBank.Api or RimBank.Mcp holding their conventions and catalogued .Api or .Mcp namespaces, or a context adapter named after its root namespace with an allowed suffix",
         code => code.Types
             .GroupBy(type => type.Assembly.Name.Split(',')[0], StringComparer.Ordinal)
             .SelectMany(assembly => AssemblyNameProblems(assembly.Key, assembly.Select(type => type.NamespaceName()), code.Catalogue)),
@@ -31,6 +50,12 @@ public static partial class ArchitectureRules
         "cores-live-in-rimbank-core",
         "tech-stack §3.1 and ADR 0023: every context's core lives in the one RimBank.Core project",
         code => CoreTypeProblems(code.Types.Select(type => (type.Display(), type.NamespaceName(), type.Assembly.Name.Split(',')[0])), code.Catalogue),
+        SolutionOnly: true);
+
+    public static ArchitectureRule HttpAndMcpAdaptersLiveInSharedProjects { get; } = new(
+        "http-and-mcp-adapters-live-in-shared-projects",
+        "ADR 0025: every context's HTTP adapter is a folder of RimBank.Api and its MCP adapter a folder of RimBank.Mcp, never a project of its own",
+        code => SharedAdapterTypeProblems(code.Types.Select(type => (type.Display(), type.NamespaceName(), type.Assembly.Name.Split(',')[0])), code.Catalogue),
         SolutionOnly: true);
 
     public static ArchitectureRule BusinessFolderNames { get; } = new(
@@ -58,8 +83,8 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule TestNamespaces { get; } = new(
         "test-namespaces",
-        "tech-stack §3.3: a test namespace is <namespace under test>.<folder>.Tests and always ends with .Tests",
-        code => code.TestAssemblies.SelectMany(assembly => TestNamespaceProblems(assembly.Types.Select(type => (type.Display(), type.NamespaceName())))),
+        "tech-stack §3.3 and ADR 0026: a test namespace ends with .Tests and is the test project's namespace, a context's namespace plus .Tests, or a test-only fake context <project>.FakeContexts.<Name>.Tests",
+        code => code.TestAssemblies.SelectMany(assembly => TestNamespaceProblems(assembly.Assembly, assembly.Types.Select(type => (type.Display(), type.NamespaceName())))),
         SolutionOnly: true);
 
     public static bool NamespaceIsAllowed(string namespaceName, ServiceDomainCatalogue catalogue) =>
@@ -79,20 +104,42 @@ public static partial class ArchitectureRules
             yield break;
         }
 
+        if (SharedAdapterProjects.FirstOrDefault(shared => shared.Value == assemblyName) is { Value: not null } sharedProject)
+        {
+            foreach (var namespaceName in namespaces.Distinct().Where(namespaceName =>
+                namespaceName != assemblyName && !IsCataloguedPart(namespaceName, sharedProject.Key, catalogue)))
+            {
+                yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', which is neither its own conventions nor the {sharedProject.Key} adapter of a catalogued RimBank.<BusinessDomain>.<ServiceDomain>");
+            }
+
+            yield break;
+        }
+
         var segments = assemblyName.Split('.');
         var named = ContextAddress.CompositionProjects.Contains(assemblyName)
             || segments.Length == 4
                 && segments[0] == "RimBank"
                 && catalogue.Contains(segments[1], segments[2])
-                && ContextAddress.AdapterSuffixes.ContainsKey(segments[3]);
+                && ContextAddress.AdapterSuffixes.TryGetValue(segments[3], out var part)
+                && !SharedAdapterProjects.ContainsKey(part);
         if (!named)
         {
-            yield return new Violation(assemblyName, $"is not a composition project, {CoreProject}, or RimBank.<BusinessDomain>.<ServiceDomain>.<Adapter> with a catalogued service domain and an allowed adapter suffix");
+            yield return new Violation(assemblyName, $"is not a composition project, {CoreProject}, {string.Join(", ", SharedAdapterProjects.Values)}, or RimBank.<BusinessDomain>.<ServiceDomain>.<Adapter> with a catalogued service domain and an allowed adapter suffix (PublishedLanguage, Subscriptions, Postgresql)");
         }
 
         foreach (var namespaceName in namespaces.Distinct().Where(namespaceName => !Namespaces.IsWithin(namespaceName, assemblyName)))
         {
             yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', outside its root namespace");
+        }
+
+        // A composition project has one namespace, its own: its folders are not namespace segments (ADR 0026). A context
+        // adapter project's namespaces are checked by context-namespaces-stop-at-the-adapter.
+        if (ContextAddress.CompositionProjects.Contains(assemblyName))
+        {
+            foreach (var namespaceName in namespaces.Distinct().Where(namespaceName => namespaceName != assemblyName && Namespaces.IsWithin(namespaceName, assemblyName)))
+            {
+                yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', which goes below its root namespace: folders are not namespace segments");
+            }
         }
     }
 
@@ -105,14 +152,80 @@ public static partial class ArchitectureRules
             .Where(type => type.AssemblyName != CoreProject && IsCataloguedCore(type.NamespaceName, catalogue))
             .Select(type => new Violation(type.TypeName, $"is in the core of {ContextAddress.Parse(type.NamespaceName)!.Context} but lives in {type.AssemblyName}, not {CoreProject}"));
 
-    /// <summary>The test namespace rule as a pure function over (type, namespace) pairs.</summary>
-    public static IEnumerable<Violation> TestNamespaceProblems(IEnumerable<(string TypeName, string NamespaceName)> types) =>
-        types
-            .Where(type => !type.NamespaceName.EndsWith(".Tests", StringComparison.Ordinal))
-            .Select(type => new Violation(type.TypeName, $"namespace '{type.NamespaceName}' does not end with .Tests"));
+    /// <summary>
+    /// The shared adapter location rule as a pure function over (type, namespace, assembly): a type in the
+    /// <c>.Api</c> or <c>.Mcp</c> part of a catalogued context must be in its <see cref="SharedAdapterProjects"/> project.
+    /// </summary>
+    public static IEnumerable<Violation> SharedAdapterTypeProblems(IEnumerable<(string TypeName, string NamespaceName, string AssemblyName)> types, ServiceDomainCatalogue catalogue) =>
+        from type in types
+        let address = ContextAddress.Parse(type.NamespaceName)
+        where address is not null
+            && SharedAdapterProjects.TryGetValue(address.Part, out var project)
+            && type.AssemblyName != project
+            && catalogue.Contains(address.BusinessDomain, address.ServiceDomain)
+        select new Violation(type.TypeName, $"is in the {address.Part} adapter of {address.Context} but lives in {type.AssemblyName}, not {SharedAdapterProjects[address.Part]}");
+
+    /// <summary>
+    /// The flat context namespace rule as a pure function (ADR 0026): <c>null</c> when the namespace is not in a context,
+    /// or is exactly the context's core or one of its adapters; otherwise why it is not.
+    /// </summary>
+    public static string? ContextNamespaceProblem(string namespaceName)
+    {
+        if (ContextAddress.Parse(namespaceName) is not { } address)
+        {
+            return null;
+        }
+
+        var expected = address.Part is ContextPart.Core
+            ? address.Context
+            : $"{address.Context}.{ContextAddress.AdapterSuffixes.Single(suffix => suffix.Value == address.Part).Key}";
+        return namespaceName == expected
+            ? null
+            : $"namespace '{namespaceName}' goes below '{expected}': folders such as aggregates, Behavior Qualifiers and flows are not namespace segments";
+    }
+
+    /// <summary>
+    /// The test namespace rule as a pure function over the (type, namespace) pairs of one test assembly (ADR 0026): a
+    /// test namespace ends with <c>.Tests</c> and is exactly the test project's namespace, a context's namespace plus
+    /// <c>.Tests</c>, or a test-only fake context, <c>&lt;project&gt;.FakeContexts.&lt;Name&gt;.Tests</c>. A fake
+    /// context keeps its own namespace because the store wiring binds a context's handlers by namespace.
+    /// </summary>
+    public static IEnumerable<Violation> TestNamespaceProblems(string assemblyName, IEnumerable<(string TypeName, string NamespaceName)> types) =>
+        types.SelectMany(type => TestNamespaceProblems(assemblyName, type.TypeName, type.NamespaceName));
+
+    private static IEnumerable<Violation> TestNamespaceProblems(string assemblyName, string typeName, string namespaceName)
+    {
+        if (!namespaceName.EndsWith(".Tests", StringComparison.Ordinal))
+        {
+            yield return new Violation(typeName, $"namespace '{namespaceName}' does not end with .Tests");
+            yield break;
+        }
+
+        var underTest = namespaceName[..^".Tests".Length];
+        if (ContextAddress.Parse(underTest) is not null)
+        {
+            if (ContextNamespaceProblem(underTest) is { } problem)
+            {
+                yield return new Violation(typeName, $"test {problem}");
+            }
+
+            yield break;
+        }
+
+        var project = assemblyName.EndsWith(".Tests", StringComparison.Ordinal) ? assemblyName[..^".Tests".Length] : assemblyName;
+        var isFakeContext = underTest.StartsWith($"{project}.FakeContexts.", StringComparison.Ordinal)
+            && !underTest[$"{project}.FakeContexts.".Length..].Contains('.', StringComparison.Ordinal);
+        if (underTest != project && !isFakeContext)
+        {
+            yield return new Violation(typeName, $"test namespace '{namespaceName}' goes below '{project}.Tests': folders are not namespace segments");
+        }
+    }
 
     private static bool IsCataloguedCore(string namespaceName, ServiceDomainCatalogue catalogue) =>
-        ContextAddress.Parse(namespaceName) is { Part: ContextPart.Core } address && catalogue.Contains(address.BusinessDomain, address.ServiceDomain);
+        IsCataloguedPart(namespaceName, ContextPart.Core, catalogue);
+
+    private static bool IsCataloguedPart(string namespaceName, ContextPart part, ServiceDomainCatalogue catalogue) =>
+        ContextAddress.Parse(namespaceName) is { } address && address.Part == part && catalogue.Contains(address.BusinessDomain, address.ServiceDomain);
 
     // ArchUnitNET exposes neither "readonly" nor "record" on a struct, so the rule reads what the compiler emits:
     // [IsReadOnly] on a readonly struct, and a [CompilerGenerated] PrintMembers on a record struct.

@@ -1,7 +1,6 @@
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.Registration;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// Register a party in the directory: BIAN <c>PartyReferenceDataDirectoryEntry/Register</c> (ADR 0024). Handled by

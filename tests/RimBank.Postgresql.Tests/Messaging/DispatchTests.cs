@@ -1,10 +1,8 @@
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 
-namespace RimBank.Postgresql.Messaging.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 0.11: commands and queries go through IMessageBus.InvokeAsync<Result<T>> to Wolverine-free core handlers,
 // and each handler commits through its own context's store (ADR 0017, specs/tech-stack.md §4 and §8.1–8.2).

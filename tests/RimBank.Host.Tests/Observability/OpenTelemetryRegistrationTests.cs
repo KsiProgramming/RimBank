@@ -2,10 +2,9 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using RimBank.Host.Tests;
 using RimBank.ServiceDefaults;
 
-namespace RimBank.Host.Observability.Tests;
+namespace RimBank.Host.Tests;
 
 // OpenTelemetry traces and metrics are part of every host (mission quality bar, tech-stack §1).
 public sealed class OpenTelemetryRegistrationTests

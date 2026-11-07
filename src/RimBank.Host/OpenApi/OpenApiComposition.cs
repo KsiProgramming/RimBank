@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using RimBank.Http;
+using RimBank.Api;
 using RimBank.SharedKernel;
 
-namespace RimBank.Host.OpenApi;
+namespace RimBank.Host;
 
 /// <summary>
 /// The host's OpenAPI document (<c>v1</c>, registered by the service defaults and served in Development only): it
-/// describes the conventions of RimBank.Http that the generator cannot see, such as the <c>Idempotency-Key</c> header
+/// describes the HTTP conventions of RimBank.Api that the generator cannot see, such as the <c>Idempotency-Key</c> header
 /// of every command endpoint (specs/tech-stack.md §5, ADR 0018).
 /// </summary>
 public static class OpenApiComposition

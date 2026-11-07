@@ -5,7 +5,7 @@ using ModelContextProtocol.Protocol;
 using RimBank.Problems;
 using RimBank.SharedKernel;
 
-namespace RimBank.Mcp.Errors;
+namespace RimBank.Mcp;
 
 /// <summary>
 /// An <see cref="Error"/> as an MCP tool result: <c>isError: true</c>, with the RFC 9457 Problem Details that HTTP

@@ -1,5 +1,4 @@
 using Marten;
-using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Postgresql;
 

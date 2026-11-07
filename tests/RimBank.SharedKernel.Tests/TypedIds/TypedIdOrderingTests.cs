@@ -1,6 +1,6 @@
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.SharedKernel.TypedIds.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 public sealed class TypedIdOrderingTests
 {

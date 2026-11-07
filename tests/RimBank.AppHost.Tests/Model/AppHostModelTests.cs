@@ -3,7 +3,7 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace RimBank.AppHost.Model.Tests;
+namespace RimBank.AppHost.Tests;
 
 // The AppHost's resource model, checked without starting any container (no Docker needed).
 public sealed class AppHostModelTests

@@ -4,11 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
-namespace RimBank.Postgresql.Registration.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // The registration convention without a database: building the host and resolving a store opens no connection.
 public sealed class ServiceDomainStoreRegistrationTests

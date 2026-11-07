@@ -2,7 +2,7 @@ using JasperFx.CodeGeneration;
 using Microsoft.Extensions.Hosting;
 using Wolverine;
 
-namespace RimBank.Postgresql.Database.Tests;
+namespace RimBank.Postgresql.Tests;
 
 /// <summary>
 /// The message bus of a test host, set up as <c>RimBank.Host</c> sets up its own (ADR 0017), except for the durability

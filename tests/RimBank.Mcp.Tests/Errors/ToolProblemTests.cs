@@ -5,7 +5,7 @@ using RimBank.Problems;
 using RimBank.SharedKernel;
 using Result = RimBank.SharedKernel.Result;
 
-namespace RimBank.Mcp.Errors.Tests;
+namespace RimBank.Mcp.Tests;
 
 // ADR 0021 and ADR 0022: an MCP error is the Problem Details HTTP returns for the same Error, as structuredContent and
 // as the same JSON in one text block.

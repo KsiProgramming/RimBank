@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace RimBank.AppHost.Model.Tests;
+namespace RimBank.AppHost.Tests;
 
 // The dev-only realm file (ADR 0019, ADR 0022), read as JSON without starting Keycloak.
 public sealed class DevRealmTests

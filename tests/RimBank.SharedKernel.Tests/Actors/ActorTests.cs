@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.Actors.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // Roadmap 0.13: every state change is traceable to an actor (mission quality bar "Auditability", ADR 0019).
 public sealed class ActorTests

@@ -2,7 +2,7 @@ namespace RimBank.Architecture.Tests;
 
 // The composition projects (tech-stack §2–§4, ADR 0014–0019): RimBank.Host composes, RimBank.AppHost orchestrates,
 // RimBank.ServiceDefaults is applied by the host and alone opens endpoints (its health probes) to anonymous callers, RimBank.Problems maps errors for the adapters that answer callers,
-// RimBank.Http holds the HTTP conventions every .Api follows, RimBank.Mcp the MCP conventions every .Mcp follows, and RimBank.Postgresql holds the Marten and Wolverine
+// RimBank.Api holds, at its root, the HTTP conventions every context's .Api folder follows (ADR 0025), RimBank.Mcp the MCP conventions every .Mcp follows, and RimBank.Postgresql holds the Marten and Wolverine
 // conventions every .Postgresql adapter follows.
 // Contexts and SharedKernel never reach up to any of them.
 public static partial class ArchitectureRules
@@ -11,7 +11,7 @@ public static partial class ArchitectureRules
     private const string AppHostRoot = "RimBank.AppHost";
     private const string ServiceDefaultsRoot = "RimBank.ServiceDefaults";
     private const string ProblemsRoot = "RimBank.Problems";
-    private const string HttpRoot = "RimBank.Http";
+    private const string HttpRoot = "RimBank.Api";
     private const string SharedMcpRoot = "RimBank.Mcp";
     private const string SharedPostgresqlRoot = "RimBank.Postgresql";
 
@@ -95,13 +95,13 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule HttpDependencies { get; } = new(
         "http-dependencies",
-        "tech-stack §4 and ADR 0018: RimBank.Http references SharedKernel, RimBank.Problems and ASP.NET Core only, never a context, Marten or Wolverine",
+        "tech-stack §4 and ADR 0018: the HTTP conventions at the root of RimBank.Api reference SharedKernel, RimBank.Problems and ASP.NET Core only, never a context, Marten or Wolverine",
         code =>
             from type in code.Types
             where Namespaces.IsWithin(type.NamespaceName(), HttpRoot)
             from target in code.Targets(type)
             where !IsBcl(target)
-                && !new[] { AspNetCore, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
+                && !new[] { AspNetCore, AspNetCoreHeaders, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
                     .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
             select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, RimBank.Problems, ASP.NET Core or the BCL"));
 

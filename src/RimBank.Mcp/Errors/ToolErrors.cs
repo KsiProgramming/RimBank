@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Mcp.Errors;
+namespace RimBank.Mcp;
 
 /// <summary>The errors every MCP tool can return, whatever its context (ADR 0022).</summary>
 public static class ToolErrors

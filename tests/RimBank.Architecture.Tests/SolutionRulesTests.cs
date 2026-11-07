@@ -29,12 +29,10 @@ public sealed class SolutionRulesTests
                 "RimBank.Host",
                 "RimBank.Host.Testing",
                 "RimBank.Host.Tests",
-                "RimBank.Http",
-                "RimBank.Http.Tests",
+                "RimBank.Api",
+                "RimBank.Api.Tests",
                 "RimBank.Mcp",
                 "RimBank.Mcp.Tests",
-                "RimBank.Party.PartyReferenceDataDirectory.Api",
-                "RimBank.Party.PartyReferenceDataDirectory.Api.Tests",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests",
                 "RimBank.Problems",
@@ -54,8 +52,8 @@ public sealed class SolutionRulesTests
     public void The_party_register_flow_is_classified_as_write_side()
     {
         var solution = CodeBases.Solution;
-        var handler = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Registration.RegisterPartyHandler");
-        var command = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Registration.RegisterParty");
+        var handler = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.RegisterPartyHandler");
+        var command = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.RegisterParty");
         var directory = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.IPartyDirectory");
 
         solution.IsCommandHandler(handler).ShouldBeTrue();
@@ -70,11 +68,11 @@ public sealed class SolutionRulesTests
     public void The_party_retrieve_flow_is_classified_as_read_side()
     {
         var solution = CodeBases.Solution;
-        var handler = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.RetrievePartyReferenceDataDirectoryEntryHandler");
-        var query = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.RetrievePartyReferenceDataDirectoryEntry");
+        var handler = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.RetrievePartyReferenceDataDirectoryEntryHandler");
+        var query = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.RetrievePartyReferenceDataDirectoryEntry");
         var enquiry = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.IPartyDirectoryEnquiry");
-        var view = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.PartyReferenceDataDirectoryEntryView");
-        var projection = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.PartyReferenceDataDirectoryEntryViewProjection");
+        var view = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryView");
+        var projection = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryViewProjection");
 
         solution.IsQueryHandler(handler).ShouldBeTrue();
         solution.IsCommandHandler(handler).ShouldBeFalse();
@@ -90,11 +88,11 @@ public sealed class SolutionRulesTests
     [Fact]
     public void The_party_api_adapter_is_recognised_as_the_party_context_api_part()
     {
-        var address = ContextAddress.Parse("RimBank.Party.PartyReferenceDataDirectory.Api.Registration");
+        var address = ContextAddress.Parse("RimBank.Party.PartyReferenceDataDirectory.Api");
 
         address.ShouldNotBeNull();
         address.Part.ShouldBe(ContextPart.Api);
-        CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Api.Registration.RegisterPartyRequest");
+        CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Api.RegisterPartyRequest");
     }
 
     // The .Postgresql dependency rules only bite on types they place in a context's .Postgresql part.
@@ -113,6 +111,6 @@ public sealed class SolutionRulesTests
     {
         CodeBases.Solution.Types.ShouldContain(type => type.FullName == "RimBank.SharedKernel.Money");
         CodeBases.Solution.TestAssemblies.Select(assembly => assembly.Assembly)
-            .ShouldBe(["RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Conformance.Tests", "RimBank.Core.Tests", "RimBank.Host.Tests", "RimBank.Http.Tests", "RimBank.Mcp.Tests", "RimBank.Party.PartyReferenceDataDirectory.Api.Tests", "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
+            .ShouldBe(["RimBank.Api.Tests", "RimBank.AppHost.Tests", "RimBank.Architecture.Tests", "RimBank.Conformance.Tests", "RimBank.Core.Tests", "RimBank.Host.Tests", "RimBank.Mcp.Tests", "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests", "RimBank.Postgresql.Tests", "RimBank.Problems.Tests", "RimBank.SharedKernel.Tests"], ignoreOrder: true);
     }
 }

@@ -1,6 +1,6 @@
 using RimBank.SharedKernel;
 
-namespace RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
+namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
 /// Identifies a Party Reference Data Directory entry (the Control Record): the stream id of the

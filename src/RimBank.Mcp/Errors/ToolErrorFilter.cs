@@ -7,7 +7,7 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RimBank.Problems;
 
-namespace RimBank.Mcp.Errors;
+namespace RimBank.Mcp;
 
 /// <summary>
 /// The call-tool filter of every RimBank MCP server (ADR 0022). It runs around each tool call and:
