@@ -20,6 +20,9 @@ public sealed class FakeLedgerJournal(IDocumentSession session) : IFakeLedgerJou
     public void Start(Guid ledgerId, IFakeLedgerEvent domainEvent) => session.Events.StartStream(ledgerId, domainEvent);
 
     public void Append(Guid ledgerId, IFakeLedgerEvent domainEvent) => session.Events.Append(ledgerId, domainEvent);
+
+    public void AppendAt(Guid ledgerId, long expectedVersion, IFakeLedgerEvent domainEvent) =>
+        session.Events.Append(ledgerId, expectedVersion + 1, domainEvent);
 }
 
 /// <summary>The read port over the ledger's inline view, with its own query session (no transaction).</summary>

@@ -106,6 +106,10 @@ public static class ServiceDomainStoreRegistration
             options.EnableRelayOfUserName = true;
             options.Policies.Add(new CommandIdempotencyPolicy(coreNamespace, name.SchemaName));
 
+            // A command whose commit loses an optimistic-concurrency race runs once more, so its handler's own version
+            // check answers the conflict as a value (ADR 0027).
+            options.Policies.Add(new CommandConcurrencyRetryPolicy(coreNamespace));
+
             // The context's own messages go to its own durable local queue: they survive a restart and are retried,
             // and a backlog in one context never delays another.
             options.Publish(rule =>

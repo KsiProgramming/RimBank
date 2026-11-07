@@ -126,4 +126,8 @@ public sealed class JournalWithoutSession : IFakeLedgerJournal
     public void Append(Guid ledgerId, IFakeLedgerEvent domainEvent)
     {
     }
+
+    public void AppendAt(Guid ledgerId, long expectedVersion, IFakeLedgerEvent domainEvent)
+    {
+    }
 }

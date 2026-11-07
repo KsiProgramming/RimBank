@@ -53,6 +53,9 @@ public interface IFakeLedgerJournal : IWritePort
     void Start(Guid ledgerId, IFakeLedgerEvent domainEvent);
 
     void Append(Guid ledgerId, IFakeLedgerEvent domainEvent);
+
+    /// <summary>Appends to a stream that must still be at <paramref name="expectedVersion"/> when the transaction commits.</summary>
+    void AppendAt(Guid ledgerId, long expectedVersion, IFakeLedgerEvent domainEvent);
 }
 
 /// <summary>Read port: the ledger's views.</summary>
@@ -64,6 +67,12 @@ public interface IFakeLedgerEnquiry : IReadPort
 public sealed record OpenFakeLedger(Guid LedgerId, string Name, IdempotencyKey IdempotencyKey) : ICommand;
 
 public sealed record PostFakeAmount(Guid LedgerId, decimal Amount, IdempotencyKey IdempotencyKey) : ICommand;
+
+/// <summary>
+/// A posting with optimistic concurrency (ADR 0027): the ledger must be at <paramref name="ExpectedVersion"/>, or, when
+/// it is <c>null</c>, still at the version the handler loaded when the transaction commits.
+/// </summary>
+public sealed record PostFakeAmountAtVersion(Guid LedgerId, long? ExpectedVersion, decimal Amount, IdempotencyKey IdempotencyKey) : ICommand;
 
 /// <summary>The acknowledgement of a command: what was decided, never a read model (specs/tech-stack.md §8.1).</summary>
 public sealed record FakeLedgerAcknowledged(Guid LedgerId);
@@ -78,6 +87,42 @@ public static class FakeLedgerErrors
     public static Error LedgerNotFound(Guid ledgerId) => Error.NotFound("fake-ledger.ledger-not-found", $"Fake ledger {ledgerId} does not exist.");
 
     public static Error AmountNotPositive => Error.Validation("fake-ledger.amount-not-positive", "The amount must be positive.");
+
+    public static Error VersionConflict => Error.Conflict("fake-ledger.version-conflict", "The ledger has changed since it was read.");
+}
+
+/// <summary>
+/// Checks the expected version against the loaded stream, like a real Update handler, and appends with it. A test can
+/// make another writer commit between the load and the commit, through <see cref="Interlopers"/>, to lose the race.
+/// </summary>
+public static class PostFakeAmountAtVersionHandler
+{
+    /// <summary>Per ledger: runs on every attempt after the load, before the append. Test-only hook.</summary>
+    public static System.Collections.Concurrent.ConcurrentDictionary<Guid, Func<Task>> Interlopers { get; } = new();
+
+    /// <summary>Per ledger: how many times the handler ran.</summary>
+    public static System.Collections.Concurrent.ConcurrentDictionary<Guid, int> Attempts { get; } = new();
+
+    public static async Task<Result<FakeLedgerAcknowledged>> Handle(
+        PostFakeAmountAtVersion command,
+        IFakeLedgerJournal journal,
+        CancellationToken cancellationToken)
+    {
+        Attempts.AddOrUpdate(command.LedgerId, 1, (_, attempts) => attempts + 1);
+        var history = await journal.LoadAsync(command.LedgerId, cancellationToken);
+        if (command.ExpectedVersion is { } expected && history.Count != expected)
+        {
+            return FakeLedgerErrors.VersionConflict;
+        }
+
+        if (Interlopers.TryGetValue(command.LedgerId, out var interloper))
+        {
+            await interloper();
+        }
+
+        journal.AppendAt(command.LedgerId, history.Count, new FakeAmountPosted(command.LedgerId, command.Amount));
+        return new FakeLedgerAcknowledged(command.LedgerId);
+    }
 }
 
 public static class OpenFakeLedgerHandler
