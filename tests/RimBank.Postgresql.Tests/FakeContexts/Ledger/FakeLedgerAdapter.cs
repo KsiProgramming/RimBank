@@ -1,5 +1,4 @@
 using Marten;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace RimBank.Postgresql.FakeContexts.Ledger.Tests;
@@ -53,7 +52,7 @@ public static class FakeLedger
     {
         builder.AddServiceDomainStore<IFakeLedgerStore, IFakeLedgerEvent>(ServiceDomain, Configure);
         builder.AddWritePort<IFakeLedgerJournal, FakeLedgerJournal>();
-        builder.Services.AddSingleton<IFakeLedgerEnquiry, FakeLedgerEnquiry>();
+        builder.AddReadPort<IFakeLedgerEnquiry, FakeLedgerEnquiry>();
         return builder;
     }
 }

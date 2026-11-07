@@ -12,7 +12,7 @@ Drivers: mission principles 5 (a query reads a read model and never changes stat
 
 ## Scope
 ### In scope
-- **`RimBank.Postgresql`: `AddReadPort<TPort, TImplementation>`** (new `ReadPortRegistration`), the read-side twin of `AddWritePort`: requires `TPort : IReadPort`, registers the implementation scoped in the container, and tells Wolverine's code generation about both assemblies. A handler that takes a read port gets no transaction, no `IDocumentSession` and no idempotency policy (that policy already applies only to `ICommand`).
+- **`RimBank.Postgresql`: `AddReadPort<TPort, TImplementation>`** (new `ReadPortRegistration`), the read-side twin of `AddWritePort`: requires `TPort : IReadPort` and an implementation whose only constructor parameter is the context's store, registers it as a singleton (it holds no state; the store is a singleton too), and tells Wolverine's code generation about both assemblies. A handler that takes a read port gets no transaction, no `IDocumentSession` and no idempotency policy (that policy already applies only to `ICommand`).
 - **`.Postgresql`:**
   - `PartyReferenceDataDirectoryPostgresql.Configure` adds `options.AddInlineView<PartyReferenceDataDirectoryEntryView, PartyReferenceDataDirectoryEntryViewProjection, PartyReferenceDataDirectoryEntryEvent>()`.
   - `MartenPartyDirectoryEnquiry(IPartyReferenceDataDirectoryStore store) : IPartyDirectoryEnquiry`: opens a query session on the context's own store and loads the view by the entry's Guid. It only maps the typed id and holds no logic.
@@ -37,7 +37,7 @@ Drivers: mission principles 5 (a query reads a read model and never changes stat
 ## Decisions
 | Decision | Choice | Rationale |
 |---|---|---|
-| Read port wiring | New generic `AddReadPort<TPort, TImplementation>` in `RimBank.Postgresql`, with the implementation over a **query session** of the context's typed store | Chosen in the interview. Mirrors `AddWritePort` (ADR 0017) without its transaction. A query never needs the handler's write session or outbox, and `RimBank.Postgresql` is where per-context Marten conventions live (ADR 0016) |
+| Read port wiring | New generic `AddReadPort<TPort, TImplementation>` in `RimBank.Postgresql`: a singleton whose only constructor parameter is the context's store, opening a **query session** per read | Chosen in the interview. Mirrors `AddWritePort` (ADR 0017) without its transaction. A query never needs the handler's write session or outbox, and `RimBank.Postgresql` is where per-context Marten conventions live (ADR 0016) |
 | View lifecycle | Inline, through `AddInlineView` | ADR 0024 and tech-stack §8.3: callers read the entry right after Register |
 | Malformed id | 400 with the existing `shared.invalid-identifier` and `errors["partyreferencedatadirectoryid"]` | Chosen in the interview (BIAN declares 400). `TypedId.TryCreate(string)` already rejects non-GUID, empty and non-v7 values with this code, so no new error code is needed. A `{id:guid}` constraint would turn it into a 404 instead |
 | Not found | 404 `party.party-not-found` from the handler | ADR 0024 error table, already mapped by `RimBank.Problems` |
