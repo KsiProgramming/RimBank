@@ -49,4 +49,19 @@ public sealed class RetrievePartyReferenceDataDirectoryEntryResponseTests
         document.RootElement.GetProperty("PartyReferenceDataDirectoryEntryId").GetGuid().ShouldBe(_view.Id);
         document.RootElement.GetProperty("DirectoryEntryDate").GetDateTimeOffset().ShouldBe(_openDate);
     }
+
+    // Roadmap 1.8: the refresh date of the last Update, omitted until there is one.
+    [Fact]
+    public void An_updated_entry_also_shows_its_refresh_date()
+    {
+        var refreshDate = _openDate.AddDays(3);
+
+        var json = JsonSerializer.Serialize(
+            RetrievePartyReferenceDataDirectoryEntryResponse.From(_view with { RefreshDate = refreshDate }),
+            JsonSerializerOptions.Web);
+
+        using var document = JsonDocument.Parse(json);
+        document.RootElement.EnumerateObject().Select(property => property.Name).Last().ShouldBe("RefreshDate");
+        document.RootElement.GetProperty("RefreshDate").GetDateTimeOffset().ShouldBe(refreshDate);
+    }
 }

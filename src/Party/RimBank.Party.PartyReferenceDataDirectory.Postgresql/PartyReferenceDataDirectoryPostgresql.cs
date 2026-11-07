@@ -22,6 +22,7 @@ public static class PartyReferenceDataDirectoryPostgresql
     {
         ArgumentNullException.ThrowIfNull(options);
         options.Events.MapEventType<PartyRegistered>("party_registered");
+        options.Events.MapEventType<PartyReferenceDataDirectoryEntryUpdated>("party_reference_data_directory_entry_updated");
         options.AddInlineView<PartyReferenceDataDirectoryEntryView, PartyReferenceDataDirectoryEntryViewProjection, PartyReferenceDataDirectoryEntryEvent>();
     }
 

@@ -74,6 +74,9 @@ public sealed partial record Error
     /// <summary>A failure that is not the caller's fault.</summary>
     public static Error Unexpected(string code, string message) => new(code, message, ErrorKind.Unexpected, null);
 
+    /// <summary>The operation needs a precondition the caller did not send.</summary>
+    public static Error PreconditionRequired(string code, string message) => new(code, message, ErrorKind.PreconditionRequired, null);
+
     /// <inheritdoc />
     public bool Equals(Error? other) =>
         other is not null

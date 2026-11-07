@@ -12,6 +12,7 @@ public static class PartyReferenceDataDirectoryApi
     {
         endpoints.MapRegisterParty();
         endpoints.MapRetrievePartyReferenceDataDirectoryEntry();
+        endpoints.MapUpdatePartyReferenceDataDirectoryEntry();
         return endpoints;
     }
 }

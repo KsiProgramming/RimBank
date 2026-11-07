@@ -85,10 +85,10 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Api/                # the HTTP API of every context, one folder per context (ADR 0025)
-│  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match)
-│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/
+│  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match, If-Match: ADR 0027)
+│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/
 │  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
-│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018); one retry on a lost concurrency race (ADR 0027)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
 │  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory for every folder (§3.4, ADR 0026)
 │  │  └─ LoansAndDeposits/CurrentAccount/       # namespace RimBank.LoansAndDeposits.CurrentAccount
@@ -134,6 +134,10 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ RegisterParty.cs                    # command
 │  ├─ RegisterPartyAcknowledged.cs        # acknowledgement, built from the decided state
 │  └─ RegisterPartyHandler.cs
+├─ Update/                                # business flow (command side): Update, with an expected version (ADR 0027)
+│  ├─ UpdatePartyReferenceDataDirectoryEntry.cs              # command
+│  ├─ UpdatePartyReferenceDataDirectoryEntryAcknowledged.cs  # acknowledgement, built from the decided state
+│  └─ UpdatePartyReferenceDataDirectoryEntryHandler.cs
 ├─ Retrieval/                             # business flow (query side): Retrieve
 │  ├─ RetrievePartyReferenceDataDirectoryEntry.cs         # query
 │  ├─ RetrievePartyReferenceDataDirectoryEntryHandler.cs
@@ -194,7 +198,13 @@ The architecture tests tell these roles apart by SharedKernel markers ([ADR 0012
 - Request and response models live in the context's `.Api` folder of `RimBank.Api` ([ADR 0025](../docs/adr/0025-one-api-project.md)) and are mapped to and from the core. Domain types are never serialised directly.
 - **Commands vs queries over HTTP:** BIAN `Retrieve` operations are `GET` endpoints that dispatch a query. All other BIAN operations (`Register`, `Initiate`, `Update`, `Control`, `Execute`, `Exchange`, `Request`, …) are `POST`/`PUT` endpoints that dispatch a command.
 - **Command responses** come from the command's outcome (the identifier, stream version and the state produced by the decision). They never read a read model, so they do not depend on projection lag. Where BIAN's response schema expects the full Control Record, it is built from the aggregate state produced by the decision.
-- **Query responses** come only from read models. A stream version is returned in an `ETag` header, and a command may send it back in `If-Match` for optimistic concurrency.
+- **Query responses** come only from read models. A stream version is returned in an `ETag` header, and a command sends it back in `If-Match` for optimistic concurrency.
+- **`If-Match` is required on every command that changes an existing record** ([ADR 0027](../docs/adr/0027-optimistic-concurrency-for-commands.md)). It must be exactly one strong version tag:
+  - missing → 428 `shared.if-match-required`;
+  - malformed (weak, `*`, a list) → 400 `shared.if-match-invalid`;
+  - stale → 409 `<context>.version-conflict`.
+
+  The command carries the version as `ExpectedVersion`; the handler checks it against the loaded stream, and the write port appends with it. A commit that loses a race is retried once, so the conflict is always answered as a value. MCP tools take `expectedVersion` as a required argument.
 - **Every non-2xx response is `application/problem+json` (RFC 9457).**
   - `type`: a stable URN, for example `urn:rimbank:problem:party:party-not-found`
   - `title`, `status`, `detail`, `instance`

@@ -8,8 +8,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <c>.Postgresql</c> adapter.
 /// </summary>
 /// <remarks>
-/// It grows with the operations that need it: Update (1.8) adds an append with an expected version, and Associations
-/// (1.11) add the <c>PartyAssociation</c> streams.
+/// It grows with the operations that need it: Associations (1.11) add the <c>PartyAssociation</c> streams.
 /// </remarks>
 public interface IPartyDirectory : IWritePort
 {
@@ -28,4 +27,17 @@ public interface IPartyDirectory : IWritePort
     /// <param name="entryId">The new entry.</param>
     /// <param name="events">The events its decision returned.</param>
     void StartEntry(PartyReferenceDataDirectoryEntryId entryId, IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events);
+
+    /// <summary>
+    /// Appends <paramref name="events"/> to an existing entry whose stream is at <paramref name="expectedVersion"/>
+    /// (ADR 0027). The events are only staged: the handler's transaction commits them, and fails if another writer
+    /// appended to the stream in the meantime.
+    /// </summary>
+    /// <param name="entryId">The entry.</param>
+    /// <param name="expectedVersion">The stream version the handler decided against.</param>
+    /// <param name="events">The events its decision returned.</param>
+    void AppendToEntry(
+        PartyReferenceDataDirectoryEntryId entryId,
+        long expectedVersion,
+        IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events);
 }

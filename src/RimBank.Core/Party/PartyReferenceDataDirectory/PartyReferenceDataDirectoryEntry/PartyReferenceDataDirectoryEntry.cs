@@ -13,13 +13,15 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="DemographicsId">The entry's Demographics Behavior Qualifier.</param>
 /// <param name="PartyReferenceId">The entry's Reference Behavior Qualifier.</param>
 /// <param name="BankRelationsId">The entry's BankRelations Behavior Qualifier.</param>
+/// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update, if any.</param>
 public sealed partial record PartyReferenceDataDirectoryEntry(
     PartyReferenceDataDirectoryEntryId? Id,
     PartyType? PartyType,
     DateTimeOffset? OpenDate,
     DemographicsId? DemographicsId,
     PartyReferenceId? PartyReferenceId,
-    BankRelationsId? BankRelationsId)
+    BankRelationsId? BankRelationsId,
+    DateTimeOffset? RefreshDate = null)
     : IDecider<PartyReferenceDataDirectoryEntry, PartyReferenceDataDirectoryEntryCommand, PartyReferenceDataDirectoryEntryEvent>
 {
     /// <summary>An entry that is not registered yet.</summary>
@@ -41,6 +43,11 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
                 registered.DemographicsId,
                 registered.PartyReferenceId,
                 registered.BankRelationsId),
+            PartyReferenceDataDirectoryEntryUpdated updated => state with
+            {
+                PartyType = updated.PartyType,
+                RefreshDate = updated.RefreshDate,
+            },
             _ => throw new UnreachableException($"The entry does not know {domainEvent}."),
         };
 }

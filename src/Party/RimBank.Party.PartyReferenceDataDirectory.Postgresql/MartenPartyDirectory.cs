@@ -25,4 +25,14 @@ public sealed class MartenPartyDirectory(IDocumentSession session) : IPartyDirec
         ArgumentNullException.ThrowIfNull(events);
         session.Events.StartStream(entryId.Value, [.. events]);
     }
+
+    /// <inheritdoc />
+    public void AppendToEntry(
+        PartyReferenceDataDirectoryEntryId entryId,
+        long expectedVersion,
+        IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        session.Events.Append(entryId.Value, expectedVersion + events.Count, [.. events]);
+    }
 }

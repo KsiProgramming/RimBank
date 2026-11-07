@@ -13,6 +13,7 @@ public sealed class ErrorStatusTests
         { ErrorKind.NotFound, 404 },
         { ErrorKind.Conflict, 409 },
         { ErrorKind.BusinessRule, 422 },
+        { ErrorKind.PreconditionRequired, 428 },
         { ErrorKind.Unexpected, 500 },
     };
 

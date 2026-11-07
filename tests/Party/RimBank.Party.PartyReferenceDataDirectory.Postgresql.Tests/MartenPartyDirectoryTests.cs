@@ -49,6 +49,50 @@ public sealed class MartenPartyDirectoryTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task An_append_at_the_expected_version_commits_after_the_history()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = Registered(PartyType.Person);
+        await StartAsync(host, registered);
+        var updated = Updated(registered, PartyType.Organisation);
+
+        await AppendAsync(host, registered.EntryId, expectedVersion: 1, updated);
+
+        await using var session = host.Store.LightweightSession();
+        (await new MartenPartyDirectory(session).LoadEntryAsync(registered.EntryId, Cancellation)).ShouldBe([registered, updated]);
+        (await session.Events.FetchStreamStateAsync(registered.EntryId.Value, Cancellation)).ShouldNotBeNull().Version.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task An_append_at_a_stale_version_fails_at_commit_with_a_concurrency_exception_and_appends_nothing()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = Registered(PartyType.Person);
+        await StartAsync(host, registered);
+        await AppendAsync(host, registered.EntryId, expectedVersion: 1, Updated(registered, PartyType.Organisation));
+
+        // The base type is what the retry policy on command chains catches (ADR 0027).
+        await Should.ThrowAsync<JasperFx.ConcurrencyException>(
+            () => AppendAsync(host, registered.EntryId, expectedVersion: 1, Updated(registered, PartyType.Person)));
+
+        await using var session = host.Store.LightweightSession();
+        (await session.Events.FetchStreamStateAsync(registered.EntryId.Value, Cancellation)).ShouldNotBeNull().Version.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task PartyReferenceDataDirectoryEntryUpdated_is_stored_under_a_stable_name()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = Registered(PartyType.Person);
+        await StartAsync(host, registered);
+
+        await AppendAsync(host, registered.EntryId, expectedVersion: 1, Updated(registered, PartyType.Organisation));
+
+        (await host.ScalarAsync<string>($"SELECT type FROM {Schema}.mt_events WHERE stream_id = '{registered.EntryId.Value}' AND version = 2"))
+            .ShouldBe("party_reference_data_directory_entry_updated");
+    }
+
+    [Fact]
     public async Task PartyRegistered_is_stored_under_a_stable_name_with_plain_ids_and_the_party_type_name()
     {
         await using var host = await server.StartHostAsync();
@@ -79,6 +123,20 @@ public sealed class MartenPartyDirectoryTests(PostgresqlServer server)
         new MartenPartyDirectory(session).StartEntry(registered.EntryId, [registered]);
         await session.SaveChangesAsync(Cancellation);
     }
+
+    private static async Task AppendAsync(
+        PartyHost host,
+        PartyReferenceDataDirectoryEntryId entryId,
+        long expectedVersion,
+        PartyReferenceDataDirectoryEntryUpdated updated)
+    {
+        await using var session = host.Store.LightweightSession();
+        new MartenPartyDirectory(session).AppendToEntry(entryId, expectedVersion, [updated]);
+        await session.SaveChangesAsync(Cancellation);
+    }
+
+    private static PartyReferenceDataDirectoryEntryUpdated Updated(PartyRegistered registered, PartyType partyType) =>
+        new(registered.EntryId, partyType, PostgresqlServer.Now.AddDays(1));
 
     private static PartyRegistered Registered(PartyType partyType) => new(
         PartyReferenceDataDirectoryEntryId.New(TimeProvider.System),

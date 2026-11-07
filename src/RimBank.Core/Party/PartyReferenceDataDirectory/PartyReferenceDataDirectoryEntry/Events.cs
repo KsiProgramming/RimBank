@@ -21,3 +21,15 @@ public sealed record PartyRegistered(
     DemographicsId DemographicsId,
     PartyReferenceId PartyReferenceId,
     BankRelationsId BankRelationsId) : PartyReferenceDataDirectoryEntryEvent;
+
+/// <summary>
+/// The entry's details were updated (BIAN <c>PartyReferenceDataDirectoryEntry/Update</c>). It carries the party type the
+/// entry has from now on, changed or not, and the time of the update as the entry's <c>RefreshDate</c>.
+/// </summary>
+/// <param name="EntryId">The entry.</param>
+/// <param name="PartyType">The entry's party type after the update.</param>
+/// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: when it was updated.</param>
+public sealed record PartyReferenceDataDirectoryEntryUpdated(
+    PartyReferenceDataDirectoryEntryId EntryId,
+    PartyType PartyType,
+    DateTimeOffset RefreshDate) : PartyReferenceDataDirectoryEntryEvent;
