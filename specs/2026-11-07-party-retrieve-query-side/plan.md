@@ -30,7 +30,7 @@ Every group is written test first, and the solution builds and its tests pass af
 - [x] Run `RimBank.Architecture.Tests` and `RimBank.Host.Tests` (unchanged: the host still starts and Register still works with the handler discovered). The Party `.Api.Tests` need Docker and run in CI.
 
 ## 3. Docs and roadmap
-- [ ] tech-stack §3.4 tree: `PartyDirectoryEnquiry.cs` → `IPartyDirectoryEnquiry.cs`, and its comment "read port: query the entry and association views".
-- [ ] Check that ADR 0024 needs no change (no new error code, event, view or operation row) and leave it untouched.
-- [ ] Roadmap: tick **1.6**.
-- [ ] Run `dotnet format --verify-no-changes` and the full `dotnet test --solution RimBank.slnx` locally.
+- [x] tech-stack §3.4 tree: `PartyDirectoryEnquiry.cs` → `IPartyDirectoryEnquiry.cs`, and its comment "read port: query the entry and association views".
+- [x] Check that ADR 0024 needs no change (no new error code, event, view or operation row) and leave it untouched.
+- [x] Roadmap: tick **1.6**.
+- [x] Run `dotnet format --verify-no-changes` and the full `dotnet test --solution RimBank.slnx` locally.
