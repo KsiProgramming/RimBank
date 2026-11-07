@@ -10,6 +10,11 @@ public static class PartyReferenceDataDirectoryEntryErrors
         "party.party-already-registered",
         "This party is already registered in the directory.");
 
+    /// <summary>The entry a command or a query names does not exist (404).</summary>
+    public static Error PartyNotFound { get; } = Error.NotFound(
+        "party.party-not-found",
+        "This party is not registered in the directory.");
+
     /// <summary>A party type other than Person or Organisation (400).</summary>
     public static Error PartyTypeInvalid { get; } = Error.Validation(
         "party.party-type-invalid",

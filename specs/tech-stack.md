@@ -149,7 +149,7 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  └─ PartyAssociationViewProjection.cs
 ├─ BankRelations/
 ├─ IPartyDirectory.cs                     # write port: load and append the entry and association event streams
-└─ PartyDirectoryEnquiry.cs               # read port: query the read models
+└─ IPartyDirectoryEnquiry.cs              # read port: query the entry and association views
 ```
 
 Commands and queries sit next to each other inside the business flow or Behavior Qualifier they belong to. They are told apart by name and by the port they use, not by technical `Commands/` or `Queries/` folders.

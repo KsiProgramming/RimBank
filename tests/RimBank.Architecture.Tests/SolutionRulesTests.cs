@@ -65,6 +65,27 @@ public sealed class SolutionRulesTests
         solution.IsReadPort(directory).ShouldBeFalse();
     }
 
+    // The same for the read side: the first real query handler, read port, view and projection must be recognised.
+    [Fact]
+    public void The_party_retrieve_flow_is_classified_as_read_side()
+    {
+        var solution = CodeBases.Solution;
+        var handler = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.RetrievePartyReferenceDataDirectoryEntryHandler");
+        var query = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.RetrievePartyReferenceDataDirectoryEntry");
+        var enquiry = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.IPartyDirectoryEnquiry");
+        var view = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.PartyReferenceDataDirectoryEntryView");
+        var projection = solution.Types.Single(type => type.FullName == "RimBank.Party.PartyReferenceDataDirectory.Retrieval.PartyReferenceDataDirectoryEntryViewProjection");
+
+        solution.IsQueryHandler(handler).ShouldBeTrue();
+        solution.IsCommandHandler(handler).ShouldBeFalse();
+        solution.IsQuery(query).ShouldBeTrue();
+        solution.IsCommand(query).ShouldBeFalse();
+        solution.IsReadPort(enquiry).ShouldBeTrue();
+        solution.IsWritePort(enquiry).ShouldBeFalse();
+        solution.IsView(view).ShouldBeTrue();
+        solution.IsProjection(projection).ShouldBeTrue();
+    }
+
     // The .Api dependency rules only bite on types they place in a context's .Api part.
     [Fact]
     public void The_party_api_adapter_is_recognised_as_the_party_context_api_part()
