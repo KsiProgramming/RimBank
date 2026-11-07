@@ -10,11 +10,14 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// </summary>
 /// <param name="PartyReferenceDataDirectoryEntryId">The entry: the <c>{partyreferencedatadirectoryid}</c> of its operations.</param>
 /// <param name="PartyType">BIAN <c>PartyType</c>: <c>Person</c> or <c>Organisation</c>.</param>
-/// <param name="DirectoryEntryDateType">BIAN <c>DirectoryEntryDateType</c>: <c>OpenDate</c>, the only date the entry records.</param>
+/// <param name="DirectoryEntryDateType">BIAN <c>DirectoryEntryDateType</c>: <c>OpenDate</c>, the date of <c>DirectoryEntryDate</c>.</param>
 /// <param name="DirectoryEntryDate">BIAN <c>DirectoryEntryDate</c>: when the directory registered the party.</param>
 /// <param name="DemographicsId">The entry's Demographics: the <c>{demographicsid}</c> of its operations.</param>
 /// <param name="ReferenceId">The entry's Reference: the <c>{referenceid}</c> of its operations.</param>
 /// <param name="BankRelationsId">The entry's BankRelations: the <c>{bankrelationsid}</c> of its operations.</param>
+/// <param name="RefreshDate">
+/// The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update. Omitted until the first one.
+/// </param>
 public sealed record RetrievePartyReferenceDataDirectoryEntryResponse(
     [property: JsonPropertyName("PartyReferenceDataDirectoryEntryId")] Guid PartyReferenceDataDirectoryEntryId,
     [property: JsonPropertyName("PartyType")] string PartyType,
@@ -22,7 +25,8 @@ public sealed record RetrievePartyReferenceDataDirectoryEntryResponse(
     [property: JsonPropertyName("DirectoryEntryDate")] DateTimeOffset DirectoryEntryDate,
     [property: JsonPropertyName("DemographicsId")] Guid DemographicsId,
     [property: JsonPropertyName("ReferenceId")] Guid ReferenceId,
-    [property: JsonPropertyName("BankRelationsId")] Guid BankRelationsId)
+    [property: JsonPropertyName("BankRelationsId")] Guid BankRelationsId,
+    [property: JsonPropertyName("RefreshDate"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateTimeOffset? RefreshDate = null)
 {
     /// <summary>The <c>DirectoryEntryDateType</c> of the entry's open date.</summary>
     public const string OpenDate = "OpenDate";
@@ -41,6 +45,7 @@ public sealed record RetrievePartyReferenceDataDirectoryEntryResponse(
             view.OpenDate,
             view.DemographicsId.Value,
             view.PartyReferenceId.Value,
-            view.BankRelationsId.Value);
+            view.BankRelationsId.Value,
+            view.RefreshDate);
     }
 }

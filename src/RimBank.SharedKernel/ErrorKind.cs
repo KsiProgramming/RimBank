@@ -26,4 +26,10 @@ public enum ErrorKind
 
     /// <summary>An expected-but-unrecoverable failure that is not the caller's fault (HTTP 500).</summary>
     Unexpected,
+
+    /// <summary>
+    /// The operation needs a precondition the caller did not send, for example the version a command expects (HTTP 428,
+    /// RFC 6585; ADR 0027).
+    /// </summary>
+    PreconditionRequired,
 }

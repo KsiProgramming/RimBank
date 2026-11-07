@@ -14,6 +14,7 @@ public sealed class ErrorTests
         { () => Error.Unauthorized(Code, Message), ErrorKind.Unauthorized },
         { () => Error.Forbidden(Code, Message), ErrorKind.Forbidden },
         { () => Error.Unexpected(Code, Message), ErrorKind.Unexpected },
+        { () => Error.PreconditionRequired(Code, Message), ErrorKind.PreconditionRequired },
     };
 
     [Theory]

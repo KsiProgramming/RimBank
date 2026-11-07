@@ -13,6 +13,7 @@ public sealed class PartyReferenceDataDirectoryConformanceTests(PostgresqlServer
     [
         RegisterPartyEndpoint.OperationId,
         RetrievePartyReferenceDataDirectoryEntryEndpoint.OperationId,
+        UpdatePartyReferenceDataDirectoryEntryEndpoint.OperationId,
     ];
 
     [Fact]
