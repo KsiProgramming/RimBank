@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry;
 using RimBank.Party.PartyReferenceDataDirectory.Registration;
 using RimBank.SharedKernel;
-using BianPartyType = RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry.PartyType;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
 
@@ -38,16 +37,5 @@ public sealed record RegisterPartyRequest
     /// <param name="idempotencyKey">The request's <c>Idempotency-Key</c> (ADR 0018).</param>
     /// <returns>The command, or the validation error.</returns>
     public Result<RegisterParty> ToCommand(IdempotencyKey idempotencyKey) =>
-        ParsePartyType().Map(partyType => new RegisterParty(partyType, idempotencyKey));
-
-    // Exact BIAN names only: "person" or " Person" is not a party type, and neither is an enum number.
-    private Result<BianPartyType> ParsePartyType() =>
-        PartyType switch
-        {
-            null => RegisterPartyRequestErrors.PartyTypeRequired,
-            var blank when string.IsNullOrWhiteSpace(blank) => RegisterPartyRequestErrors.PartyTypeRequired,
-            nameof(BianPartyType.Person) => BianPartyType.Person,
-            nameof(BianPartyType.Organisation) => BianPartyType.Organisation,
-            _ => PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid,
-        };
+        PartyTypes.FromBianName(PartyType).Map(partyType => new RegisterParty(partyType, idempotencyKey));
 }

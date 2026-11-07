@@ -31,6 +31,15 @@ public static class PartyReferenceDataDirectoryEntryErrors
         "party.party-not-found",
         "This party is not registered in the directory.");
 
+    /// <summary>A Register with no party type, or an empty one (400).</summary>
+    public static Error PartyTypeRequired { get; } = Error.Validation(
+        "party.party-type-required",
+        "The party type is required.",
+        new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["PartyType"] = ["The party type is required: Person or Organisation."],
+        });
+
     /// <summary>A party type other than Person or Organisation (400).</summary>
     public static Error PartyTypeInvalid { get; } = Error.Validation(
         "party.party-type-invalid",

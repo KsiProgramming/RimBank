@@ -27,7 +27,7 @@ public sealed class RegisterPartyRequestTests
     {
         var command = new RegisterPartyRequest { PartyType = partyType }.ToCommand(_key);
 
-        command.Error.ShouldBe(RegisterPartyRequestErrors.PartyTypeRequired);
+        command.Error.ShouldBe(PartyReferenceDataDirectoryEntryErrors.PartyTypeRequired);
         command.Error.Code.ShouldBe("party.party-type-required");
         command.Error.FieldErrors.Keys.ShouldBe(["PartyType"]);
     }
