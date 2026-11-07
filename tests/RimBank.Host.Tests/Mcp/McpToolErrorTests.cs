@@ -2,7 +2,7 @@ using System.Text.Json;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 // Roadmap 0.16: a failing tool answers with isError and the Problem Details HTTP would return for the same error, and
 // an unexpected failure leaks nothing (specs/tech-stack.md §6, ADR 0021, ADR 0022).

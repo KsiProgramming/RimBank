@@ -5,9 +5,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using ModelContextProtocol.Client;
-using RimBank.Host.Security;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 // Roadmap 0.16: an MCP client learns from the 401 where to get a token (MCP authorization, RFC 9728), and a call
 // without a valid token is refused with the same Problem Details as HTTP (specs/tech-stack.md §6, ADR 0019, ADR 0022).

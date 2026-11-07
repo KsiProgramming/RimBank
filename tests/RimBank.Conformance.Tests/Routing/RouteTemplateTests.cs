@@ -1,6 +1,6 @@
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.Routing.Tests;
+namespace RimBank.Conformance.Tests;
 
 // ADR 0020: routes match BIAN paths whatever the parameter names, constraints or letter case.
 public sealed class RouteTemplateTests

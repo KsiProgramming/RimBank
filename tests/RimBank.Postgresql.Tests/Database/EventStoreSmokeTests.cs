@@ -2,7 +2,7 @@ using Npgsql;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
-namespace RimBank.Postgresql.Database.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 0.10 smoke tests against a real PostgreSQL: append, inline read-your-write, async catch-up and rebuild,
 // each on two fake contexts that share a server but nothing else (ADR 0016).

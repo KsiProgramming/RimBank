@@ -3,7 +3,7 @@ using Microsoft.OpenApi;
 using RimBank.Api;
 using RimBank.SharedKernel;
 
-namespace RimBank.Host.OpenApi;
+namespace RimBank.Host;
 
 /// <summary>
 /// The host's OpenAPI document (<c>v1</c>, registered by the service defaults and served in Development only): it

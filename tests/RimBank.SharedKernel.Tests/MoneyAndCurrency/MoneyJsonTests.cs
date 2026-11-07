@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 public sealed class MoneyJsonTests
 {

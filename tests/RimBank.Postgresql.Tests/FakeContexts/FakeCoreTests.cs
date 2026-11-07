@@ -2,7 +2,7 @@ using System.Reflection;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
-namespace RimBank.Postgresql.FakeContexts.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // The fake cores stand in for real ones, so they must hold to the same rule (specs/tech-stack.md §4): handlers,
 // commands, queries, messages and ports never mention Marten or Wolverine. The architecture tests enforce it on src/.

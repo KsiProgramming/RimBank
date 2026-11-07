@@ -1,4 +1,4 @@
-namespace RimBank.Host.Modules;
+namespace RimBank.Host;
 
 /// <summary>Registers and maps a list of <see cref="IServiceDomainModule"/>s, in list order (ADR 0014).</summary>
 public static class ServiceDomainModuleComposition

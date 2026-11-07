@@ -1,6 +1,6 @@
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.Specifications.Tests;
+namespace RimBank.Conformance.Tests;
 
 // Roadmap 0.14: the loaders read the real BIAN v14 ext-DDD specifications of Party Reference Data Directory
 // (doc-0/release14.0.0/apis-iso20022_ext-ddd/, ADR 0002, ADR 0020).

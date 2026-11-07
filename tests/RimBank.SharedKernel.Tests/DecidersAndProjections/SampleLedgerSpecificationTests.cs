@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using LedgerSpecification = RimBank.SharedKernel.Testing.DeciderSpecification<
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedger,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerCommand,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerEvent>;
+    RimBank.SharedKernel.Tests.SampleLedger,
+    RimBank.SharedKernel.Tests.SampleLedgerCommand,
+    RimBank.SharedKernel.Tests.SampleLedgerEvent>;
 
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // The sample ledger's decisions, written with the Given / When / Then helper (write side).
 public sealed class SampleLedgerSpecificationTests

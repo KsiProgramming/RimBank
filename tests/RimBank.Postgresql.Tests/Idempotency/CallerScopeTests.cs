@@ -1,9 +1,7 @@
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 
-namespace RimBank.Postgresql.Idempotency.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 0.13: an idempotency key is scoped to the caller who sent it, so two callers can never replay, collide with or
 // probe each other's commands (ADR 0018 follow-up, ADR 0019). The caller is the envelope's user name, which the host's

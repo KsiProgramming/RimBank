@@ -3,10 +3,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using RimBank.Host.Errors.Tests;
 using RimBank.ServiceDefaults;
 
-namespace RimBank.Host.Security.Tests;
+namespace RimBank.Host.Tests;
 
 // Roadmap 0.13: deny by default. Whatever a module maps, only the health probes are open to anonymous callers; the
 // architecture rule allow-anonymous-only-in-service-defaults guards the source, and this test guards the running

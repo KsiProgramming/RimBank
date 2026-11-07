@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using RimBank.Problems;
 
-namespace RimBank.Host.Errors;
+namespace RimBank.Host;
 
 /// <summary>
 /// Turns any exception that reaches the host into the generic <c>shared.unexpected</c> 500, in every environment. The

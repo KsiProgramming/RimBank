@@ -1,9 +1,9 @@
 using LedgerViewSpecification = RimBank.SharedKernel.Testing.ProjectionSpecification<
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerViewProjection,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerView,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerEvent>;
+    RimBank.SharedKernel.Tests.SampleLedgerViewProjection,
+    RimBank.SharedKernel.Tests.SampleLedgerView,
+    RimBank.SharedKernel.Tests.SampleLedgerEvent>;
 
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // The sample ledger's view, written with the Given events / Then view helper (read side).
 public sealed class SampleLedgerViewSpecificationTests

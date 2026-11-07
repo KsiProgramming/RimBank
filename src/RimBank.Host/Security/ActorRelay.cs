@@ -3,7 +3,7 @@ using RimBank.Problems;
 using RimBank.SharedKernel;
 using Wolverine;
 
-namespace RimBank.Host.Security;
+namespace RimBank.Host;
 
 /// <summary>
 /// Hands the authenticated caller to the message bus, so every command and query dispatched for this request carries

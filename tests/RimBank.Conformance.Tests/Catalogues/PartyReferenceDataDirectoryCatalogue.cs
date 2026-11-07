@@ -1,6 +1,6 @@
 using RimBank.Conformance.Testing;
 
-namespace RimBank.Conformance.Catalogues.Tests;
+namespace RimBank.Conformance.Tests;
 
 /// <summary>One BIAN operation of a service domain, as an ADR maps it.</summary>
 /// <param name="OperationId">The BIAN operation id, for example <c>Associations/Register</c>.</param>

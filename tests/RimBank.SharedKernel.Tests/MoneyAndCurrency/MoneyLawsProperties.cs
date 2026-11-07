@@ -1,7 +1,7 @@
 using FsCheck.Xunit;
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // Algebraic laws of Money (ADR 0009). Each property runs 100 generated cases by default.
 [Properties(Arbitrary = [typeof(MoneyArbitraries)])]

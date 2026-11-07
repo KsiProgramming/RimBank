@@ -22,7 +22,7 @@ namespace RimBank.SampleBanking.PostgresqlUsesAppHost.Postgresql
 // lives in RimBank.Host/Modules/<BusinessDomain>/ and calls the adapter's extension methods.
 namespace RimBank.SampleBanking.ApiImplementsHostModule.Api
 {
-    public sealed class ApiImplementsHostModuleModule : RimBank.Host.Modules.IServiceDomainModule
+    public sealed class ApiImplementsHostModuleModule : RimBank.Host.IServiceDomainModule
     {
         public string ServiceDomain => "ApiImplementsHostModule";
     }
@@ -98,7 +98,7 @@ namespace RimBank.SampleBanking.CoreUsesSharedMcp
 {
     public static class CoreUsesSharedMcpEntry
     {
-        public static string Code() => RimBank.Mcp.Errors.ToolErrors.ArgumentsInvalidCode;
+        public static string Code() => RimBank.Mcp.ToolErrors.ArgumentsInvalidCode;
     }
 }
 
@@ -107,7 +107,7 @@ namespace RimBank.SampleBanking.ApiUsesSharedMcp.Api
 {
     public static class ApiUsesSharedMcpEndpoints
     {
-        public static string Code() => RimBank.Mcp.Errors.ToolErrors.ArgumentsInvalidCode;
+        public static string Code() => RimBank.Mcp.ToolErrors.ArgumentsInvalidCode;
     }
 }
 

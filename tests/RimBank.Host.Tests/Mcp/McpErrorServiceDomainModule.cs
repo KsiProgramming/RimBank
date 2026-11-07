@@ -4,12 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using RimBank.Host.Modules;
-using RimBank.Mcp.Errors;
+using RimBank.Mcp;
 using RimBank.SharedKernel;
 using Result = RimBank.SharedKernel.Result;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>
 /// A test-only module whose tools fail in each way a real tool can (ADR 0022): a query that finds nothing, a command

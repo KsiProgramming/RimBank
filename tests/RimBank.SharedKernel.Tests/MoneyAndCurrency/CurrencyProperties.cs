@@ -1,7 +1,7 @@
 using FsCheck.Xunit;
 using RimBank.SharedKernel.Testing;
 
-namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 [Properties(Arbitrary = [typeof(MoneyArbitraries)])]
 public sealed class CurrencyProperties

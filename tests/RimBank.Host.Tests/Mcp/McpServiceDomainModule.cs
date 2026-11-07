@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
-using RimBank.Host.Modules;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>
 /// A test-only module that registers MCP tools the way a context's <c>.Mcp</c> adapter will, through

@@ -1,8 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.TestHost;
-using RimBank.Host.Tests;
 
-namespace RimBank.Host.Health.Tests;
+namespace RimBank.Host.Tests;
 
 // The probes are mapped in every environment, open to anonymous callers, and return the status only (ADR 0014).
 public sealed class HealthEndpointTests

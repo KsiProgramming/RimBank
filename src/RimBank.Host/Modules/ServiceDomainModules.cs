@@ -1,6 +1,5 @@
-using RimBank.Host.Modules.Party;
 
-namespace RimBank.Host.Modules;
+namespace RimBank.Host;
 
 /// <summary>
 /// The service domains this host runs, in registration order. The list is explicit (no assembly scanning), so the

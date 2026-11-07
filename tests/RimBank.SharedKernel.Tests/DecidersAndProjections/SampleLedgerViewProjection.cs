@@ -1,4 +1,4 @@
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // Pure projection: (view, event) → view. Opened creates the view; an event before it leaves no view.
 public sealed class SampleLedgerViewProjection : IProjection<SampleLedgerView, SampleLedgerEvent>

@@ -5,10 +5,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using ModelContextProtocol.Protocol;
-using RimBank.Host.Errors.Tests;
-using RimBank.Host.Security.Tests;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 // Roadmap 0.15: one Streamable HTTP endpoint at /mcp, served by the host with each module's tools, protected like every
 // other endpoint, and reachable by the SDK's own client (specs/tech-stack.md §6, §9, ADR 0021).

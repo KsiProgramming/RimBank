@@ -3,7 +3,7 @@ using Alba;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
-using RimBank.Host.Security;
+using RimBank.Host;
 using RimBank.Host.Testing;
 using RimBank.Postgresql;
 using RimBank.SharedKernel.Testing;

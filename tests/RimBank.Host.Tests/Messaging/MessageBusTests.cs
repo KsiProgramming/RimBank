@@ -1,9 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using RimBank.Host.Tests;
 using Wolverine;
 using Wolverine.Runtime;
 
-namespace RimBank.Host.Messaging.Tests;
+namespace RimBank.Host.Tests;
 
 // The host runs one Wolverine bus for every context (specs/tech-stack.md §1, ADR 0017). With no context registered, it
 // opens no database connection, finds no handler and keeps its messages in memory.

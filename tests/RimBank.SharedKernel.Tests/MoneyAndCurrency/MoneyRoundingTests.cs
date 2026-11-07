@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace RimBank.SharedKernel.MoneyAndCurrency.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 public sealed class MoneyRoundingTests
 {

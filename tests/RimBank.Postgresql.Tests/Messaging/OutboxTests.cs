@@ -1,10 +1,8 @@
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 using Wolverine;
 
-namespace RimBank.Postgresql.Messaging.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 0.11: a message a handler returns is saved in the same transaction as its events, in the context's own
 // schema, goes through the context's durable local queue, and survives a restart (ADR 0017).

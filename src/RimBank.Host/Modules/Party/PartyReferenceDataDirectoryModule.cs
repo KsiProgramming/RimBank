@@ -1,7 +1,7 @@
 using RimBank.Party.PartyReferenceDataDirectory.Api;
 using RimBank.Party.PartyReferenceDataDirectory.Postgresql;
 
-namespace RimBank.Host.Modules.Party;
+namespace RimBank.Host;
 
 /// <summary>
 /// The Party Reference Data Directory (BIAN service domain, business domain Party): its store, inline view, and write

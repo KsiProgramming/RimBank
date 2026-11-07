@@ -2,7 +2,7 @@ using JasperFx.CodeGeneration;
 using RimBank.Postgresql;
 using Wolverine;
 
-namespace RimBank.Host.Messaging;
+namespace RimBank.Host;
 
 /// <summary>
 /// The host's single Wolverine bus (specs/tech-stack.md §1, ADR 0017). Every context's <c>.Api</c>, <c>.Mcp</c> and

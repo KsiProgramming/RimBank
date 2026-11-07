@@ -3,11 +3,11 @@ using FsCheck.Fluent;
 using FsCheck.Xunit;
 using RimBank.SharedKernel.Testing;
 using LedgerLaws = RimBank.SharedKernel.Testing.DeciderLaws<
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedger,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerCommand,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerEvent>;
+    RimBank.SharedKernel.Tests.SampleLedger,
+    RimBank.SharedKernel.Tests.SampleLedgerCommand,
+    RimBank.SharedKernel.Tests.SampleLedgerEvent>;
 
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // The decider laws and the projection/aggregate agreement law on the sample ledger. Each runs 100 command sequences.
 public sealed class SampleLedgerLawsProperties

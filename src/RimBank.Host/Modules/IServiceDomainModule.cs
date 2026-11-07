@@ -1,4 +1,4 @@
-namespace RimBank.Host.Modules;
+namespace RimBank.Host;
 
 /// <summary>
 /// The single entry point through which a bounded context registers itself in <c>RimBank.Host</c>

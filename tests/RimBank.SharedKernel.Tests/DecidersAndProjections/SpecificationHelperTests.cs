@@ -2,19 +2,19 @@ using FsCheck;
 using FsCheck.Fluent;
 using RimBank.SharedKernel.Testing;
 using LedgerLaws = RimBank.SharedKernel.Testing.DeciderLaws<
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedger,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerCommand,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerEvent>;
+    RimBank.SharedKernel.Tests.SampleLedger,
+    RimBank.SharedKernel.Tests.SampleLedgerCommand,
+    RimBank.SharedKernel.Tests.SampleLedgerEvent>;
 using LedgerSpecification = RimBank.SharedKernel.Testing.DeciderSpecification<
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedger,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerCommand,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerEvent>;
+    RimBank.SharedKernel.Tests.SampleLedger,
+    RimBank.SharedKernel.Tests.SampleLedgerCommand,
+    RimBank.SharedKernel.Tests.SampleLedgerEvent>;
 using LedgerViewSpecification = RimBank.SharedKernel.Testing.ProjectionSpecification<
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerViewProjection,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerView,
-    RimBank.SharedKernel.DecidersAndProjections.Tests.SampleLedgerEvent>;
+    RimBank.SharedKernel.Tests.SampleLedgerViewProjection,
+    RimBank.SharedKernel.Tests.SampleLedgerView,
+    RimBank.SharedKernel.Tests.SampleLedgerEvent>;
 
-namespace RimBank.SharedKernel.DecidersAndProjections.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // The helpers must fail when they should, with a message that names what was expected and what happened.
 public sealed class SpecificationHelperTests

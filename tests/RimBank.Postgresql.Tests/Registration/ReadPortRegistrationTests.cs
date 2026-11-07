@@ -1,14 +1,12 @@
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RimBank.Postgresql.Database.Tests;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
-using RimBank.Postgresql.FakeContexts.Tests;
 using RimBank.SharedKernel;
 using Wolverine.Runtime;
 
-namespace RimBank.Postgresql.Registration.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // Roadmap 1.7: a read port is registered by convention, reads through query sessions of its context's own store, and
 // its query handlers run without a transaction (ADR 0016, specs/tech-stack.md §8.2).

@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 
-namespace RimBank.Host.Security.Tests;
+namespace RimBank.Host.Tests;
 
 // Roadmap 0.13: every endpoint needs a valid access token unless it is a health probe (deny by default), and a missing
 // or invalid token is a 401 Problem Details response (tech-stack §5, §10, ADR 0019).

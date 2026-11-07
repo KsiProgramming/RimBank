@@ -54,5 +54,6 @@ Every group is written test first, and the solution builds and its tests pass af
 - [x] Every Party core type moves to `RimBank.Party.PartyReferenceDataDirectory`, every HTTP type to `….Api`, and every test to `….Tests` / `….Api.Tests`. Folders stay. The context's own `using` lines and the `using Entry = …;` alias go away; `EntryExamples` fields that had a type's name are renamed (`Demographics`, `Reference`, `BankRelations`).
 - [x] New architecture rule `context-namespaces-stop-at-the-adapter` with its bad fixture; `test-namespaces` applies it to test namespaces; `business-folder-names` keeps its namespace check (fixture moved to `RimBank.SharedKernel.Services`) and gains `BusinessFolderNamesOnDiskTests`.
 - [x] `.editorconfig`: `dotnet_style_namespace_match_folder = false`, IDE0130 off.
-- [x] Docs: ADR 0026; notes in ADR 0011, 0023 and 0025; tech-stack §3.1, §3.3, §3.4; CONTRIBUTING (test namespaces, rules table).
+- [x] Composition projects too: `RimBank.Host.*` → `RimBank.Host`, `RimBank.Mcp.Errors` → `RimBank.Mcp`, and every composition test project to `<project>.Tests`; only test-only fake contexts keep `<project>.FakeContexts.<Name>.Tests`. `assembly-names` fails a composition namespace below its root, and `test-namespaces` checks the test project's name.
+- [x] Docs: ADR 0026; notes in ADR 0011, 0014, 0023 and 0025; tech-stack §3.1, §3.3, §3.4; CONTRIBUTING (test namespaces, rules table).
 - [x] Release build, full test run and `dotnet format --verify-no-changes`.

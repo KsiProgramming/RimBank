@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using ModelContextProtocol.Client;
-using RimBank.Host.Modules;
 
-namespace RimBank.Host.Mcp.Tests;
+namespace RimBank.Host.Tests;
 
 /// <summary>Starts the host in memory with test tokens, and connects the SDK's own MCP client to its <c>/mcp</c>.</summary>
 internal static class McpTestHost

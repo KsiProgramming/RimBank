@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace RimBank.Host.Modules.Tests;
+namespace RimBank.Host.Tests;
 
 // The module entry-point convention (tech-stack §2, ADR 0014), proven with fake modules: no real context exists yet.
 public sealed class ServiceDomainModuleCompositionTests

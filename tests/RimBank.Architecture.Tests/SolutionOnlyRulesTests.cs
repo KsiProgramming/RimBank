@@ -101,7 +101,7 @@ public sealed class SolutionOnlyRulesTests
     [Theory]
     [InlineData("RimBank.Api", "RimBank.Api")]
     [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory.Api")]
-    [InlineData("RimBank.Mcp", "RimBank.Mcp.Errors")]
+    [InlineData("RimBank.Mcp", "RimBank.Mcp")]
     [InlineData("RimBank.Mcp", "RimBank.Party.PartyReferenceDataDirectory.Mcp")]
     public void A_shared_adapter_project_holding_its_conventions_and_catalogued_adapters_passes(string assemblyName, string namespaceName)
     {
@@ -114,10 +114,23 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.Api", "RimBank.Party.PartyReferenceDataDirectory.Postgresql")]
     [InlineData("RimBank.Api", "RimBank.Customers.Directory.Api")]
     [InlineData("RimBank.Mcp", "RimBank.Party.PartyReferenceDataDirectory.Api")]
+    [InlineData("RimBank.Mcp", "RimBank.Mcp.Errors")]
+    [InlineData("RimBank.Api", "RimBank.Api.Http")]
     public void A_shared_adapter_project_holding_anything_else_fails(string assemblyName, string namespaceName)
     {
         ArchitectureRules.AssemblyNameProblems(assemblyName, [namespaceName], _catalogue)
             .ShouldHaveSingleItem().Detail.ShouldContain($"'{namespaceName}'");
+    }
+
+    [Theory]
+    [InlineData("RimBank.Host", "RimBank.Host.Security")]
+    [InlineData("RimBank.Host", "RimBank.Host.Modules.Party")]
+    [InlineData("RimBank.SharedKernel", "RimBank.SharedKernel.MoneyAndCurrency")]
+    [InlineData("RimBank.Postgresql", "RimBank.Postgresql.Views")]
+    public void A_composition_project_namespace_below_its_root_fails(string assemblyName, string namespaceName)
+    {
+        ArchitectureRules.AssemblyNameProblems(assemblyName, [assemblyName, namespaceName], _catalogue)
+            .ShouldHaveSingleItem().Detail.ShouldContain($"'{namespaceName}', which goes below its root namespace");
     }
 
     [Fact]
@@ -143,24 +156,26 @@ public sealed class SolutionOnlyRulesTests
             .ShouldHaveSingleItem().Detail.ShouldContain($"lives in {assemblyName}, not {expected}");
     }
 
-    [Fact]
-    public void Test_namespaces_ending_with_Tests_pass()
+    [Theory]
+    [InlineData("RimBank.SharedKernel.Tests", "RimBank.SharedKernel.Tests")]
+    [InlineData("RimBank.Core.Tests", "RimBank.Core.Tests")]
+    [InlineData("RimBank.Core.Tests", "RimBank.Party.PartyReferenceDataDirectory.Tests")]
+    [InlineData("RimBank.Api.Tests", "RimBank.Party.PartyReferenceDataDirectory.Api.Tests")]
+    [InlineData("RimBank.Postgresql.Tests", "RimBank.Postgresql.FakeContexts.Ledger.Tests")]
+    public void Test_namespaces_of_the_project_a_context_or_a_fake_context_pass(string assemblyName, string namespaceName)
     {
-        ArchitectureRules.TestNamespaceProblems(
-            [
-                ("RimBank.SharedKernel.Tests.ErrorTests", "RimBank.SharedKernel.Tests"),
-                ("RimBank.SharedKernel.MoneyAndCurrency.Tests.MoneyTests", "RimBank.SharedKernel.MoneyAndCurrency.Tests"),
-                ("RimBank.Party.PartyReferenceDataDirectory.Tests.RegisterPartyHandlerTests", "RimBank.Party.PartyReferenceDataDirectory.Tests"),
-                ("RimBank.Party.PartyReferenceDataDirectory.Api.Tests.RegisterPartyEndpointTests", "RimBank.Party.PartyReferenceDataDirectory.Api.Tests"),
-            ]).ShouldBeEmpty();
+        ArchitectureRules.TestNamespaceProblems(assemblyName, [($"{namespaceName}.SomeTests", namespaceName)]).ShouldBeEmpty();
     }
 
     [Theory]
-    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Registration.Tests")]
-    [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval.Tests")]
-    public void Context_test_namespaces_with_a_folder_segment_fail(string namespaceName)
+    [InlineData("RimBank.Core.Tests", "RimBank.Party.PartyReferenceDataDirectory.Registration.Tests")]
+    [InlineData("RimBank.Api.Tests", "RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval.Tests")]
+    [InlineData("RimBank.SharedKernel.Tests", "RimBank.SharedKernel.MoneyAndCurrency.Tests")]
+    [InlineData("RimBank.Host.Tests", "RimBank.Host.Security.Tests")]
+    [InlineData("RimBank.Postgresql.Tests", "RimBank.Postgresql.FakeContexts.Ledger.Views.Tests")]
+    public void Test_namespaces_with_a_folder_segment_fail(string assemblyName, string namespaceName)
     {
-        ArchitectureRules.TestNamespaceProblems([($"{namespaceName}.SomeTests", namespaceName)])
+        ArchitectureRules.TestNamespaceProblems(assemblyName, [($"{namespaceName}.SomeTests", namespaceName)])
             .ShouldHaveSingleItem().Detail.ShouldContain("goes below");
     }
 
@@ -168,8 +183,8 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.Party.PartyReferenceDataDirectory")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Api")]
     [InlineData("RimBank.Party.PartyReferenceDataDirectory.Postgresql")]
-    [InlineData("RimBank.SharedKernel.MoneyAndCurrency")]
-    [InlineData("RimBank.Host.Modules.Party")]
+    [InlineData("RimBank.SharedKernel")]
+    [InlineData("RimBank.Host")]
     public void Context_namespaces_at_the_core_or_an_adapter_and_composition_namespaces_pass(string namespaceName) =>
         ArchitectureRules.ContextNamespaceProblem(namespaceName).ShouldBeNull();
 
@@ -187,7 +202,7 @@ public sealed class SolutionOnlyRulesTests
     [InlineData("RimBank.SharedKernel.TestsHelpers")]
     public void Test_namespaces_not_ending_with_Tests_fail(string namespaceName)
     {
-        ArchitectureRules.TestNamespaceProblems([($"{namespaceName}.SomeTests", namespaceName)])
+        ArchitectureRules.TestNamespaceProblems("RimBank.SharedKernel.Tests", [($"{namespaceName}.SomeTests", namespaceName)])
             .ShouldHaveSingleItem().Detail.ShouldContain("does not end with .Tests");
     }
 

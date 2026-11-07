@@ -3,7 +3,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 
-namespace RimBank.AppHost.Startup.Tests;
+namespace RimBank.AppHost.Tests;
 
 // Starts the real AppHost (PostgreSQL and Keycloak containers + RimBank.Host) and probes the host. Needs Docker: it always runs in
 // CI, and is skipped locally only when Docker is not reachable.

@@ -2,7 +2,7 @@ using Npgsql;
 using RimBank.Postgresql.FakeContexts.Ledger.Tests;
 using RimBank.Postgresql.FakeContexts.Registry.Tests;
 
-namespace RimBank.Postgresql.Database.Tests;
+namespace RimBank.Postgresql.Tests;
 
 // tech-stack §2 and §8.4: each context logs in as its own role, which owns its own schema and is given nothing on any
 // other schema, so a context can never read another context's events, views, outbox or inbox (ADR 0016), nor the

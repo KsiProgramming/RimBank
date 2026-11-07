@@ -83,8 +83,8 @@ public static partial class ArchitectureRules
 
     public static ArchitectureRule TestNamespaces { get; } = new(
         "test-namespaces",
-        "tech-stack §3.3 and ADR 0026: a test namespace always ends with .Tests, and inside a context it is the namespace under test plus .Tests",
-        code => code.TestAssemblies.SelectMany(assembly => TestNamespaceProblems(assembly.Types.Select(type => (type.Display(), type.NamespaceName())))),
+        "tech-stack §3.3 and ADR 0026: a test namespace ends with .Tests and is the test project's namespace, a context's namespace plus .Tests, or a test-only fake context <project>.FakeContexts.<Name>.Tests",
+        code => code.TestAssemblies.SelectMany(assembly => TestNamespaceProblems(assembly.Assembly, assembly.Types.Select(type => (type.Display(), type.NamespaceName())))),
         SolutionOnly: true);
 
     public static bool NamespaceIsAllowed(string namespaceName, ServiceDomainCatalogue catalogue) =>
@@ -107,7 +107,7 @@ public static partial class ArchitectureRules
         if (SharedAdapterProjects.FirstOrDefault(shared => shared.Value == assemblyName) is { Value: not null } sharedProject)
         {
             foreach (var namespaceName in namespaces.Distinct().Where(namespaceName =>
-                !Namespaces.IsWithin(namespaceName, assemblyName) && !IsCataloguedPart(namespaceName, sharedProject.Key, catalogue)))
+                namespaceName != assemblyName && !IsCataloguedPart(namespaceName, sharedProject.Key, catalogue)))
             {
                 yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', which is neither its own conventions nor the {sharedProject.Key} adapter of a catalogued RimBank.<BusinessDomain>.<ServiceDomain>");
             }
@@ -130,6 +130,16 @@ public static partial class ArchitectureRules
         foreach (var namespaceName in namespaces.Distinct().Where(namespaceName => !Namespaces.IsWithin(namespaceName, assemblyName)))
         {
             yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', outside its root namespace");
+        }
+
+        // A composition project has one namespace, its own: its folders are not namespace segments (ADR 0026). A context
+        // adapter project's namespaces are checked by context-namespaces-stop-at-the-adapter.
+        if (ContextAddress.CompositionProjects.Contains(assemblyName))
+        {
+            foreach (var namespaceName in namespaces.Distinct().Where(namespaceName => namespaceName != assemblyName && Namespaces.IsWithin(namespaceName, assemblyName)))
+            {
+                yield return new Violation(assemblyName, $"holds the namespace '{namespaceName}', which goes below its root namespace: folders are not namespace segments");
+            }
         }
     }
 
@@ -175,13 +185,15 @@ public static partial class ArchitectureRules
     }
 
     /// <summary>
-    /// The test namespace rule as a pure function over (type, namespace) pairs: a test namespace ends with <c>.Tests</c>,
-    /// and inside a context it is exactly the namespace under test plus <c>.Tests</c> (ADR 0026).
+    /// The test namespace rule as a pure function over the (type, namespace) pairs of one test assembly (ADR 0026): a
+    /// test namespace ends with <c>.Tests</c> and is exactly the test project's namespace, a context's namespace plus
+    /// <c>.Tests</c>, or a test-only fake context, <c>&lt;project&gt;.FakeContexts.&lt;Name&gt;.Tests</c>. A fake
+    /// context keeps its own namespace because the store wiring binds a context's handlers by namespace.
     /// </summary>
-    public static IEnumerable<Violation> TestNamespaceProblems(IEnumerable<(string TypeName, string NamespaceName)> types) =>
-        types.SelectMany(type => TestNamespaceProblems(type.TypeName, type.NamespaceName));
+    public static IEnumerable<Violation> TestNamespaceProblems(string assemblyName, IEnumerable<(string TypeName, string NamespaceName)> types) =>
+        types.SelectMany(type => TestNamespaceProblems(assemblyName, type.TypeName, type.NamespaceName));
 
-    private static IEnumerable<Violation> TestNamespaceProblems(string typeName, string namespaceName)
+    private static IEnumerable<Violation> TestNamespaceProblems(string assemblyName, string typeName, string namespaceName)
     {
         if (!namespaceName.EndsWith(".Tests", StringComparison.Ordinal))
         {
@@ -189,9 +201,23 @@ public static partial class ArchitectureRules
             yield break;
         }
 
-        if (ContextNamespaceProblem(namespaceName[..^".Tests".Length]) is { } problem)
+        var underTest = namespaceName[..^".Tests".Length];
+        if (ContextAddress.Parse(underTest) is not null)
         {
-            yield return new Violation(typeName, $"test {problem}");
+            if (ContextNamespaceProblem(underTest) is { } problem)
+            {
+                yield return new Violation(typeName, $"test {problem}");
+            }
+
+            yield break;
+        }
+
+        var project = assemblyName.EndsWith(".Tests", StringComparison.Ordinal) ? assemblyName[..^".Tests".Length] : assemblyName;
+        var isFakeContext = underTest.StartsWith($"{project}.FakeContexts.", StringComparison.Ordinal)
+            && !underTest[$"{project}.FakeContexts.".Length..].Contains('.', StringComparison.Ordinal);
+        if (underTest != project && !isFakeContext)
+        {
+            yield return new Violation(typeName, $"test namespace '{namespaceName}' goes below '{project}.Tests': folders are not namespace segments");
         }
     }
 

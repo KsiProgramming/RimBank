@@ -2,7 +2,7 @@
 // types let a bad context depend on RimBank.Host, RimBank.AppHost, RimBank.ServiceDefaults or RimBank.Problems without
 // referencing them.
 
-namespace RimBank.Host.Modules
+namespace RimBank.Host
 {
     public interface IServiceDomainModule
     {
@@ -43,7 +43,7 @@ namespace RimBank.Api
     }
 }
 
-namespace RimBank.Mcp.Errors
+namespace RimBank.Mcp
 {
     public static class ToolErrors
     {

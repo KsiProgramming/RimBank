@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace RimBank.SharedKernel.Idempotency.Tests;
+namespace RimBank.SharedKernel.Tests;
 
 // Roadmap 0.12: every command carries an idempotency key (specs/tech-stack.md §8.1, ADR 0018).
 public sealed class IdempotencyKeyTests

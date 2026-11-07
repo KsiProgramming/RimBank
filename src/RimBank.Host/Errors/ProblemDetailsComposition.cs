@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using RimBank.Problems;
 
-namespace RimBank.Host.Errors;
+namespace RimBank.Host;
 
 /// <summary>Makes every non-2xx response of the host RFC 9457 Problem Details (ADR 0015).</summary>
 public static class ProblemDetailsComposition
