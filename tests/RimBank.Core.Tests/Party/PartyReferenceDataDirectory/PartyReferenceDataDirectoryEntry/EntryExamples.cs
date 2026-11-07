@@ -28,4 +28,32 @@ internal static class EntryExamples
 
     public static PartyReferenceDataDirectoryEntryUpdated Updated(PartyType partyType = PartyType.Organisation) =>
         new(EntryId, partyType, RefreshDate);
+
+    public static readonly DateTimeOffset VerificationDate = OpenDate.AddDays(40);
+
+    public static readonly PartyDemographics Details = new(
+        "B2",
+        new Employment("Contoso Ltd", "Accountant"),
+        "Contoso Ltd since 2020",
+        "MSc Finance",
+        "Large print");
+
+    public static DemographicsChanges ChangesTo(PartyDemographics details) =>
+        new(details.SocioEconomicClassification, details.Employment, details.EmploymentHistory, details.EducationHistory, details.ServicingConstraints);
+
+    public static UpdateDemographicsDetails UpdateDetails(DemographicsChanges? changes = null) =>
+        new(Demographics, changes ?? ChangesTo(Details));
+
+    public static DemographicsUpdated DetailsUpdated(
+        PartyDemographics? details = null,
+        DemographicsVerificationStatus status = DemographicsVerificationStatus.Unverified,
+        DateTimeOffset? verificationDate = null) =>
+        new(EntryId, Demographics, details ?? Details, status, verificationDate);
+
+    public static ExchangeDemographicsDetails ExchangeDetails(ExchangeActionType action = ExchangeActionType.Verify) =>
+        new(Demographics, action, VerificationDate);
+
+    public static DemographicsExchanged DetailsExchanged(
+        DemographicsVerificationStatus status = DemographicsVerificationStatus.Verified) =>
+        new(EntryId, Demographics, status, VerificationDate);
 }

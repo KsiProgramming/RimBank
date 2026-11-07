@@ -35,7 +35,30 @@ public sealed class PartyReferenceDataDirectoryEntryLawsProperties
         from days in Gen.Choose(0, 60)
         select (PartyReferenceDataDirectoryEntryCommand)new UpdatePartyReferenceDataDirectoryEntryDetails(partyType, _openDate.AddDays(days));
 
-    private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _commands = Gen.OneOf(_registers, _updates);
+    private static readonly Gen<string?> _texts = Gen.Elements<string?>(null, "", "B2", "Contoso Ltd");
+
+    // A foreign Demographics id now and then covers party.behavior-qualifier-not-found, and clearing texts covers
+    // party.demographics-not-recorded on a later Exchange (roadmap 1.9).
+    private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _demographicsUpdates =
+        from demographicsId in Pick(DemographicsId.From)
+        from classification in _texts
+        from employer in _texts
+        from employment in Gen.Elements<Employment?>(null, new Employment(null, null), new Employment("Contoso Ltd", "Clerk"))
+        from history in _texts
+        select (PartyReferenceDataDirectoryEntryCommand)new UpdateDemographicsDetails(
+            demographicsId,
+            new DemographicsChanges(classification, employment, history, employer, null));
+
+    private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _demographicsExchanges =
+        from demographicsId in Pick(DemographicsId.From)
+        from action in Gen.Frequency(
+            (4, Gen.Elements(ExchangeActionType.Verify, ExchangeActionType.Reject)),
+            (1, Gen.Constant((ExchangeActionType)99)))
+        from days in Gen.Choose(0, 60)
+        select (PartyReferenceDataDirectoryEntryCommand)new ExchangeDemographicsDetails(demographicsId, action, _openDate.AddDays(days));
+
+    private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _commands =
+        Gen.OneOf(_registers, _updates, _demographicsUpdates, _demographicsExchanges);
 
     [Property]
     public Property Decisions_are_deterministic() => EntryLaws.DecisionsAreDeterministic(_commands);

@@ -15,6 +15,10 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="PartyReferenceId">The entry's Reference Behavior Qualifier.</param>
 /// <param name="BankRelationsId">The entry's BankRelations Behavior Qualifier.</param>
 /// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update, if any.</param>
+/// <param name="Demographics">
+/// The entry's Demographics section, served by BIAN <c>Demographics/Retrieve</c>, or <c>null</c> until its first Update
+/// (also in documents projected before roadmap 1.9); see <see cref="CurrentDemographics"/>.
+/// </param>
 public sealed record PartyReferenceDataDirectoryEntryView(
     Guid Id,
     long Version,
@@ -23,8 +27,13 @@ public sealed record PartyReferenceDataDirectoryEntryView(
     DemographicsId DemographicsId,
     PartyReferenceId PartyReferenceId,
     BankRelationsId BankRelationsId,
-    DateTimeOffset? RefreshDate = null)
+    DateTimeOffset? RefreshDate = null,
+    DemographicsRecord? Demographics = null)
 {
+    /// <summary>The entry's Demographics section: empty and unverified until its first Update. Computed, so it is not stored.</summary>
+    [JsonIgnore]
+    public DemographicsRecord CurrentDemographics => Demographics ?? DemographicsRecord.Empty;
+
     /// <summary>The entry, as its typed id. Computed from <see cref="Id"/>, so it is not stored.</summary>
     [JsonIgnore]
     public PartyReferenceDataDirectoryEntryId EntryId => PartyReferenceDataDirectoryEntryId.From(Id);

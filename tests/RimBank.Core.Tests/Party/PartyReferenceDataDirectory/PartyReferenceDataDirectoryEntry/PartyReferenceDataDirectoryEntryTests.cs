@@ -40,6 +40,37 @@ public sealed class PartyReferenceDataDirectoryEntryTests
         PartyReferenceDataDirectoryEntry.Evolve(PartyReferenceDataDirectoryEntry.Initial, Registered()).RefreshDate.ShouldBeNull();
 
     [Fact]
+    public void A_registered_entry_has_empty_unverified_demographics_until_they_are_updated()
+    {
+        var entry = PartyReferenceDataDirectoryEntry.Evolve(PartyReferenceDataDirectoryEntry.Initial, Registered());
+
+        entry.Demographics.ShouldBeNull();
+        entry.CurrentDemographics.ShouldBe(DemographicsRecord.Empty);
+    }
+
+    [Fact]
+    public void Updated_demographics_hold_what_the_event_recorded_and_keep_the_rest_of_the_entry()
+    {
+        var entry = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated(), DetailsUpdated() }
+            .Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
+
+        entry.ShouldBe(new PartyReferenceDataDirectoryEntry(
+            EntryId, PartyType.Organisation, OpenDate, Demographics, Reference, BankRelations, RefreshDate,
+            new DemographicsRecord(Details, DemographicsVerificationStatus.Unverified, null)));
+    }
+
+    [Theory]
+    [InlineData(DemographicsVerificationStatus.Verified)]
+    [InlineData(DemographicsVerificationStatus.Rejected)]
+    public void Exchanged_demographics_keep_their_details_and_take_the_verification(DemographicsVerificationStatus status)
+    {
+        var entry = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), DetailsUpdated(), DetailsExchanged(status) }
+            .Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
+
+        entry.CurrentDemographics.ShouldBe(new DemographicsRecord(Details, status, VerificationDate));
+    }
+
+    [Fact]
     public void Evolving_an_event_the_entry_does_not_know_is_a_programmer_error()
     {
         Should.Throw<UnreachableException>(() =>

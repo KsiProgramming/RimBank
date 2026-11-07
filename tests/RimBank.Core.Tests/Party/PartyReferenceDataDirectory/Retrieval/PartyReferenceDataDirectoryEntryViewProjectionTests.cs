@@ -42,6 +42,49 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 RefreshDate));
 
     [Fact]
+    public void Updated_and_exchanged_demographics_show_in_the_view_at_the_stream_version() =>
+        EntryViewSpecification.Given(Registered(), DetailsUpdated(), DetailsExchanged(DemographicsVerificationStatus.Verified))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 3,
+                PartyType.Person,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Demographics: new DemographicsRecord(Details, DemographicsVerificationStatus.Verified, VerificationDate)));
+
+    [Fact]
+    public void Changed_demographics_show_unverified_again() =>
+        EntryViewSpecification.Given(
+                Registered(),
+                DetailsUpdated(),
+                DetailsExchanged(),
+                DetailsUpdated(Details with { EducationHistory = "PhD" }))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 4,
+                PartyType.Person,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Demographics: new DemographicsRecord(Details with { EducationHistory = "PhD" }, DemographicsVerificationStatus.Unverified, null)));
+
+    [Fact]
+    public void A_registered_entry_has_no_demographics_section_and_reads_as_empty()
+    {
+        var view = PartyReferenceDataDirectoryEntryViewProjection.Project(null, Registered()).ShouldNotBeNull();
+
+        view.Demographics.ShouldBeNull();
+        view.CurrentDemographics.ShouldBe(DemographicsRecord.Empty);
+    }
+
+    [Fact]
+    public void A_demographics_event_before_registration_leaves_no_view() =>
+        EntryViewSpecification.Given(DetailsUpdated(), DetailsExchanged()).ThenNoView();
+
+    [Fact]
     public void A_registered_entry_has_no_refresh_date_in_its_view() =>
         PartyReferenceDataDirectoryEntryViewProjection.Project(null, Registered()).ShouldNotBeNull().RefreshDate.ShouldBeNull();
 
@@ -80,14 +123,16 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
     [Fact]
     public void The_view_survives_a_json_round_trip_without_storing_the_typed_id()
     {
-        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated() }
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated(), DetailsUpdated(), DetailsExchanged() }
             .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
             .ShouldNotBeNull();
 
         var json = JsonSerializer.Serialize(view, _json);
 
         JsonSerializer.Deserialize<PartyReferenceDataDirectoryEntryView>(json, _json).ShouldBe(view);
-        JsonNode.Parse(json).ShouldNotBeNull().AsObject().ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.EntryId)).ShouldBeFalse();
+        var stored = JsonNode.Parse(json).ShouldNotBeNull().AsObject();
+        stored.ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.EntryId)).ShouldBeFalse();
+        stored.ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.CurrentDemographics)).ShouldBeFalse();
     }
 
     // Stands in for the entry's later events whose data the view does not show (the Behavior Qualifier updates) until they exist.
