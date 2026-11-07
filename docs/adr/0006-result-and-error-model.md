@@ -31,6 +31,7 @@ Option 3.
   | `NotFound` | 404 | The record does not exist |
   | `Conflict` | 409 | Stale `If-Match` version, idempotency key reused with another payload |
   | `BusinessRule` | 422 | Valid input refused by a rule, for example insufficient funds (4.7) |
+  | `PreconditionRequired` | 428 | A precondition the operation needs was not sent, for example a missing `If-Match` (added in 1.8, [ADR 0027](0027-optimistic-concurrency-for-commands.md)) |
   | `Unexpected` | 500 | An expected failure that is not the caller's fault |
 
   Rate limiting (429) is an infrastructure concern (7.1) and is not a domain kind.

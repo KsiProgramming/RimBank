@@ -50,7 +50,7 @@
 - [x] **1.5 API adapter: Register:** `POST /PartyReferenceDataDirectory/Register` with validation returning Problem Details; the response is built from the command outcome, not from a read model.
 - [x] **1.6 Retrieve flow (query side):** `PartyReferenceDataDirectoryEntryView`, its pure projection, `RetrievePartyReferenceDataDirectoryEntry` query and handler, `PartyDirectoryEnquiry` read port and in-memory adapter, with projection unit tests.
 - [x] **1.7 Retrieve adapters:** inline Marten projection implementing `PartyDirectoryEnquiry`, and `GET /PartyReferenceDataDirectory/{id}/Retrieve` returning an `ETag` (404 returns Problem Details).
-- [ ] **1.8 Update:** `Update` decision, event and command endpoint, with optimistic concurrency through `If-Match` (409 Problem Details); the view is updated by the projection.
+- [x] **1.8 Update:** `Update` decision, event and command endpoint, with optimistic concurrency through `If-Match` (409 Problem Details); the view is updated by the projection.
 - [ ] **1.9 Demographics BQ:** model, decisions, Update/Exchange commands, view fields and Retrieve query.
 - [ ] **1.10 Reference BQ:** party identifiers (national ID, tax ID, LEI) as value objects; Update command and Retrieve query.
 - [ ] **1.11 Associations BQ:** party-to-party relationships as their own aggregate `PartyAssociation` (ADR 0024), with its own stream and inline view; Register/Update commands (owner and associate checked on the write side) and Retrieve query.

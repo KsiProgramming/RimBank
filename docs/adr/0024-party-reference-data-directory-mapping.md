@@ -67,6 +67,14 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 
 **Retrieve request (1.7).** `GET /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Retrieve` answers `200` from the entry's view only, with the BIAN Retrieve fields (`PartyType`, `DirectoryEntryDateType` = `OpenDate`, `DirectoryEntryDate`) and the ids of the entry and its three singleton BQs, in the same shape as the Register response. BIAN's `PartyReference` is not returned until Demographics and Reference store it (1.9, 1.10). The entry's version is the strong `ETag` (`"1"`), and an `If-None-Match` that names it (weak comparison, a list or `*`) answers `304 Not Modified` with the `ETag` and no body. A route value that is not an identifier RimBank issues (not a GUID, empty, or not a version 7 GUID) is `400` with the shared `shared.invalid-identifier` code and `errors["partyreferencedatadirectoryid"]`; an unknown entry is `404` `party.party-not-found`.
 
+**Update request (1.8).** `PUT /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Update` takes BIAN's `UpdatePartyReferenceDataDirectoryEntry` body.
+- **What changes.** Only `PartyType` is used, and it is optional. When it is omitted, the entry keeps its type. When it is given, it is read like Register's, except that a blank value is `party.party-type-invalid`.
+- **RefreshDate.** Every accepted Update records the time of the update (`TimeProvider`) as the entry's `RefreshDate`, BIAN's second `DirectoryEntryDateType`. An Update with an unchanged type is therefore still a business fact and appends `PartyReferenceDataDirectoryEntryUpdated`.
+- **Ignored fields.** `PartyReference`, `DirectoryEntryDateType` and `DirectoryEntryDate` are accepted and ignored, as in Register.
+- **Headers.** The request requires `Idempotency-Key` and `If-Match` ([ADR 0027](0027-optimistic-concurrency-for-commands.md)): missing → `428` `shared.if-match-required`, malformed → `400` `shared.if-match-invalid`, stale → `409` `party.version-conflict`.
+- **Response.** It answers `200`, built from the acknowledgement: the Register response's shape plus `RefreshDate`, with the new version as `ETag`. From 1.8, Retrieve also returns `RefreshDate`, and omits it until the first Update.
+- **Spec defect.** The spec's `200` for this operation points at `BadRequest`. RimBank answers with the intended `UpdatePartyReferenceDataDirectoryEntryResponse` schema instead.
+
 **Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its exact semantics are decided in 1.9.
 
 ### Domain events
@@ -74,7 +82,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 | Aggregate | Event | Raised by |
 |---|---|---|
 | Entry | `PartyRegistered` | `RegisterParty` (carries the singleton BQ ids) |
-| Entry | `PartyReferenceDataDirectoryEntryUpdated` | `UpdatePartyReferenceDataDirectoryEntry` |
+| Entry | `PartyReferenceDataDirectoryEntryUpdated` | `UpdatePartyReferenceDataDirectoryEntry` (carries the resulting party type and the `RefreshDate`, 1.8) |
 | Entry | `DemographicsUpdated` | `UpdateDemographics` |
 | Entry | `DemographicsExchanged` | `ExchangeDemographics` |
 | Entry | `PartyReferenceUpdated` | `UpdatePartyReference` |
@@ -137,7 +145,9 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner |
 | `party.associate-not-registered` | BusinessRule (422) | `AssociateReference` is not an entry of this directory |
 | `party.self-association` | BusinessRule (422) | The associate is the owning entry |
-| `party.version-conflict` | Conflict (409) | `If-Match` is not the current stream version |
+| `party.version-conflict` | Conflict (409) | `If-Match` is not the current stream version (1.8, [ADR 0027](0027-optimistic-concurrency-for-commands.md)) |
+| `shared.if-match-required` | PreconditionRequired (428) | A command on an existing entry or association has no `If-Match` (1.8, ADR 0027) |
+| `shared.if-match-invalid` | Validation (400) | `If-Match` is not exactly one strong version tag (1.8, ADR 0027) |
 
 Validation codes (400) for each request's fields are added by the phase that adds the request.
 

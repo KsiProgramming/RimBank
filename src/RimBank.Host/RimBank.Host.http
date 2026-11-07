@@ -33,3 +33,35 @@ grant_type=client_credentials&client_id=rimbank-dev-client&client_secret=rimbank
 # application/problem+json with "type": "urn:rimbank:problem:shared:not-found" and "errorCode": "shared.not-found".
 GET {{host}}/PartyReferenceDataDirectory/does-not-exist/Retrieve
 Authorization: Bearer {{token.response.body.$.access_token}}
+
+### Party Reference Data Directory (ADR 0024): register a party. The ETag of the answer is the entry's version, "1".
+# @name register
+POST {{host}}/PartyReferenceDataDirectory/Register
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "PartyType": "Person" }
+
+### Update the entry (roadmap 1.8, ADR 0027): If-Match is the ETag you last read. Answers 200 with ETag "2" and the
+# entry's RefreshDate. Without If-Match it is 428 shared.if-match-required.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "1"
+
+{ "PartyType": "Organisation" }
+
+### The same Update again with a new key: "1" is no longer the current version, so it is 409 party.version-conflict.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "1"
+
+{ "PartyType": "Person" }
+
+### Retrieve the entry: Organisation, its RefreshDate, and ETag "2".
+GET {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Retrieve
+Authorization: Bearer {{token.response.body.$.access_token}}
