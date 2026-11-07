@@ -35,6 +35,20 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjection
                 PartyType = updated.PartyType,
                 RefreshDate = updated.RefreshDate,
             },
+            (_, DemographicsUpdated updated) => view with
+            {
+                Version = view.Version + 1,
+                Demographics = new DemographicsRecord(updated.Details, updated.VerificationStatus, updated.VerificationDate),
+            },
+            (_, DemographicsExchanged exchanged) => view with
+            {
+                Version = view.Version + 1,
+                Demographics = view.CurrentDemographics with
+                {
+                    VerificationStatus = exchanged.VerificationStatus,
+                    VerificationDate = exchanged.VerificationDate,
+                },
+            },
             (_, _) => view with { Version = view.Version + 1 },
         };
 }

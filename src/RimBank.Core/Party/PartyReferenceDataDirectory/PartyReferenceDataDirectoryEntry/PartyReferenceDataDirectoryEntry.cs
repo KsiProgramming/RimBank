@@ -14,6 +14,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="PartyReferenceId">The entry's Reference Behavior Qualifier.</param>
 /// <param name="BankRelationsId">The entry's BankRelations Behavior Qualifier.</param>
 /// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update, if any.</param>
+/// <param name="Demographics">The entry's Demographics record, or <c>null</c> until its first Update (see <see cref="CurrentDemographics"/>).</param>
 public sealed partial record PartyReferenceDataDirectoryEntry(
     PartyReferenceDataDirectoryEntryId? Id,
     PartyType? PartyType,
@@ -21,7 +22,8 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
     DemographicsId? DemographicsId,
     PartyReferenceId? PartyReferenceId,
     BankRelationsId? BankRelationsId,
-    DateTimeOffset? RefreshDate = null)
+    DateTimeOffset? RefreshDate = null,
+    DemographicsRecord? Demographics = null)
     : IDecider<PartyReferenceDataDirectoryEntry, PartyReferenceDataDirectoryEntryCommand, PartyReferenceDataDirectoryEntryEvent>
 {
     /// <summary>An entry that is not registered yet.</summary>
@@ -29,6 +31,9 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
 
     /// <summary>Whether the entry has been registered.</summary>
     public bool IsRegistered => Id is not null;
+
+    /// <summary>The entry's Demographics record: empty and unverified until its first Update.</summary>
+    public DemographicsRecord CurrentDemographics => Demographics ?? DemographicsRecord.Empty;
 
     /// <inheritdoc />
     public static PartyReferenceDataDirectoryEntry Evolve(
@@ -47,6 +52,18 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
             {
                 PartyType = updated.PartyType,
                 RefreshDate = updated.RefreshDate,
+            },
+            DemographicsUpdated updated => state with
+            {
+                Demographics = new DemographicsRecord(updated.Details, updated.VerificationStatus, updated.VerificationDate),
+            },
+            DemographicsExchanged exchanged => state with
+            {
+                Demographics = state.CurrentDemographics with
+                {
+                    VerificationStatus = exchanged.VerificationStatus,
+                    VerificationDate = exchanged.VerificationDate,
+                },
             },
             _ => throw new UnreachableException($"The entry does not know {domainEvent}."),
         };

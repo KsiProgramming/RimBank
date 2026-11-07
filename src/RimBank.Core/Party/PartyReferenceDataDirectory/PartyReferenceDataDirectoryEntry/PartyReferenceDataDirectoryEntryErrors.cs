@@ -32,6 +32,14 @@ public static class PartyReferenceDataDirectoryEntryErrors
         "This party is not registered in the directory.");
 
     /// <summary>
+    /// The Demographics, Reference or BankRelations id a command or a query names is not the one of the entry (404,
+    /// ADR 0024).
+    /// </summary>
+    public static Error BehaviorQualifierNotFound { get; } = Error.NotFound(
+        "party.behavior-qualifier-not-found",
+        "This behavior qualifier does not belong to the party's directory entry.");
+
+    /// <summary>
     /// The version a command expected (its <c>If-Match</c>) is not the entry's current stream version: someone else
     /// changed the entry since the caller read it (409, ADR 0027).
     /// </summary>

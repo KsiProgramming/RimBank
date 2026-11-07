@@ -38,6 +38,28 @@ public sealed record UpdatePartyReferenceDataDirectoryEntryDetails(
     PartyType? PartyType,
     DateTimeOffset RefreshDate) : PartyReferenceDataDirectoryEntryCommand;
 
+/// <summary>
+/// Update the entry's demographic details (BIAN <c>Demographics/Update</c>): a partial update. The handler has already
+/// checked the entry, the Demographics id and the expected version.
+/// </summary>
+/// <param name="DemographicsId">The Demographics the caller named.</param>
+/// <param name="Changes">The changes to apply.</param>
+public sealed record UpdateDemographicsDetails(
+    DemographicsId DemographicsId,
+    DemographicsChanges Changes) : PartyReferenceDataDirectoryEntryCommand;
+
+/// <summary>
+/// Verify or reject the entry's current demographic details (BIAN <c>Demographics/Exchange</c>, ADR 0028). The handler
+/// takes <paramref name="VerificationDate"/> from its <see cref="TimeProvider"/>.
+/// </summary>
+/// <param name="DemographicsId">The Demographics the caller named.</param>
+/// <param name="Action">Whether the bank verifies or rejects the details.</param>
+/// <param name="VerificationDate">The time of the verification.</param>
+public sealed record ExchangeDemographicsDetails(
+    DemographicsId DemographicsId,
+    ExchangeActionType Action,
+    DateTimeOffset VerificationDate) : PartyReferenceDataDirectoryEntryCommand;
+
 public sealed partial record PartyReferenceDataDirectoryEntry
 {
     /// <inheritdoc />
@@ -46,6 +68,9 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// <c>party.party-already-registered</c>, and a party type other than <see cref="PartyType.Person"/> or
     /// <see cref="PartyType.Organisation"/> is <c>party.party-type-invalid</c>. Update needs a registered entry
     /// (<c>party.party-not-found</c> otherwise) and always records the refresh, even when the party type is unchanged.
+    /// Demographics Update and Exchange need a registered entry and its own Demographics id
+    /// (<c>party.behavior-qualifier-not-found</c> otherwise). Update always records the resulting details, and only a
+    /// change makes them unverified again. Exchange needs recorded details (<c>party.demographics-not-recorded</c>).
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -73,6 +98,43 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                     entryId,
                     update.PartyType ?? current,
                     update.RefreshDate)),
+            (UpdateDemographicsDetails or ExchangeDemographicsDetails, { Id: null }) =>
+                PartyReferenceDataDirectoryEntryErrors.PartyNotFound,
+            (UpdateDemographicsDetails update, _) when update.DemographicsId != state.DemographicsId =>
+                PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
+            (ExchangeDemographicsDetails exchange, _) when exchange.DemographicsId != state.DemographicsId =>
+                PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
+            (UpdateDemographicsDetails update, { Id: { } entryId }) =>
+                DecideDemographicsUpdate(entryId, update, state.CurrentDemographics),
+            (ExchangeDemographicsDetails exchange, _) when !Enum.IsDefined(exchange.Action) =>
+                DemographicsErrors.ExchangeActionTypeInvalid,
+            (ExchangeDemographicsDetails, { CurrentDemographics.Details.HasDetails: false }) =>
+                DemographicsErrors.DemographicsNotRecorded,
+            (ExchangeDemographicsDetails exchange, { Id: { } entryId }) =>
+                Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new DemographicsExchanged(
+                    entryId,
+                    exchange.DemographicsId,
+                    exchange.Action switch
+                    {
+                        ExchangeActionType.Verify => DemographicsVerificationStatus.Verified,
+                        ExchangeActionType.Reject => DemographicsVerificationStatus.Rejected,
+                        _ => throw new UnreachableException($"Undefined action {exchange.Action} was refused above."),
+                    },
+                    exchange.VerificationDate)),
             _ => throw new UnreachableException($"The entry does not decide {command}."),
         };
+
+    private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> DecideDemographicsUpdate(
+        PartyReferenceDataDirectoryEntryId entryId,
+        UpdateDemographicsDetails update,
+        DemographicsRecord current)
+    {
+        var updated = current.UpdatedTo(current.Details.Apply(update.Changes));
+        return Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new DemographicsUpdated(
+            entryId,
+            update.DemographicsId,
+            updated.Details,
+            updated.VerificationStatus,
+            updated.VerificationDate));
+    }
 }
