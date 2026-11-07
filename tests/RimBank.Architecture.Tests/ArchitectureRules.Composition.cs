@@ -101,7 +101,7 @@ public static partial class ArchitectureRules
             where Namespaces.IsWithin(type.NamespaceName(), HttpRoot)
             from target in code.Targets(type)
             where !IsBcl(target)
-                && !new[] { AspNetCore, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
+                && !new[] { AspNetCore, AspNetCoreHeaders, "Microsoft.Extensions", "RimBank.SharedKernel", ProblemsRoot, HttpRoot }
                     .Any(allowed => Namespaces.IsWithin(target.NamespaceName(), allowed))
             select new Violation(type.Display(), $"depends on {target.Display()}, which is not SharedKernel, RimBank.Problems, ASP.NET Core or the BCL"));
 

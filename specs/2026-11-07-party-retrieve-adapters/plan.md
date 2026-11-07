@@ -17,9 +17,9 @@ Every group is written test first, and the solution builds and its tests pass af
 - [x] Run `RimBank.Architecture.Tests` and `RimBank.Host.Tests` (the host starts, Register still works).
 
 ## 2. HTTP Retrieve endpoint
-- [ ] Tests first in `RimBank.Http.Tests` (`StreamVersionTagTests`): `Format(3)` is `"3"` (quoted, strong); `If-None-Match` matches for `"3"`, `W/"3"`, `"1", "3"` and `*`; it does not match for `"2"`, a missing header or an unparsable one.
-- [ ] `src/RimBank.Http/StreamVersionTag.cs`: `Format(long version)`, `SetOn(HttpResponse, long version)` and `IfNoneMatch(HttpRequest, long version)` (using `GetTypedHeaders().IfNoneMatch`). Switch `RegisterPartyEndpoint` to `SetOn` (its tests stay green, unchanged).
-- [ ] Tests first in `RimBank.Party.PartyReferenceDataDirectory.Api.Tests`:
+- [x] Tests first in `RimBank.Http.Tests` (`StreamVersionTagTests`): `Format(3)` is `"3"` (quoted, strong); `If-None-Match` matches for `"3"`, `W/"3"`, `"1", "3"` and `*`; it does not match for `"2"`, a missing header or an unparsable one.
+- [x] `src/RimBank.Http/StreamVersionTag.cs`: `Format(long version)` (1 or more), `SetOn(HttpResponse, long version)` and `IsNotModified(HttpRequest, long version)` (using `GetTypedHeaders().IfNoneMatch`; the `http-dependencies` rule now also allows `Microsoft.Net.Http.Headers`). Switch `RegisterPartyEndpoint` to `SetOn` (its tests stay green, unchanged).
+- [x] Tests first in `RimBank.Party.PartyReferenceDataDirectory.Api.Tests`:
   - `Retrieval/RetrievePartyReferenceDataDirectoryEntryResponseTests`: mapping from a view (BIAN names, `OpenDate`, plain GUIDs, no `PartyReference`), and the JSON property names.
   - `Retrieval/RetrievePartyReferenceDataDirectoryEntryEndpointTests` (Alba, Testcontainers, test-signed JWTs):
     - Register, then GET → 200 `application/json`, a body equal to the Register response's fields, and the same `ETag` (`"1"`);
@@ -27,11 +27,11 @@ Every group is written test first, and the solution builds and its tests pass af
     - `not-a-guid`, an empty GUID and a v4 GUID → 400 `application/problem+json`, `shared.invalid-identifier`, `errors["partyreferencedatadirectoryid"]`;
     - `If-None-Match: "1"` → 304, the `ETag` and an empty body; `If-None-Match: "0"` → 200; `If-None-Match: *` → 304;
     - no `Idempotency-Key` is needed; no token → 401 Problem Details.
-- [ ] `src/Party/RimBank.Party.PartyReferenceDataDirectory.Api/Retrieval/RetrievePartyReferenceDataDirectoryEntryResponse.cs`: `[JsonPropertyName]` BIAN names, `From(PartyReferenceDataDirectoryEntryView)`.
-- [ ] `Retrieval/RetrievePartyReferenceDataDirectoryEntryEndpoint.cs`: `Route`, `OperationId` constants; `MapRetrievePartyReferenceDataDirectoryEntry` with `WithName`, `WithTags("PartyReferenceDataDirectoryEntry")`, the BIAN summary, a description (ETag, 304, PartyReference not yet returned), `Produces<…Response>(200)`, `Produces(304)`, `ProducesValidationProblem()`, `ProducesProblem(401/404/500)`. `HandleAsync(string partyreferencedatadirectoryid, IMessageBus bus, HttpContext http, CancellationToken)`: parse the id (an error becomes a validation problem with the field) → `InvokeAsync<Result<…View>>` → 304 / 200 with `ETag` / `error.ToHttpResult()`.
-- [ ] `PartyReferenceDataDirectoryApi.MapPartyReferenceDataDirectoryEndpoints` maps it.
-- [ ] `PartyReferenceDataDirectoryConformanceTests._implemented` adds `RetrievePartyReferenceDataDirectoryEntryEndpoint.OperationId`.
-- [ ] Run the Party `.Api.Tests`, `RimBank.Http.Tests`, `RimBank.Architecture.Tests` (`adapters-dispatch-through-the-message-bus`, `http-dependencies`) and `RimBank.Host.Tests`.
+- [x] `src/Party/RimBank.Party.PartyReferenceDataDirectory.Api/Retrieval/RetrievePartyReferenceDataDirectoryEntryResponse.cs`: `[JsonPropertyName]` BIAN names, `From(PartyReferenceDataDirectoryEntryView)`.
+- [x] `Retrieval/RetrievePartyReferenceDataDirectoryEntryEndpoint.cs`: `Route`, `OperationId` constants; `MapRetrievePartyReferenceDataDirectoryEntry` with `WithName`, `WithTags("PartyReferenceDataDirectoryEntry")`, the BIAN summary, a description (ETag, 304, PartyReference not yet returned); the invalid-id error is `RetrievePartyReferenceDataDirectoryEntryRequestErrors.EntryIdInvalid`, `Produces<…Response>(200)`, `Produces(304)`, `ProducesValidationProblem()`, `ProducesProblem(401/404/500)`. `HandleAsync(string partyreferencedatadirectoryid, IMessageBus bus, HttpContext http, CancellationToken)`: parse the id (an error becomes a validation problem with the field) → `InvokeAsync<Result<…View>>` → 304 / 200 with `ETag` / `error.ToHttpResult()`.
+- [x] `PartyReferenceDataDirectoryApi.MapPartyReferenceDataDirectoryEndpoints` maps it.
+- [x] `PartyReferenceDataDirectoryConformanceTests._implemented` adds `RetrievePartyReferenceDataDirectoryEntryEndpoint.OperationId`.
+- [x] Run the Party `.Api.Tests`, `RimBank.Http.Tests`, `RimBank.Architecture.Tests` (`adapters-dispatch-through-the-message-bus`, `http-dependencies`) and `RimBank.Host.Tests`.
 
 ## 3. Docs and roadmap
 - [ ] ADR 0024: "Retrieve request (1.7)" paragraph next to "Register request (1.5)".

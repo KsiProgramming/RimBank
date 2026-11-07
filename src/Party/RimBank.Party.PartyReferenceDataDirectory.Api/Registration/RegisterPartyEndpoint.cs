@@ -73,7 +73,7 @@ public static class RegisterPartyEndpoint
         return outcome.Match<IResult>(
             acknowledged =>
             {
-                http.Response.Headers.ETag = $"\"{acknowledged.Version}\"";
+                StreamVersionTag.SetOn(http.Response, acknowledged.Version);
                 return TypedResults.Ok(RegisterPartyResponse.From(acknowledged));
             },
             error => error.ToHttpResult());

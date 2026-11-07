@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Routing;
 using RimBank.Party.PartyReferenceDataDirectory.Api.Registration;
+using RimBank.Party.PartyReferenceDataDirectory.Api.Retrieval;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 
@@ -12,6 +13,7 @@ public static class PartyReferenceDataDirectoryApi
     public static IEndpointRouteBuilder MapPartyReferenceDataDirectoryEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapRegisterParty();
+        endpoints.MapRetrievePartyReferenceDataDirectoryEntry();
         return endpoints;
     }
 }

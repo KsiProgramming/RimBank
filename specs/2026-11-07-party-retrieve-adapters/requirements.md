@@ -47,6 +47,8 @@ Drivers: mission principles 5 (a query reads a read model and never changes stat
 | Entity-tag helper | `StreamVersionTag` in `RimBank.Http`, also used by Register | Every `.Api` formats and compares versions the same way. 1.8 adds `If-Match` beside it. `RimBank.Http` may use ASP.NET Core (tech-stack §4) |
 | Existing databases | No migration; a development database with entries registered before 1.7 is rebuilt once with `RebuildViewAsync` (noted in the PR) | tech-stack §8.3: a new view ships with its rebuild step. There is no deployed environment yet |
 | Work order | Adapter-out, test first, three groups: Postgres read side → HTTP endpoint → docs | Chosen in the interview |
+| `http-dependencies` rule | Also allows `Microsoft.Net.Http.Headers` | Found while implementing: `EntityTagHeaderValue` (the framework's RFC 9110 parser for `If-None-Match`) lives in that namespace of the ASP.NET Core shared framework, which tech-stack §4 already allows `RimBank.Http`. Using it beats hand-parsing entity tags |
+| Invalid-id error | `RetrievePartyReferenceDataDirectoryEntryRequestErrors.EntryIdInvalid` in `.Api`: `shared.invalid-identifier` plus `errors["partyreferencedatadirectoryid"]` | `TypedId.TryCreate` gives the code without a field; the adapter names the route value, as Register names `PartyType` |
 
 ## ADRs to write
 - None new. **Amend ADR 0024** with a "Retrieve request (1.7)" paragraph: the route value is validated with `shared.invalid-identifier`, the response shape (BIAN fields + ids, no `PartyReference` yet), `ETag` and `If-None-Match` → 304. **Amend ADR 0016** with the `AddReadPort` convention (a read port reads through a query session of the context's store, with no transaction).
