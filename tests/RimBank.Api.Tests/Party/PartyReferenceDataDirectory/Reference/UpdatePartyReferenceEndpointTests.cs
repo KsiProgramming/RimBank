@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Alba;
 using Microsoft.Net.Http.Headers;
@@ -7,7 +8,7 @@ using static RimBank.Party.PartyReferenceDataDirectory.Api.Tests.ReferenceScenar
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-// Roadmap 1.10: BIAN Reference/Update over HTTP. A partial update of the party identifiers with an Idempotency-Key and
+// Roadmap 1.10 and 1.18: BIAN Reference/Update over HTTP. A partial update of the Reference with an Idempotency-Key and
 // the entry's version in If-Match, answered from its acknowledgement with the new version as ETag; the Reference fields
 // RimBank does not record yet are refused; every error is Problem Details (specs/tech-stack.md §5, ADR 0024, ADR 0029).
 public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
@@ -68,6 +69,64 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task Names_date_of_birth_and_residency_are_recorded_normalised_and_kept_by_a_later_identifier_update()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        await PutReferenceOkAsync(host, UpdateUrl(registered), Identifiers, "\"1\"", "\"2\"");
+
+        var updated = await PutReferenceOkAsync(host, UpdateUrl(registered), NamesAndResidency, "\"2\"", "\"3\"");
+        var kept = await PutReferenceOkAsync(
+            host,
+            UpdateUrl(registered),
+            """{ "PartyLegalEntityReference": { "Identification": "" } }""",
+            "\"3\"",
+            "\"4\"");
+
+        updated.ShouldBe(ExpectedWithNamesAndResidency(registered));
+        kept.ShouldBe(ExpectedWithNamesAndResidency(registered) with { PartyLegalEntityReference = null });
+    }
+
+    [Fact]
+    public async Task Invalid_names_countries_and_residency_are_a_validation_problem_naming_each_bian_field()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        var body = $$"""
+            {
+              "PartyFullLegalName": "{{new string('N', 141)}}",
+              "DateofBirth": "17/05/1990",
+              "Nationality": { "Code": "ZZ" },
+              "PartyCountryOfResidence": { "Code": "FRA" },
+              "ResidencyStatus": { "StatusDescription": "Expat" }
+            }
+            """;
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), body, "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-invalid");
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).ShouldBe(
+            ["PartyFullLegalName", "DateofBirth", "Nationality.Code", "PartyCountryOfResidence.Code", "ResidencyStatus.StatusDescription"],
+            ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task A_date_of_birth_after_today_is_a_validation_problem_and_nothing_is_stored()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        var later = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(2).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), $$"""{ "DateofBirth": "{{later}}" }""", "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-invalid");
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).ShouldBe(["DateofBirth"]);
+        (await host.ScalarAsync<long>(
+            $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
+            .ShouldBe(1);
+    }
+
+    [Fact]
     public async Task Invalid_identifiers_are_a_validation_problem_naming_each_bian_field()
     {
         await using var host = await server.StartHostAsync();
@@ -95,7 +154,7 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
         var body = """
             {
               "GovernmentIssuedIdentityReference": { "TaxIdentificationNumber": "FR12345678901", "OtherIdentification": "X1" },
-              "DateofBirth": "1990-01-01",
+              "Nationality": { "Code": "FR", "Citizen": "Jane" },
               "eMailAddress": { "Identification": "jane@example.com" },
               "PartyAddress": null,
               "NotABianField": "ignored"
@@ -107,9 +166,9 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
         problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-field-not-supported");
         var errors = problem.GetProperty("errors");
         errors.EnumerateObject().Select(field => field.Name).ShouldBe(
-            ["DateofBirth", "eMailAddress", "GovernmentIssuedIdentityReference.OtherIdentification"],
+            ["Nationality.Citizen", "eMailAddress", "GovernmentIssuedIdentityReference.OtherIdentification"],
             ignoreOrder: true);
-        errors.GetProperty("DateofBirth")[0].GetString().ShouldNotBeNull().ShouldContain("1.18");
+        errors.GetProperty("Nationality.Citizen")[0].GetString().ShouldBe("RimBank does not record this field.");
         errors.GetProperty("eMailAddress")[0].GetString().ShouldNotBeNull().ShouldContain("1.19");
         (await host.ScalarAsync<long>(
             $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))

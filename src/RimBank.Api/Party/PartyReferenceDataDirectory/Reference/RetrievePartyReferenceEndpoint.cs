@@ -30,10 +30,11 @@ public static class RetrievePartyReferenceEndpoint
             .WithTags("Reference")
             .WithSummary("Retrieve details about reference entries in the directory")
             .WithDescription(
-                "Returns the party's identifiers: the tax identification and national registration numbers in "
-                + "GovernmentIssuedIdentityReference, and the LEI in PartyLegalEntityReference.Identification. Unknown "
-                + "identifiers are left out. The ETag header is the entry's version; send it in If-None-Match to get 304 "
-                + "Not Modified while it is current.")
+                "Returns the party's Reference: the tax identification and national registration numbers in "
+                + "GovernmentIssuedIdentityReference, the LEI in PartyLegalEntityReference.Identification, PartyFullLegalName, "
+                + "PartyNameSalutation, DateofBirth (YYYY-MM-DD), Nationality and PartyCountryOfResidence (ISO 3166 Code), "
+                + "and ResidencyStatus. Unknown values are left out. The ETag header is the entry's version; send it in "
+                + "If-None-Match to get 304 Not Modified while it is current.")
             .Produces<PartyReferenceResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status304NotModified)
             .ProducesValidationProblem()

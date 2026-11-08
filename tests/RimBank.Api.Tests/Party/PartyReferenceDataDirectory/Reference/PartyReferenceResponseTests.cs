@@ -30,6 +30,32 @@ public sealed class PartyReferenceResponseTests
     }
 
     [Fact]
+    public void Names_date_of_birth_and_residency_become_the_bian_shape()
+    {
+        var details = _details with
+        {
+            Names = new PartyNames(PartyFullLegalName.TryCreate("Jeanne Marie Dupont").Value, null),
+            DateOfBirth = new DateOnly(1990, 5, 7),
+            Residency = new PartyResidency(
+                SharedKernel.CountryCode.From("FR"),
+                null,
+                new ResidencyStatus(ResidencyStatusCode.Resident, new DateTimeOffset(2024, 3, 1, 9, 30, 0, TimeSpan.FromHours(1)))),
+        };
+
+        var json = JsonNode.Parse(JsonSerializer.Serialize(
+                PartyReferenceResponse.From(new UpdatePartyReferenceAcknowledged(_entryId, _referenceId, 2, details))))
+            .ShouldNotBeNull().AsObject();
+
+        json["PartyFullLegalName"]!.GetValue<string>().ShouldBe("Jeanne Marie Dupont");
+        json.ContainsKey("PartyNameSalutation").ShouldBeFalse();
+        json["DateofBirth"]!.GetValue<string>().ShouldBe("1990-05-07");
+        json["Nationality"]!["Code"]!.GetValue<string>().ShouldBe("FR");
+        json.ContainsKey("PartyCountryOfResidence").ShouldBeFalse();
+        json["ResidencyStatus"]!["StatusDescription"]!.GetValue<string>().ShouldBe("Resident");
+        json["ResidencyStatus"]!["StatusDateTime"]!.GetValue<string>().ShouldBe("2024-03-01T09:30:00+01:00");
+    }
+
+    [Fact]
     public void The_view_s_reference_section_becomes_the_same_response()
     {
         var view = new PartyReferenceDataDirectoryEntryView(

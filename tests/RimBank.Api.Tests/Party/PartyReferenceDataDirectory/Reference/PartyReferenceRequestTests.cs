@@ -3,8 +3,8 @@ using RimBank.SharedKernel;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-// Roadmap 1.10: the BIAN Reference Update body becomes its command, with the route's ids and the If-Match version; the
-// Reference fields RimBank does not record yet are found and refused (ADR 0024, ADR 0029).
+// Roadmap 1.10 and 1.18: the BIAN Reference Update body becomes its command, with the route's ids and the If-Match
+// version; the Reference fields RimBank does not record yet are found and refused (ADR 0024, ADR 0029).
 public sealed class PartyReferenceRequestTests
 {
     private static readonly IdempotencyKey _key = IdempotencyKey.From("reference-1");
@@ -34,6 +34,33 @@ public sealed class PartyReferenceRequestTests
     }
 
     [Fact]
+    public void The_BIAN_name_and_residency_fields_become_the_changes()
+    {
+        var changes = Read(
+            """
+            {
+              "partyfulllegalname": " Jeanne Marie Dupont ",
+              "PartyNameSalutation": "",
+              "DateofBirth": "1990-05-17",
+              "Nationality": { "Code": "fr" },
+              "PartyCountryOfResidence": {},
+              "ResidencyStatus": { "StatusDescription": "Resident", "StatusDateTime": "2024-01-01T00:00:00Z" }
+            }
+            """).ToCommand(_entryId, _referenceId, 1, _key).Value.Changes;
+
+        changes.ShouldBe(PartyReferenceChanges.None with
+        {
+            PartyFullLegalName = new PartyReferenceChange<PartyFullLegalName?>(PartyFullLegalName.TryCreate("Jeanne Marie Dupont").Value),
+            PartyNameSalutation = new PartyReferenceChange<PartyNameSalutation?>(null),
+            DateOfBirth = new PartyReferenceChange<DateOnly?>(new DateOnly(1990, 5, 17)),
+            Nationality = new PartyReferenceChange<CountryCode?>(CountryCode.From("FR")),
+            PartyCountryOfResidence = new PartyReferenceChange<CountryCode?>(null),
+            ResidencyStatus = new PartyReferenceChange<ResidencyStatus?>(
+                new ResidencyStatus(ResidencyStatusCode.Resident, new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero))),
+        });
+    }
+
+    [Fact]
     public void An_empty_body_changes_nothing() =>
         Read("{}").ToCommand(_entryId, _referenceId, 1, _key).Value.Changes.ShouldBe(PartyReferenceChanges.None);
 
@@ -43,30 +70,36 @@ public sealed class PartyReferenceRequestTests
         var request = Read(
             """
             {
-              "dateofbirth": "1990-01-01",
+              "emailaddress": "jane@example.com",
               "CompanyOfficerRole": { "PartyRole": "Director" },
               "GovernmentIssuedIdentityReference": { "OtherIdentification": "X1", "Declaration": null },
-              "PartyLegalEntityReference": { "ContactPoint": "x" }
+              "PartyLegalEntityReference": { "ContactPoint": "x" },
+              "Nationality": { "Code": "FR", "Citizen": "Jane" },
+              "PartyCountryOfResidence": { "Tax": "x" },
+              "ResidencyStatus": { "StatusDescription": "Resident", "StatusReason": "Works abroad" }
             }
             """);
 
         request.UnsupportedFields().ShouldBe(
             [
-                "DateofBirth",
+                "eMailAddress",
                 "CompanyOfficerRole",
                 "GovernmentIssuedIdentityReference.OtherIdentification",
                 "PartyLegalEntityReference.ContactPoint",
+                "Nationality.Citizen",
+                "PartyCountryOfResidence.Tax",
+                "ResidencyStatus.StatusReason",
             ],
             ignoreOrder: true);
     }
 
     [Fact]
     public void Fields_sent_as_null_and_properties_that_are_not_BIAN_s_are_not_unsupported() =>
-        Read("""{ "DateofBirth": null, "NotABianField": "x" }""").UnsupportedFields().ShouldBeEmpty();
+        Read("""{ "eMailAddress": null, "Nationality": { "Citizen": null }, "NotABianField": "x" }""").UnsupportedFields().ShouldBeEmpty();
 
     [Fact]
     public void An_unsupported_field_makes_the_command_a_validation_error() =>
-        Read("""{ "Nationality": { "Code": "FR" } }""").ToCommand(_entryId, _referenceId, 1, _key)
+        Read("""{ "Nationality": { "Code": "FR", "Citizen": "Jane" } }""").ToCommand(_entryId, _referenceId, 1, _key)
             .Error.Code.ShouldBe("party.reference-field-not-supported");
 
     private static UpdatePartyReferenceRequest Read(string json) =>

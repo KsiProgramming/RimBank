@@ -61,14 +61,16 @@ public sealed record ExchangeDemographicsDetails(
     DateTimeOffset VerificationDate) : PartyReferenceDataDirectoryEntryCommand;
 
 /// <summary>
-/// Update the entry's Reference (BIAN <c>Reference/Update</c>): a partial update of the party identifiers. The handler
-/// has already checked the entry, the Reference id and the expected version.
+/// Update the entry's Reference (BIAN <c>Reference/Update</c>): a partial update. The handler has already checked the
+/// entry, the Reference id and the expected version, and takes <paramref name="Today"/> from its <see cref="TimeProvider"/>.
 /// </summary>
 /// <param name="PartyReferenceId">The Reference the caller named.</param>
 /// <param name="Changes">The changes to apply.</param>
+/// <param name="Today">The UTC date of the update: a date of birth after it is refused.</param>
 public sealed record UpdatePartyReferenceDetails(
     PartyReferenceId PartyReferenceId,
-    PartyReferenceChanges Changes) : PartyReferenceDataDirectoryEntryCommand;
+    PartyReferenceChanges Changes,
+    DateOnly Today) : PartyReferenceDataDirectoryEntryCommand;
 
 public sealed partial record PartyReferenceDataDirectoryEntry
 {
@@ -81,7 +83,8 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// Demographics Update and Exchange need a registered entry and its own Demographics id
     /// (<c>party.behavior-qualifier-not-found</c> otherwise). Update always records the resulting details, and only a
     /// change makes them unverified again. Exchange needs recorded details (<c>party.demographics-not-recorded</c>).
-    /// Reference Update needs a registered entry and its own Reference id, and always records the resulting Reference.
+    /// Reference Update needs a registered entry and its own Reference id, refuses a date of birth after today
+    /// (<c>party.reference-invalid</c>), and always records the resulting Reference.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -134,6 +137,8 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                     exchange.VerificationDate)),
             (UpdatePartyReferenceDetails update, _) when update.PartyReferenceId != state.PartyReferenceId =>
                 PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
+            (UpdatePartyReferenceDetails { Changes.DateOfBirth.Value: { } dateOfBirth } update, _) when dateOfBirth > update.Today =>
+                PartyReferenceErrors.DateOfBirthAfterToday,
             (UpdatePartyReferenceDetails update, { Id: { } entryId }) =>
                 Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new PartyReferenceUpdated(
                     entryId,
