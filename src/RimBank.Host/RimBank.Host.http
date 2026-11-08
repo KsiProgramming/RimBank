@@ -191,3 +191,55 @@ Idempotency-Key: {{$guid}}
 If-Match: "4"
 
 { "PartyType": "Person" }
+
+### BankRelations BQ (roadmap 1.12, ADR 0035): the second party (a person) is the first party's relationship manager.
+# The employee or unit is loaded on the write side, like a Reference reference. Answers 200 with ETag "5",
+# BankRelationType "RelationshipManager" and RelationshipStartDate "2024-01-01T00:00:00Z".
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/BankRelations/{{register.response.body.$.BankRelationsId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "4"
+
+{
+  "BankRelationType": "relationshipmanager",
+  "BusinessUnitEmployeeReference": { "PartyReference": "{{associate.response.body.$.PartyReferenceDataDirectoryEntryId}}" },
+  "BankRelationReference": {
+    "RelationshipStartDate": { "DateTimeContent": "2024-01-01" },
+    "RelationshipLifecycleStatus": { "StatusDescription": "Active" }
+  }
+}
+
+### Retrieve the BankRelations: the same values, ETag "5". Send If-None-Match: "5" to get 304 Not Modified.
+GET {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/BankRelations/{{register.response.body.$.BankRelationsId}}/Retrieve
+Authorization: Bearer {{token.response.body.$.access_token}}
+
+### A servicing branch must be an organisation, and the kept manager is a person: 422 application/problem+json,
+# "errorCode": "party.referenced-party-type-mismatch", detail "BusinessUnitEmployeeReference.PartyReference must name a
+# party of type Organisation.". Send the group's id as the reference too, and it is accepted.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/BankRelations/{{register.response.body.$.BankRelationsId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "5"
+
+{ "BankRelationType": "ServicingBranch" }
+
+### The party itself as its relationship manager: 422 party.self-reference. Nothing is stored.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/BankRelations/{{register.response.body.$.BankRelationsId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "5"
+
+{ "BusinessUnitEmployeeReference": { "PartyReference": "{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}" } }
+
+### A BIAN part RimBank does not record: 400 party.bank-relations-field-not-supported with
+# errors["BankRelationReference.RelationshipIdentification"]. Nothing is stored.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/BankRelations/{{register.response.body.$.BankRelationsId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "5"
+
+{ "BankRelationReference": { "RelationshipIdentification": { "IdentifierValue": "REL-1" } } }
