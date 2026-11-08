@@ -67,10 +67,15 @@ public sealed record ExchangeDemographicsDetails(
 /// <param name="PartyReferenceId">The Reference the caller named.</param>
 /// <param name="Changes">The changes to apply.</param>
 /// <param name="Today">The UTC date of the update: a date of birth after it is refused.</param>
+/// <param name="ReferencedParties">
+/// The party type of each registered entry the changes reference (1.21, ADR 0034), loaded by the handler from the write
+/// side. A referenced entry missing from it is not registered. <c>null</c> when the changes reference no entry.
+/// </param>
 public sealed record UpdatePartyReferenceDetails(
     PartyReferenceId PartyReferenceId,
     PartyReferenceChanges Changes,
-    DateOnly Today) : PartyReferenceDataDirectoryEntryCommand;
+    DateOnly Today,
+    IReadOnlyDictionary<PartyReferenceDataDirectoryEntryId, PartyType>? ReferencedParties = null) : PartyReferenceDataDirectoryEntryCommand;
 
 public sealed partial record PartyReferenceDataDirectoryEntry
 {
@@ -79,14 +84,18 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// Register is accepted once per entry: a registered entry refuses it with
     /// <c>party.party-already-registered</c>, and a party type other than <see cref="PartyType.Person"/> or
     /// <see cref="PartyType.Organisation"/> is <c>party.party-type-invalid</c>. Update needs a registered entry
-    /// (<c>party.party-not-found</c> otherwise) and always records the refresh, even when the party type is unchanged.
+    /// (<c>party.party-not-found</c> otherwise) and always records the refresh, even when the party type is unchanged; it
+    /// refuses to make an organisation with corporate references a person (<c>party.corporate-references-need-organisation</c>).
     /// Demographics Update and Exchange need a registered entry and its own Demographics id
     /// (<c>party.behavior-qualifier-not-found</c> otherwise). Update always records the resulting details, and only a
     /// change makes them unverified again. Exchange needs recorded details (<c>party.demographics-not-recorded</c>).
     /// Reference Update needs a registered entry and its own Reference id, refuses a date of birth or customer-since date
     /// after today, a resulting customer-since date before the date of birth, and a resulting political exposure
-    /// description without a foreign or domestic exposure (<c>party.reference-invalid</c>), and always records the
-    /// resulting Reference.
+    /// description without a foreign or domestic exposure, or a resulting company officer role without an officer
+    /// (<c>party.reference-invalid</c>). Corporate references need an organisation's entry, and each reference it sets must
+    /// be another registered entry of the right party type (<c>party.corporate-references-need-organisation</c>,
+    /// <c>party.self-reference</c>, <c>party.referenced-party-not-registered</c>,
+    /// <c>party.referenced-party-type-mismatch</c>). It always records the resulting Reference.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -109,6 +118,9 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                 PartyReferenceDataDirectoryEntryErrors.PartyNotFound,
             (UpdatePartyReferenceDataDirectoryEntryDetails { PartyType: { } partyType }, _) when !Enum.IsDefined(partyType) =>
                 PartyReferenceDataDirectoryEntryErrors.PartyTypeInvalid,
+            (UpdatePartyReferenceDataDirectoryEntryDetails { PartyType: PartyReferenceDataDirectory.PartyType.Person }, _)
+                when state.CurrentReference.CurrentCorporateReferences.HasAny =>
+                PartyReferenceErrors.CorporateReferencesNeedOrganisation,
             (UpdatePartyReferenceDataDirectoryEntryDetails update, { Id: { } entryId, PartyType: { } current }) =>
                 Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new PartyReferenceDataDirectoryEntryUpdated(
                     entryId,
@@ -144,9 +156,43 @@ public sealed partial record PartyReferenceDataDirectoryEntry
             (UpdatePartyReferenceDetails { Changes.CustomerSinceDate.Value: { } since } update, _) when since > update.Today =>
                 PartyReferenceErrors.CustomerSinceDateAfterToday,
             (UpdatePartyReferenceDetails update, { Id: { } entryId }) =>
-                DecideReferenceUpdate(entryId, update, state.CurrentReference.Apply(update.Changes)),
+                DecideReferences(entryId, state.PartyType, update, state.CurrentReference.Apply(update.Changes)),
             _ => throw new UnreachableException($"The entry does not decide {command}."),
         };
+
+    // The references to other parties (roadmap 1.21, ADR 0034): only an organisation's entry holds them, and each one the
+    // Update sets names another registered entry of the right party type. The handler loaded those entries from the write
+    // side; references the Update keeps were checked when they were recorded.
+    private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> DecideReferences(
+        PartyReferenceDataDirectoryEntryId entryId,
+        PartyType? partyType,
+        UpdatePartyReferenceDetails update,
+        PartyReferenceDetails updated)
+    {
+        if (updated.CurrentCorporateReferences.HasAny && partyType != PartyReferenceDataDirectory.PartyType.Organisation)
+        {
+            return PartyReferenceErrors.CorporateReferencesNeedOrganisation;
+        }
+
+        foreach (var (field, referenced) in update.Changes.ReferencedEntries())
+        {
+            var expected = field == PartyReferenceFields.CompanyOfficerPartyReference ? PartyReferenceDataDirectory.PartyType.Person : PartyReferenceDataDirectory.PartyType.Organisation;
+            PartyType? actualType = update.ReferencedParties?.TryGetValue(referenced, out var loaded) == true ? loaded : null;
+            var refused = (referenced == entryId, actualType) switch
+            {
+                (true, _) => PartyReferenceErrors.SelfReference(field),
+                (false, null) => PartyReferenceErrors.ReferencedPartyNotRegistered(field),
+                (false, { } actual) when actual != expected => PartyReferenceErrors.ReferencedPartyTypeMismatch(field, expected),
+                _ => null,
+            };
+            if (refused is not null)
+            {
+                return refused;
+            }
+        }
+
+        return DecideReferenceUpdate(entryId, update, updated);
+    }
 
     // The rules that hold across Reference fields are checked on the resulting Reference (roadmap 1.20, ADR 0032), so a
     // partial update cannot leave it inconsistent with values it keeps.
@@ -160,6 +206,8 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                 PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure,
             ({ CustomerSince: { } since }, { } born) when since < born =>
                 PartyReferenceErrors.CustomerSinceDateBeforeDateOfBirth,
+            _ when updated.CurrentCorporateReferences is { CompanyOfficerRole: not null, CompanyOfficer: null } =>
+                PartyReferenceErrors.CompanyOfficerRoleWithoutOfficer,
             _ => Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(
                 new PartyReferenceUpdated(entryId, update.PartyReferenceId, updated)),
         };

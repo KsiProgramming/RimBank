@@ -5,8 +5,8 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <summary>
 /// The record of the entry's Reference Behavior Qualifier, an entity of the entry (ADR 0024), shared by the entry's state
 /// and its view. Roadmap 1.10 records the party identifiers, 1.18 the names, date of birth, nationality and residency,
-/// 1.19 the postal addresses and contact points, and 1.20 the declared legal standing and documents (ADR 0029, ADR 0032).
-/// The references to other parties wait for 1.21.
+/// 1.19 the postal addresses and contact points, 1.20 the declared legal standing and documents, and 1.21 the corporate
+/// customer's references to other parties (ADR 0029, ADR 0032, ADR 0034).
 /// </summary>
 /// <remarks>
 /// The parts added after 1.10 are <c>null</c> when nothing is recorded, so a Reference stored before them (an event or a
@@ -29,6 +29,9 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// The party's declared government-issued document and document directory reference (1.20), or <c>null</c> when none is
 /// recorded.
 /// </param>
+/// <param name="CorporateReferences">
+/// The corporate customer, legal entity, company officer and officer role (1.21), or <c>null</c> when none is recorded.
+/// </param>
 public sealed record PartyReferenceDetails(
     PartyIdentifiers Identifiers,
     PartyNames? Names = null,
@@ -37,8 +40,13 @@ public sealed record PartyReferenceDetails(
     PartyAddresses? Addresses = null,
     PartyContactPoints? ContactPoints = null,
     PartyLegalStanding? LegalStanding = null,
-    PartyDocuments? Documents = null)
+    PartyDocuments? Documents = null,
+    PartyCorporateReferences? CorporateReferences = null)
 {
+    /// <summary>The corporate customer's references: empty when none is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
+    public PartyCorporateReferences CurrentCorporateReferences => CorporateReferences ?? PartyCorporateReferences.Empty;
+
     /// <summary>The party's declared legal standing: empty when none is recorded. Computed, so it is not stored.</summary>
     [JsonIgnore]
     public PartyLegalStanding CurrentLegalStanding => LegalStanding ?? PartyLegalStanding.Empty;
@@ -78,6 +86,7 @@ public sealed record PartyReferenceDetails(
         var contactPoints = CurrentContactPoints.Apply(changes);
         var legalStanding = CurrentLegalStanding.Apply(changes);
         var documents = CurrentDocuments.Apply(changes);
+        var corporateReferences = CurrentCorporateReferences.Apply(changes);
         return new PartyReferenceDetails(
             Identifiers.Apply(changes),
             names.HasAny ? names : null,
@@ -86,6 +95,7 @@ public sealed record PartyReferenceDetails(
             addresses.HasAny ? addresses : null,
             contactPoints.HasAny ? contactPoints : null,
             legalStanding.HasAny ? legalStanding : null,
-            documents.HasAny ? documents : null);
+            documents.HasAny ? documents : null,
+            corporateReferences.HasAny ? corporateReferences : null);
     }
 }

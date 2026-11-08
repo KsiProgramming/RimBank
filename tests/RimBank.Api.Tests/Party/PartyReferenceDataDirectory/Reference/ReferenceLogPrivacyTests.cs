@@ -67,4 +67,43 @@ public sealed class ReferenceLogPrivacyTests(PostgresqlServer server)
             logs.Containing(value).Select(entry => $"{entry.Level} {entry.Category}").ShouldBeEmpty($"'{value}' was logged");
         }
     }
+
+    // Roadmap 1.21 (ADR 0034): who the company's officer is, and in which role, is personal data too. Neither the referenced
+    // entries nor the role reach the logs, on success, on a refused reference or on Retrieve.
+    [Fact]
+    public async Task No_submitted_corporate_reference_or_role_is_logged()
+    {
+        var logs = new CapturedLogs();
+        await using var host = await server.StartHostAsync(logs: logs);
+        var company = await RegisterAsync(host, "Organisation");
+        var group = await RegisterAsync(host, "Organisation");
+        var officer = await RegisterAsync(host);
+        var references = $$"""
+            {
+              "CorporateCustomerReference": { "PartyReference": "{{group.PartyReferenceDataDirectoryEntryId}}" },
+              "CompanyOfficerReference": { "PartyReference": "{{officer.PartyReferenceDataDirectoryEntryId}}" },
+              "CompanyOfficerRole": "Chief Risk Officer"
+            }
+            """;
+
+        await PutReferenceOkAsync(host, UpdateUrl(company), references, "\"1\"", "\"2\"");
+        await PutProblemAsync(
+            host,
+            UpdateUrl(company),
+            $$"""{ "CompanyOfficerReference": { "PartyReference": "{{group.PartyReferenceDataDirectoryEntryId}}" } }""",
+            "\"2\"",
+            422);
+        await host.Alba.Scenario(_ =>
+        {
+            _.Get.Url(RetrieveUrl(company));
+            _.WithRequestHeader(HeaderNames.Authorization, "Bearer " + TestTokens.Issue());
+            _.StatusCodeShouldBeOk();
+        });
+
+        logs.Containing($"/Reference/{company.ReferenceId}/Update").ShouldNotBeEmpty();
+        foreach (var value in new[] { group.PartyReferenceDataDirectoryEntryId.ToString(), officer.PartyReferenceDataDirectoryEntryId.ToString(), "Chief Risk Officer" })
+        {
+            logs.Containing(value).Select(entry => $"{entry.Level} {entry.Category}").ShouldBeEmpty($"'{value}' was logged");
+        }
+    }
 }

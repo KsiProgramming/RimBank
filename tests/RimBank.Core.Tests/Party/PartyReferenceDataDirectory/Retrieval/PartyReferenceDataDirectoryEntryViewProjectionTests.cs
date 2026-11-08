@@ -134,6 +134,38 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 Reference: FullestReferenceDetails));
 
     [Fact]
+    public void Corporate_and_officer_references_show_in_the_reference_section() =>
+        EntryViewSpecification.Given(
+                Registered(PartyType.Organisation),
+                ReferenceUpdated(FullestReferenceDetails),
+                ReferenceUpdated(FullestReferenceDetails with { CorporateReferences = CorporateReferences }))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 3,
+                PartyType.Organisation,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Reference: FullestReferenceDetails with { CorporateReferences = CorporateReferences }));
+
+    [Fact]
+    public void A_reference_event_stored_before_1_21_still_projects_with_no_corporate_references()
+    {
+        // A PartyReferenceUpdated as roadmap 1.20 stored it: no CorporateReferences member.
+        var stored = JsonSerializer.SerializeToNode(ReferenceUpdated(FullestReferenceDetails), _json).ShouldNotBeNull();
+        stored["Details"].ShouldNotBeNull().AsObject().Remove("CorporateReferences").ShouldBeTrue();
+        var updated = stored.Deserialize<PartyReferenceUpdated>(_json).ShouldNotBeNull();
+
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), updated }
+            .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
+            .ShouldNotBeNull();
+
+        view.CurrentReference.ShouldBe(FullestReferenceDetails);
+        view.CurrentReference.CurrentCorporateReferences.ShouldBe(PartyCorporateReferences.Empty);
+    }
+
+    [Fact]
     public void A_reference_event_stored_before_1_20_still_projects_with_no_legal_standing_or_documents()
     {
         // A PartyReferenceUpdated as roadmap 1.19 stored it: no LegalStanding or Documents member.

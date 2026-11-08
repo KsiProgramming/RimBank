@@ -7,9 +7,8 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// <summary>
 /// The body of <c>PUT …/{partyreferencedatadirectoryid}/Reference/{referenceid}/Update</c>: BIAN's
 /// <c>UpdateReference</c> with its property names (ADR 0024, ADR 0029), as a partial update of the Reference. A value
-/// left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. The four BIAN
-/// references to other parties are refused until the roadmap phase that records them (1.21, ADR 0032); properties that
-/// are not BIAN's are ignored.
+/// left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. Parts of BIAN objects
+/// RimBank does not record are refused; properties that are not BIAN's are ignored.
 /// </summary>
 public sealed record UpdatePartyReferenceRequest
 {
@@ -99,6 +98,35 @@ public sealed record UpdatePartyReferenceRequest
     [JsonPropertyName("DocumentDirectoryEntryInstanceReference")]
     public DocumentDirectoryEntryModel? DocumentDirectoryEntryInstanceReference { get; init; }
 
+    /// <summary>
+    /// BIAN <c>CorporateCustomerReference</c> (1.21, ADR 0034): the company, as the id of a registered organisation in its
+    /// <c>PartyReference</c>.
+    /// </summary>
+    [JsonPropertyName("CorporateCustomerReference")]
+    public InvolvedPartyModel? CorporateCustomerReference { get; init; }
+
+    /// <summary>
+    /// BIAN <c>CorporateCustomerLegalEntityReference</c> (1.21): the legal entity, as the id of a registered organisation in
+    /// its <c>PartyReference</c>.
+    /// </summary>
+    [JsonPropertyName("CorporateCustomerLegalEntityReference")]
+    public InvolvedPartyModel? CorporateCustomerLegalEntityReference { get; init; }
+
+    /// <summary>
+    /// BIAN <c>CompanyOfficerReference</c> (1.21): the company officer, as the id of a registered person in its
+    /// <c>PartyReference</c>.
+    /// </summary>
+    [JsonPropertyName("CompanyOfficerReference")]
+    public InvolvedPartyModel? CompanyOfficerReference { get; init; }
+
+    /// <summary>
+    /// BIAN <c>CompanyOfficerRole</c> (1.21, Max35Text): the officer's role as a plain string, for example <c>Director</c>.
+    /// BIAN types it as a <c>Party</c>, which has no role property (ADR 0034): an object is read for its parts, which are
+    /// all refused, and an empty one clears the role.
+    /// </summary>
+    [JsonPropertyName("CompanyOfficerRole")]
+    public JsonElement? CompanyOfficerRole { get; init; }
+
     /// <summary>Every other property sent: the BIAN Reference fields RimBank does not record yet are found here.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Other { get; init; }
@@ -127,6 +155,10 @@ public sealed record UpdatePartyReferenceRequest
         .. PartsOf(PartyReferenceFields.SocialNetworkContacts, SocialNetworkContacts?.Other),
         .. GovernmentIssuedDocumentDetails?.UnsupportedParts(PartyReferenceFields.GovernmentIssuedDocumentDetails) ?? [],
         .. PartsOf(PartyReferenceFields.DocumentDirectoryEntryInstanceReference, DocumentDirectoryEntryInstanceReference?.Other),
+        .. PartsOf(PartyReferenceFields.CorporateCustomerReference, CorporateCustomerReference?.Other),
+        .. PartsOf(PartyReferenceFields.CorporateCustomerLegalEntityReference, CorporateCustomerLegalEntityReference?.Other),
+        .. PartsOf(PartyReferenceFields.CompanyOfficerReference, CompanyOfficerReference?.Other),
+        .. RolePartsOf(CompanyOfficerRole),
     ];
 
     /// <summary>
@@ -168,9 +200,40 @@ public sealed record UpdatePartyReferenceRequest
                     GovernmentIssuedDocumentDetails?.ToInput(),
                     DocumentDirectoryEntryInstanceReference is { } directory
                         ? directory.DocumentDirectoryEntryIdentification ?? string.Empty
-                        : null),
+                        : null,
+                    PartyReferenceOf(CorporateCustomerReference),
+                    PartyReferenceOf(CorporateCustomerLegalEntityReference),
+                    PartyReferenceOf(CompanyOfficerReference),
+                    RoleOf(CompanyOfficerRole)),
                 UnsupportedFields())
             .Map(changes => new UpdatePartyReference(entryId, referenceId, expectedVersion, changes, idempotencyKey));
+
+    private static string? PartyReferenceOf(InvolvedPartyModel? reference) =>
+        reference switch
+        {
+            null => null,
+            _ => reference.PartyReference ?? string.Empty,
+        };
+
+    // A string is the role; null is not sent; an object (the BIAN Party shape) has no role, so it clears the role and its
+    // parts are reported as unsupported; any other JSON value is read as its text, which the role then checks.
+    private static string? RoleOf(JsonElement? role) =>
+        role switch
+        {
+            null or { ValueKind: JsonValueKind.Null or JsonValueKind.Undefined } => null,
+            { ValueKind: JsonValueKind.String } text => text.GetString(),
+            { ValueKind: JsonValueKind.Object } => string.Empty,
+            { } other => other.GetRawText(),
+        };
+
+    private static IEnumerable<string> RolePartsOf(JsonElement? role) =>
+        role switch
+        {
+            { ValueKind: JsonValueKind.Object } parts => parts.EnumerateObject()
+                .Where(part => part.Value.ValueKind != JsonValueKind.Null)
+                .Select(part => $"{PartyReferenceFields.CompanyOfficerRole}.{part.Name}"),
+            _ => [],
+        };
 
     private static IEnumerable<string> AddressPartsOf(string field, PostalAddressModel? address) =>
         PartsOf(field, address?.Other).Concat(PartsOf($"{field}.{PostalAddress.CountryPart}", address?.Country?.Other));

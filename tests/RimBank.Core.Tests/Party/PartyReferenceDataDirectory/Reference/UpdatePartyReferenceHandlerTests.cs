@@ -114,6 +114,100 @@ public sealed class UpdatePartyReferenceHandlerTests
             .ShouldBe(acknowledged);
     }
 
+    [Fact]
+    public async Task The_referenced_entries_are_loaded_from_the_write_side_and_recorded()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Organisation));
+        _directory.Seed(CompanyId, RegisteredEntry(CompanyId, PartyType.Organisation));
+        _directory.Seed(OfficerId, RegisteredEntry(OfficerId, PartyType.Person));
+
+        var acknowledged = (await Update(Reference, expectedVersion: 1, CorporateReferenceChangesTo(CorporateReferences))).Value;
+
+        acknowledged.Reference.CorporateReferences.ShouldBe(CorporateReferences);
+        _directory.StreamOf(EntryId).Count.ShouldBe(2);
+        _directory.StreamOf(CompanyId).ShouldBe([RegisteredEntry(CompanyId, PartyType.Organisation)]);
+    }
+
+    [Fact]
+    public async Task A_referenced_entry_that_is_not_registered_is_refused_and_nothing_is_appended()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Organisation));
+
+        var result = await Update(Reference, expectedVersion: 1, PartyReferenceChanges.None with { CorporateCustomer = new(CompanyId) });
+
+        result.Error.Code.ShouldBe("party.referenced-party-not-registered");
+        result.Error.Kind.ShouldBe(ErrorKind.BusinessRule);
+        _directory.StreamOf(EntryId).ShouldBe([Registered(PartyType.Organisation)]);
+    }
+
+    [Fact]
+    public async Task An_association_id_given_as_a_reference_is_not_registered_never_a_failure()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Organisation));
+        var associationId = PartyAssociationId.From(Guid.CreateVersion7(OpenDate.AddMinutes(9)));
+        _directory.Seed(associationId, new PartyAssociationRegistered(
+            associationId,
+            EntryId,
+            CompanyId,
+            PartyRelationshipType.PartyIsParentOfParty,
+            null));
+
+        var result = await Update(
+            Reference,
+            expectedVersion: 1,
+            PartyReferenceChanges.None with { LegalEntity = new(PartyReferenceDataDirectoryEntryId.From(associationId.Value)) });
+
+        result.Error.Code.ShouldBe("party.referenced-party-not-registered");
+    }
+
+    [Fact]
+    public async Task A_reference_to_the_entry_itself_is_refused()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Organisation));
+
+        var result = await Update(Reference, expectedVersion: 1, PartyReferenceChanges.None with { CorporateCustomer = new(EntryId) });
+
+        result.Error.Code.ShouldBe("party.self-reference");
+    }
+
+    [Fact]
+    public async Task The_party_types_loaded_are_the_ones_the_decision_checks()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Organisation));
+        _directory.Seed(OfficerId, RegisteredEntry(OfficerId, PartyType.Organisation), new PartyReferenceDataDirectoryEntryUpdated(OfficerId, PartyType.Person, RefreshDate));
+        _directory.Seed(CompanyId, RegisteredEntry(CompanyId, PartyType.Organisation));
+
+        (await Update(Reference, expectedVersion: 1, PartyReferenceChanges.None with { CompanyOfficer = new(OfficerId) })).IsSuccess.ShouldBeTrue();
+        (await Update(Reference, expectedVersion: 2, PartyReferenceChanges.None with { CompanyOfficer = new(CompanyId) }))
+            .Error.Code.ShouldBe("party.referenced-party-type-mismatch");
+    }
+
+    [Fact]
+    public async Task A_person_s_entry_cannot_record_corporate_references()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Person));
+        _directory.Seed(CompanyId, RegisteredEntry(CompanyId, PartyType.Organisation));
+
+        var result = await Update(Reference, expectedVersion: 1, PartyReferenceChanges.None with { CorporateCustomer = new(CompanyId) });
+
+        result.Error.Code.ShouldBe("party.corporate-references-need-organisation");
+    }
+
+    [Fact]
+    public async Task A_kept_reference_is_not_checked_again()
+    {
+        // The officer was recorded when it was registered; the stream here holds a reference to an entry the directory does
+        // not know, so the Update could only pass if the kept reference is not loaded again.
+        _directory.Seed(
+            EntryId,
+            Registered(PartyType.Organisation),
+            ReferenceUpdated(new PartyReferenceDetails(PartyIdentifiers.Empty, CorporateReferences: CorporateReferences)));
+
+        var result = await Update(Reference, expectedVersion: 2, PartyReferenceChanges.None with { PartyFullLegalName = new(Names.FullLegalName) });
+
+        result.Value.Reference.CorporateReferences.ShouldBe(CorporateReferences);
+    }
+
     private static UpdatePartyReference Command(PartyReferenceId referenceId, long expectedVersion, PartyReferenceChanges? changes = null) =>
         new(EntryId, referenceId, expectedVersion, changes ?? ReferenceChangesTo(Identifiers), IdempotencyKey.From("reference-1"));
 

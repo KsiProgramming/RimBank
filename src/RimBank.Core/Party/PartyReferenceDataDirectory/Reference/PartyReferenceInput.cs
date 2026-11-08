@@ -31,6 +31,13 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// BIAN <c>DocumentDirectoryEntryInstanceReference.DocumentDirectoryEntryIdentification</c> (1.20). An object with no
 /// value is sent as blank.
 /// </param>
+/// <param name="CorporateCustomerReference">
+/// BIAN <c>CorporateCustomerReference.PartyReference</c> (1.21, ADR 0034): a directory entry id. An object with no value
+/// is sent as blank.
+/// </param>
+/// <param name="CorporateCustomerLegalEntityReference">BIAN <c>CorporateCustomerLegalEntityReference.PartyReference</c> (1.21).</param>
+/// <param name="CompanyOfficerReference">BIAN <c>CompanyOfficerReference.PartyReference</c> (1.21).</param>
+/// <param name="CompanyOfficerRole">BIAN <c>CompanyOfficerRole</c> (1.21): the role text, for example <c>Director</c>.</param>
 public sealed record PartyReferenceInput(
     string? TaxIdentificationNumber = null,
     string? NationalRegistrationNumber = null,
@@ -52,7 +59,11 @@ public sealed record PartyReferenceInput(
     string? PoliticalExposureDescription = null,
     string? CustomerSinceDate = null,
     PartyDocumentInput? GovernmentIssuedDocument = null,
-    string? DocumentDirectoryEntryIdentification = null)
+    string? DocumentDirectoryEntryIdentification = null,
+    string? CorporateCustomerReference = null,
+    string? CorporateCustomerLegalEntityReference = null,
+    string? CompanyOfficerReference = null,
+    string? CompanyOfficerRole = null)
 {
     /// <summary>Nothing sent: every value is kept.</summary>
     public static PartyReferenceInput None { get; } = new();

@@ -125,6 +125,41 @@ internal static class EntryExamples
     public static readonly PartyReferenceDetails FullestReferenceDetails =
         CompleteReferenceDetails with { LegalStanding = LegalStanding, Documents = Documents };
 
+    // Two other entries a Reference can name (1.21): an organisation (the company and its legal entity) and a person (the
+    // company officer), registered at the same time as the entry.
+    public static readonly PartyReferenceDataDirectoryEntryId CompanyId =
+        PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(OpenDate.AddMinutes(1)));
+
+    public static readonly PartyReferenceDataDirectoryEntryId OfficerId =
+        PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(OpenDate.AddMinutes(2)));
+
+    public static PartyRegistered RegisteredEntry(PartyReferenceDataDirectoryEntryId entryId, PartyType partyType) =>
+        new(entryId, partyType, OpenDate, Demographics, Reference, BankRelations);
+
+    public static readonly PartyCorporateReferences CorporateReferences = new(
+        CompanyId,
+        CompanyId,
+        OfficerId,
+        CompanyOfficerRole.TryCreate("Director").Value);
+
+    // The changes that set every 1.21 reference to the given ones.
+    public static PartyReferenceChanges CorporateReferenceChangesTo(PartyCorporateReferences references) =>
+        PartyReferenceChanges.None with
+        {
+            CorporateCustomer = new(references.CorporateCustomer),
+            LegalEntity = new(references.LegalEntity),
+            CompanyOfficer = new(references.CompanyOfficer),
+            CompanyOfficerRole = new(references.CompanyOfficerRole),
+        };
+
+    // The party types of the company and the officer, as the Reference handler loads them.
+    public static readonly IReadOnlyDictionary<PartyReferenceDataDirectoryEntryId, PartyType> ReferencedParties =
+        new Dictionary<PartyReferenceDataDirectoryEntryId, PartyType>
+        {
+            [CompanyId] = PartyType.Organisation,
+            [OfficerId] = PartyType.Person,
+        };
+
     // The changes that set every value of the details. The 1.19 and 1.20 parts are only sent when the details have them,
     // so the changes of an earlier-shaped Reference stay the ones its own phase's request makes.
     public static PartyReferenceChanges ReferenceChangesTo(PartyReferenceDetails details) =>
@@ -148,10 +183,16 @@ internal static class EntryExamples
             CustomerSinceDate = details.LegalStanding is { } since ? new(since.CustomerSince) : null,
             GovernmentIssuedDocument = details.Documents is { } document ? new(document.GovernmentIssuedDocument) : null,
             DocumentDirectoryEntry = details.Documents is { } directory ? new(directory.DocumentDirectoryEntry) : null,
+            CorporateCustomer = details.CorporateReferences is { } customer ? new(customer.CorporateCustomer) : null,
+            LegalEntity = details.CorporateReferences is { } legal ? new(legal.LegalEntity) : null,
+            CompanyOfficer = details.CorporateReferences is { } officer ? new(officer.CompanyOfficer) : null,
+            CompanyOfficerRole = details.CorporateReferences is { } role ? new(role.CompanyOfficerRole) : null,
         };
 
-    public static UpdatePartyReferenceDetails UpdateReference(PartyReferenceChanges? changes = null) =>
-        new(Reference, changes ?? ReferenceChangesTo(Identifiers), Today);
+    public static UpdatePartyReferenceDetails UpdateReference(
+        PartyReferenceChanges? changes = null,
+        IReadOnlyDictionary<PartyReferenceDataDirectoryEntryId, PartyType>? referencedParties = null) =>
+        new(Reference, changes ?? ReferenceChangesTo(Identifiers), Today, referencedParties);
 
     public static PartyReferenceUpdated ReferenceUpdated(PartyReferenceDetails? details = null) =>
         new(EntryId, Reference, details ?? ReferenceDetails);

@@ -4,7 +4,7 @@ using FsCheck.Xunit;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
-// The partial-update law of the Reference (roadmap 1.20): over every recorded field (1.10 to 1.20), an omitted change keeps
+// The partial-update law of the Reference (roadmap 1.20): over every recorded field (1.10 to 1.21), an omitted change keeps
 // the current value, a given one sets or clears it, and applying the same changes twice is the same as once.
 public sealed class PartyReferencePartialUpdateProperties
 {
@@ -32,6 +32,10 @@ public sealed class PartyReferencePartialUpdateProperties
         ("CustomerSinceDate", d => d.CurrentLegalStanding.CustomerSince, c => Of(c.CustomerSinceDate)),
         ("GovernmentIssuedDocumentDetails", d => d.CurrentDocuments.GovernmentIssuedDocument, c => Of(c.GovernmentIssuedDocument)),
         ("DocumentDirectoryEntryInstanceReference", d => d.CurrentDocuments.DocumentDirectoryEntry, c => Of(c.DocumentDirectoryEntry)),
+        ("CorporateCustomerReference", d => d.CurrentCorporateReferences.CorporateCustomer, c => Of(c.CorporateCustomer)),
+        ("CorporateCustomerLegalEntityReference", d => d.CurrentCorporateReferences.LegalEntity, c => Of(c.LegalEntity)),
+        ("CompanyOfficerReference", d => d.CurrentCorporateReferences.CompanyOfficer, c => Of(c.CompanyOfficer)),
+        ("CompanyOfficerRole", d => d.CurrentCorporateReferences.CompanyOfficerRole, c => Of(c.CompanyOfficerRole)),
     ];
 
     [Property]
@@ -69,7 +73,7 @@ public sealed class PartyReferencePartialUpdateProperties
 
     [Fact]
     public void Every_recorded_bian_reference_field_is_covered() =>
-        // 24 BIAN UpdateReference fields, less the four staged for 1.21; GovernmentIssuedIdentityReference holds two values.
+        // 24 BIAN UpdateReference fields, less the staged ones (none since 1.21); GovernmentIssuedIdentityReference holds two values.
         _fields.Length.ShouldBe(24 - PartyReferenceFields.Staged.Count + 1);
 
     private static (bool Sent, object? Value) Of<TValue>(PartyReferenceChange<TValue>? change) =>

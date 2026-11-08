@@ -117,6 +117,39 @@ public sealed class PartyReferenceRoundTripTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task Corporate_references_are_checked_on_the_write_side_stored_as_ids_and_rebuilt_into_the_view()
+    {
+        await using var host = await server.StartHostAsync();
+        var company = await RegisterAsync(host.Bus);
+        var group = await RegisterAsync(host.Bus);
+        var officer = (await host.Bus.InvokeAsync<Result<RegisterPartyAcknowledged>>(new RegisterParty(PartyType.Person, NewKey()), Cancellation)).Value;
+        var references = new PartyCorporateReferences(group.EntryId, group.EntryId, officer.EntryId, CompanyOfficerRole.TryCreate("Director").Value);
+
+        var updated = (await UpdateAsync(host.Bus, company, 1, NewKey(), PartyReferenceChanges.None with
+        {
+            CorporateCustomer = new(references.CorporateCustomer),
+            LegalEntity = new(references.LegalEntity),
+            CompanyOfficer = new(references.CompanyOfficer),
+            CompanyOfficerRole = new(references.CompanyOfficerRole),
+        })).Value;
+        var mismatch = await UpdateAsync(host.Bus, company, 2, NewKey(), PartyReferenceChanges.None with { CompanyOfficer = new(group.EntryId) });
+        await host.Store.RebuildViewAsync(
+            ViewRegistration.ProjectionName<PartyReferenceDataDirectoryEntryViewProjection>(),
+            TimeSpan.FromSeconds(60),
+            Cancellation);
+        var rebuilt = await host.Enquiry.FindEntryAsync(company.EntryId, Cancellation);
+
+        updated.Reference.CorporateReferences.ShouldBe(references);
+        mismatch.Error.Code.ShouldBe("party.referenced-party-type-mismatch");
+        rebuilt.ShouldNotBeNull().Version.ShouldBe(2);
+        rebuilt.CurrentReference.CurrentCorporateReferences.ShouldBe(references);
+        (await host.ScalarAsync<string>(
+                $"SELECT data #>> '{{Details,CorporateReferences,CompanyOfficer}}' FROM {Schema}.mt_events "
+                + $"WHERE stream_id = '{company.EntryId.Value}' AND version = 2"))
+            .ShouldBe(officer.EntryId.ToString());
+    }
+
+    [Fact]
     public async Task A_political_exposure_description_without_exposure_appends_nothing()
     {
         await using var host = await server.StartHostAsync();

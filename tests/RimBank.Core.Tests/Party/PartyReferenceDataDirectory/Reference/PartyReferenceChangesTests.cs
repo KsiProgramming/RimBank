@@ -3,8 +3,8 @@ using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
-// Reading the changes a Reference Update asks for (roadmap 1.10, 1.18 and 1.19, ADR 0029, ADR 0031): null keeps, blank clears, every
-// invalid value is named with its BIAN field, and the fields RimBank does not record yet are refused with their phase.
+// Reading the changes a Reference Update asks for (roadmap 1.10 to 1.21, ADR 0029, ADR 0031, ADR 0032, ADR 0034): null
+// keeps, blank clears, every invalid value is named with its BIAN field, and the fields RimBank does not record are refused.
 public sealed class PartyReferenceChangesTests
 {
     [Fact]
@@ -175,15 +175,73 @@ public sealed class PartyReferenceChangesTests
             .Error.FieldErrors.ShouldNotBeNull().Keys.ShouldBe(["ResidencyStatus.StatusDescription"]);
 
     [Fact]
-    public void A_staged_field_is_refused_with_the_phase_that_adds_it()
-    {
-        var error = PartyReferenceChanges.Create(PartyReferenceInput.None, ["CompanyOfficerRole", "CorporateCustomerReference"]).Error;
+    public void Given_corporate_and_officer_references_are_read_into_entry_ids_and_the_role() =>
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    CorporateCustomerReference: $" {CompanyId} ",
+                    CorporateCustomerLegalEntityReference: CompanyId.ToString(),
+                    CompanyOfficerReference: OfficerId.ToString(),
+                    CompanyOfficerRole: "  Director "),
+                [])
+            .Value.ShouldBe(CorporateReferenceChangesTo(CorporateReferences));
 
-        error.Kind.ShouldBe(ErrorKind.Validation);
-        error.Code.ShouldBe("party.reference-field-not-supported");
-        var fieldErrors = error.FieldErrors.ShouldNotBeNull();
-        fieldErrors["CompanyOfficerRole"].ShouldHaveSingleItem().ShouldContain("1.21");
-        fieldErrors["CorporateCustomerReference"].ShouldHaveSingleItem().ShouldContain("1.21");
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void A_blank_reference_or_role_clears_it(string blank) =>
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    CorporateCustomerReference: blank,
+                    CorporateCustomerLegalEntityReference: blank,
+                    CompanyOfficerReference: blank,
+                    CompanyOfficerRole: blank),
+                [])
+            .Value.ShouldBe(PartyReferenceChanges.None with
+            {
+                CorporateCustomer = new(null),
+                LegalEntity = new(null),
+                CompanyOfficer = new(null),
+                CompanyOfficerRole = new(null),
+            });
+
+    [Fact]
+    public void Every_invalid_reference_and_role_is_named_with_its_bian_path()
+    {
+        var error = PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    CorporateCustomerReference: "ACME-1",
+                    CorporateCustomerLegalEntityReference: Guid.Empty.ToString(),
+                    CompanyOfficerReference: Guid.NewGuid().ToString(), // version 4: not an id the directory issues
+                    CompanyOfficerRole: new string('r', 36)),
+                [])
+            .Error;
+
+        error.Code.ShouldBe("party.reference-invalid");
+        error.FieldErrors.Keys.Order(StringComparer.Ordinal).ShouldBe(
+        [
+            "CompanyOfficerReference.PartyReference",
+            "CompanyOfficerRole",
+            "CorporateCustomerLegalEntityReference.PartyReference",
+            "CorporateCustomerReference.PartyReference",
+        ]);
+    }
+
+    [Fact]
+    public void The_referenced_entries_are_the_ones_the_changes_set_with_their_bian_paths()
+    {
+        var changes = PartyReferenceChanges.None with
+        {
+            CorporateCustomer = new(CompanyId),
+            LegalEntity = new(null),
+            CompanyOfficer = new(OfficerId),
+        };
+
+        changes.ReferencedEntries().ShouldBe(
+        [
+            ("CorporateCustomerReference.PartyReference", CompanyId),
+            ("CompanyOfficerReference.PartyReference", OfficerId),
+        ]);
+        PartyReferenceChanges.None.ReferencedEntries().ShouldBeEmpty();
     }
 
     [Theory]
@@ -202,6 +260,10 @@ public sealed class PartyReferenceChangesTests
     [InlineData("GovernmentIssuedDocumentDetails.DocumentReference.DocumentIdentification.IdentifierIssuerReference")]
     [InlineData("GovernmentIssuedDocumentDetails.DocumentReference.DocumentValidityPeriod.ToDateTime.TimeZoneCode")]
     [InlineData("DocumentDirectoryEntryInstanceReference.DirectoryEntryStatus")]
+    [InlineData("CorporateCustomerReference.InvolvementReference")]
+    [InlineData("CorporateCustomerLegalEntityReference.InvolvementReference")]
+    [InlineData("CompanyOfficerReference.InvolvementReference")]
+    [InlineData("CompanyOfficerRole.Identification")]
     public void A_field_no_phase_adds_is_refused_without_a_phase(string field) =>
         PartyReferenceChanges.Create(PartyReferenceInput.None, [field]).Error
             .FieldErrors.ShouldNotBeNull()[field]
@@ -209,55 +271,47 @@ public sealed class PartyReferenceChangesTests
 
     [Fact]
     public void Unsupported_fields_are_refused_before_the_values_are_checked() =>
-        PartyReferenceChanges.Create(new PartyReferenceInput(new string('1', 36), DateofBirth: "garbage"), ["CompanyOfficerRole"]).Error.Code
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(new string('1', 36), DateofBirth: "garbage"),
+                ["CompanyOfficerReference.InvolvementReference"])
+            .Error.Code
             .ShouldBe("party.reference-field-not-supported");
 
     [Fact]
-    public void Every_bian_reference_field_is_either_recorded_or_staged()
+    public void Every_bian_reference_field_is_recorded()
     {
         // The 24 top-level fields of BIAN UpdateReference (PartyReferenceDataDirectory.yaml): two are recorded from 1.10,
-        // six from 1.18, six from 1.19 and six from 1.20; the four references to other parties wait for 1.21 (ADR 0032).
-        PartyReferenceFields.Staged.Count.ShouldBe(4);
-        PartyReferenceFields.Staged.Keys.ShouldNotContain(PartyReferenceFields.GovernmentIssuedIdentityReference);
-        PartyReferenceFields.Staged.Keys.ShouldNotContain(PartyReferenceFields.PartyLegalEntityReference);
-        string[] recordedIn118 =
+        // six from 1.18, six from 1.19, six from 1.20 and the four references to other parties from 1.21 (ADR 0034).
+        string[] recorded =
         [
+            PartyReferenceFields.GovernmentIssuedIdentityReference,
+            PartyReferenceFields.PartyLegalEntityReference,
             PartyReferenceFields.PartyFullLegalName,
             PartyReferenceFields.PartyNameSalutation,
             PartyReferenceFields.DateofBirth,
             PartyReferenceFields.Nationality,
             PartyReferenceFields.PartyCountryOfResidence,
             PartyReferenceFields.ResidencyStatus,
-        ];
-        PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn118.Contains(field));
-        string[] recordedIn119 =
-        [
             PartyReferenceFields.ResidentialAddress,
             PartyReferenceFields.PartyAddress,
             PartyReferenceFields.CorporateAddress,
             PartyReferenceFields.EMailAddress,
             PartyReferenceFields.CellPhoneNumber,
             PartyReferenceFields.SocialNetworkContacts,
-        ];
-        PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn119.Contains(field));
-        string[] recordedIn120 =
-        [
             PartyReferenceFields.PartyLegalStructure,
             PartyReferenceFields.PoliticalExposureType,
             PartyReferenceFields.PoliticalExposureDescriptionRecord,
             PartyReferenceFields.CustomerSinceDate,
             PartyReferenceFields.GovernmentIssuedDocumentDetails,
             PartyReferenceFields.DocumentDirectoryEntryInstanceReference,
+            PartyReferenceFields.CorporateCustomerReference,
+            PartyReferenceFields.CorporateCustomerLegalEntityReference,
+            PartyReferenceFields.CompanyOfficerReference,
+            PartyReferenceFields.CompanyOfficerRole,
         ];
-        PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn120.Contains(field));
-        PartyReferenceFields.Staged.Keys.Order(StringComparer.Ordinal).ShouldBe(
-        [
-            "CompanyOfficerReference",
-            "CompanyOfficerRole",
-            "CorporateCustomerLegalEntityReference",
-            "CorporateCustomerReference",
-        ]);
-        PartyReferenceFields.Staged.Values.Distinct().ShouldBe(["1.21"]);
+
+        recorded.Distinct(StringComparer.Ordinal).Count().ShouldBe(24);
+        PartyReferenceFields.Staged.ShouldBeEmpty();
     }
 
     [Fact]

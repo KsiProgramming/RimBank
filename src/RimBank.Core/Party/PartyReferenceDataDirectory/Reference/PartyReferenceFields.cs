@@ -117,6 +117,33 @@ public static class PartyReferenceFields
     public const string DocumentDirectoryEntryIdentification =
         DocumentDirectoryEntryInstanceReference + "." + DocumentDirectoryEntryIdentificationPart;
 
+    /// <summary>BIAN <c>CorporateCustomerReference</c> (1.21), an <c>Involvedparty</c> object.</summary>
+    public const string CorporateCustomerReference = "CorporateCustomerReference";
+
+    /// <summary>BIAN <c>CorporateCustomerLegalEntityReference</c> (1.21), an <c>Involvedparty</c> object.</summary>
+    public const string CorporateCustomerLegalEntityReference = "CorporateCustomerLegalEntityReference";
+
+    /// <summary>BIAN <c>CompanyOfficerReference</c> (1.21), an <c>Involvedparty</c> object.</summary>
+    public const string CompanyOfficerReference = "CompanyOfficerReference";
+
+    /// <summary>BIAN <c>CompanyOfficerRole</c> (1.21), read as the role text (ADR 0034).</summary>
+    public const string CompanyOfficerRole = "CompanyOfficerRole";
+
+    /// <summary>The part of a BIAN <c>Involvedparty</c> object RimBank records: the referenced directory entry.</summary>
+    public const string PartyReferencePart = "PartyReference";
+
+    /// <summary>The part of a BIAN <c>Involvedparty</c> object RimBank refuses: the role is in <see cref="CompanyOfficerRole"/>.</summary>
+    public const string InvolvementReferencePart = "InvolvementReference";
+
+    /// <summary>BIAN <c>CorporateCustomerReference.PartyReference</c>.</summary>
+    public const string CorporateCustomerPartyReference = CorporateCustomerReference + "." + PartyReferencePart;
+
+    /// <summary>BIAN <c>CorporateCustomerLegalEntityReference.PartyReference</c>.</summary>
+    public const string LegalEntityPartyReference = CorporateCustomerLegalEntityReference + "." + PartyReferencePart;
+
+    /// <summary>BIAN <c>CompanyOfficerReference.PartyReference</c>.</summary>
+    public const string CompanyOfficerPartyReference = CompanyOfficerReference + "." + PartyReferencePart;
+
     /// <summary>The only part of a BIAN <c>Country</c> object RimBank records.</summary>
     public const string CountryCodePart = "Code";
 
@@ -128,13 +155,9 @@ public static class PartyReferenceFields
 
     /// <summary>
     /// Every top-level BIAN <c>UpdateReference</c> field RimBank does not record yet, with the roadmap phase that will
-    /// record it (ADR 0029). The four references to other parties wait for the Associations BQ (1.11, ADR 0032).
+    /// record it (ADR 0029). Empty since 1.21, which recorded the last four (ADR 0034); a later BIAN release that adds a
+    /// field stages it here.
     /// </summary>
-    public static FrozenDictionary<string, string> Staged { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["CorporateCustomerReference"] = "1.21",
-        ["CorporateCustomerLegalEntityReference"] = "1.21",
-        ["CompanyOfficerReference"] = "1.21",
-        ["CompanyOfficerRole"] = "1.21",
-    }.ToFrozenDictionary(StringComparer.Ordinal);
+    public static FrozenDictionary<string, string> Staged { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal).ToFrozenDictionary(StringComparer.Ordinal);
 }
