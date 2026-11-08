@@ -114,7 +114,7 @@ Once the six fields leave `Staged`, an adapter that did not map them would drop 
   - the Update with the 1.20 payload, using `If-Match` from the previous answer;
   - a Retrieve, and a 304 with `If-None-Match`;
   - an error example with the expected Problem Details as a comment.
-- [ ] `docs/adr/0032-reference-legal-standing-and-documents.md`, from `template.md`.
+- [ ] `docs/adr/0032-reference-legal-standing-and-documents.md`, from `template.md`. It opens with the ownership rule (declared, not assessed; assessments go to a future KYC context), then gives the field rules.
 - [ ] Amend ADR 0029 (the 1.20 table, the staged table moved to 1.21, the pin count, the PII list) and ADR 0024 (the Reference paragraph).
 - [ ] `specs/tech-stack.md` §3.4: add the new files to the `Reference/` tree.
 - [ ] `specs/roadmap.md`:

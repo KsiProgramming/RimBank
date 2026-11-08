@@ -77,6 +77,6 @@ As agreed in the interview, the corporate customer, legal entity and officer ref
 ## Merge criteria
 - [ ] All checks above pass in CI.
 - [ ] Roadmap: 1.20 reworded and ticked, and 1.21 added after 1.11, in the same PR.
-- [ ] ADR 0032 written; ADR 0029 and ADR 0024 amended; tech-stack §3.4 updated.
+- [ ] ADR 0032 written, with the ownership rule (declared, not assessed) and the rejected option; ADR 0029 and ADR 0024 amended; tech-stack §3.4 updated.
 - [ ] No PII in logs (proved by `ReferenceLogPrivacyTests`), and no new error code.
 - [ ] The PR is opened with the `open-phase-pr` skill (labels, milestone, board, `Closes #<1.20 issue>`).

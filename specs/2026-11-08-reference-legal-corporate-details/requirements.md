@@ -103,12 +103,13 @@ Drivers:
 - `CorporateCustomerReference`, `CorporateCustomerLegalEntityReference`, `CompanyOfficerReference` and `CompanyOfficerRole`: **1.21**. They stay refused.
 - More than one document, document history, issuer and issuing country, document images, and resolving the Document Directory reference. No phase is planned for these.
 - Rules tied to `PartyType`, such as `Individual` only for persons. As in 1.18, every field is accepted for both party types.
-- PEP screening, PEP-driven due diligence and expiry alerts. These belong to later KYC and compliance work (Stage 8).
+- PEP screening, PEP-driven due diligence, document verification and expiry alerts. These are assessments, owned by a future KYC context (Stage 8), not by this directory (see "Ownership" in Decisions). No verification status is added to these fields, unlike Demographics (ADR 0028).
 - The `Reference/Created` and `Reference/Updated` channels (after 7.2), the MCP tools (**1.17**), per-operation scopes (**1.15**), and masking and encryption at rest (**7.2**). The log-capture test only proves that no new code logs these values.
 
 ## Decisions
 | Decision | Choice | Rationale |
 |---|---|---|
+| Ownership: declared, not assessed | The directory records what the party **declares**: legal structure, political exposure, identity documents. It never records a compliance **assessment**: no screening result, verification status, risk rating or due-diligence outcome on these fields | BIAN puts these fields in Reference, so they stay (mission "Source of truth" 1). But deciding whether a party is a PEP, or whether a document is genuine, is a different business capability (BIAN Customer Due Diligence / Party Lifecycle Management, Stage 8), with its own reasons to change. That context will own its assessments and take the declared values as inputs through Party's published events, never by reading this view. This keeps the Reference BQ cohesive (one reason to change: the party's declared details) and stops the directory growing into an entity service for KYC (ADR 0032) |
 | Phase split | Six own fields now. The four `Involvedparty`/`Party` references go to a new 1.21 after 1.11 | Chosen in the interview. They are party-to-party links that overlap with Associations, and principle 10 keeps the phase to about a day |
 | Legal structure values | The 11 BIAN enum values plus `CharitableIncorporatedOrganisation`, in any case, answered in BIAN spelling | The BIAN description cites the full OB code list, and the enum misses one of its values (mission "Source of truth" 3, ADR 0032) |
 | Enum JSON shape | Plain string, with BIAN's wrapper object flattened | Same as `PartyType` (ADR 0024) |
@@ -124,6 +125,7 @@ Drivers:
 
 ## ADRs to write
 - **ADR 0032 (new): Reference legal standing, political exposure and documents.** It records:
+  - **ownership**: the directory holds the party's declared details only, and compliance assessments of them belong to a future KYC context (Stage 8). The test for a new field is "does the party declare it, or does the bank conclude it?". Only declared values belong here. Option rejected: moving political exposure and documents out of 1.20 to wait for the KYC context. That would leave BIAN Reference fields unrecorded with no phase, and the declaration is still reference data;
   - the legal structure values (including `CharitableIncorporatedOrganisation`) and the BIAN spelling;
   - the PEP description invariant;
   - the `CustomerSinceDate` bounds and the date-of-birth invariant;
