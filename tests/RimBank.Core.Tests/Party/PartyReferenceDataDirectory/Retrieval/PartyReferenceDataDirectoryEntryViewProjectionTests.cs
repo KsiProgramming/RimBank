@@ -121,6 +121,38 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 Reference: CompleteReferenceDetails));
 
     [Fact]
+    public void Legal_standing_and_documents_show_in_the_reference_section() =>
+        EntryViewSpecification.Given(Registered(), ReferenceUpdated(CompleteReferenceDetails), ReferenceUpdated(FullestReferenceDetails))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 3,
+                PartyType.Person,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Reference: FullestReferenceDetails));
+
+    [Fact]
+    public void A_reference_event_stored_before_1_20_still_projects_with_no_legal_standing_or_documents()
+    {
+        // A PartyReferenceUpdated as roadmap 1.19 stored it: no LegalStanding or Documents member.
+        var stored = JsonSerializer.SerializeToNode(ReferenceUpdated(CompleteReferenceDetails), _json).ShouldNotBeNull();
+        var details = stored["Details"].ShouldNotBeNull().AsObject();
+        details.Remove("LegalStanding").ShouldBeTrue();
+        details.Remove("Documents").ShouldBeTrue();
+        var updated = stored.Deserialize<PartyReferenceUpdated>(_json).ShouldNotBeNull();
+
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), updated }
+            .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
+            .ShouldNotBeNull();
+
+        view.CurrentReference.ShouldBe(CompleteReferenceDetails);
+        view.CurrentReference.CurrentLegalStanding.ShouldBe(PartyLegalStanding.Empty);
+        view.CurrentReference.CurrentDocuments.ShouldBe(PartyDocuments.Empty);
+    }
+
+    [Fact]
     public void A_reference_event_stored_before_1_19_still_projects_with_no_addresses_or_contact_points()
     {
         // A PartyReferenceUpdated as roadmap 1.18 stored it: identifiers, names, date of birth and residency.

@@ -7,9 +7,9 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// <summary>
 /// The body of <c>PUT …/{partyreferencedatadirectoryid}/Reference/{referenceid}/Update</c>: BIAN's
 /// <c>UpdateReference</c> with its property names (ADR 0024, ADR 0029), as a partial update of the Reference. A value
-/// left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. The other BIAN
-/// Reference fields are refused until the roadmap phase that records them (1.20); properties that are not BIAN's are
-/// ignored.
+/// left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. The four BIAN
+/// references to other parties are refused until the roadmap phase that records them (1.21, ADR 0032); properties that
+/// are not BIAN's are ignored.
 /// </summary>
 public sealed record UpdatePartyReferenceRequest
 {
@@ -69,6 +69,36 @@ public sealed record UpdatePartyReferenceRequest
     [JsonPropertyName("SocialNetworkContacts")]
     public SocialNetworkContactModel? SocialNetworkContacts { get; init; }
 
+    /// <summary>
+    /// BIAN <c>PartyLegalStructure</c> (1.20), as a plain string (BIAN's enum wrapper flattened, ADR 0024), for example
+    /// <c>PrivateLimitedCompany</c> or <c>Co-Operative</c>.
+    /// </summary>
+    [JsonPropertyName("PartyLegalStructure")]
+    public string? PartyLegalStructure { get; init; }
+
+    /// <summary>
+    /// BIAN <c>PoliticalExposureType</c> (1.20), as a plain string: <c>Politicalexposureforeign</c>,
+    /// <c>Politicalexposuredomestic</c> or <c>Nopoliticalexposure</c>.
+    /// </summary>
+    [JsonPropertyName("PoliticalExposureType")]
+    public string? PoliticalExposureType { get; init; }
+
+    /// <summary>BIAN <c>PoliticalExposureDescriptionRecord</c> (1.20, Max350Text), only with a foreign or domestic exposure.</summary>
+    [JsonPropertyName("PoliticalExposureDescriptionRecord")]
+    public string? PoliticalExposureDescriptionRecord { get; init; }
+
+    /// <summary>BIAN <c>CustomerSinceDate</c> (1.20): an ISO 8601 date, or a date-time whose date is kept as written.</summary>
+    [JsonPropertyName("CustomerSinceDate")]
+    public string? CustomerSinceDate { get; init; }
+
+    /// <summary>BIAN <c>GovernmentIssuedDocumentDetails</c> (1.20): the declared identity document.</summary>
+    [JsonPropertyName("GovernmentIssuedDocumentDetails")]
+    public PartyDocumentModel? GovernmentIssuedDocumentDetails { get; init; }
+
+    /// <summary>BIAN <c>DocumentDirectoryEntryInstanceReference</c> (1.20): the opaque document directory reference.</summary>
+    [JsonPropertyName("DocumentDirectoryEntryInstanceReference")]
+    public DocumentDirectoryEntryModel? DocumentDirectoryEntryInstanceReference { get; init; }
+
     /// <summary>Every other property sent: the BIAN Reference fields RimBank does not record yet are found here.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Other { get; init; }
@@ -95,6 +125,8 @@ public sealed record UpdatePartyReferenceRequest
         .. PartsOf(PartyReferenceFields.EMailAddress, EMailAddress?.Other),
         .. PartsOf(PartyReferenceFields.CellPhoneNumber, CellPhoneNumber?.Other),
         .. PartsOf(PartyReferenceFields.SocialNetworkContacts, SocialNetworkContacts?.Other),
+        .. GovernmentIssuedDocumentDetails?.UnsupportedParts(PartyReferenceFields.GovernmentIssuedDocumentDetails) ?? [],
+        .. PartsOf(PartyReferenceFields.DocumentDirectoryEntryInstanceReference, DocumentDirectoryEntryInstanceReference?.Other),
     ];
 
     /// <summary>
@@ -128,7 +160,15 @@ public sealed record UpdatePartyReferenceRequest
                     CorporateAddress?.ToInput(),
                     EMailAddress is { } email ? email.EmailAddress ?? string.Empty : null,
                     CellPhoneNumber is { } phone ? phone.MobileNumber ?? string.Empty : null,
-                    SocialNetworkContacts is { } social ? social.URLAddress ?? string.Empty : null),
+                    SocialNetworkContacts is { } social ? social.URLAddress ?? string.Empty : null,
+                    PartyLegalStructure,
+                    PoliticalExposureType,
+                    PoliticalExposureDescriptionRecord,
+                    CustomerSinceDate,
+                    GovernmentIssuedDocumentDetails?.ToInput(),
+                    DocumentDirectoryEntryInstanceReference is { } directory
+                        ? directory.DocumentDirectoryEntryIdentification ?? string.Empty
+                        : null),
                 UnsupportedFields())
             .Map(changes => new UpdatePartyReference(entryId, referenceId, expectedVersion, changes, idempotencyKey));
 
@@ -136,8 +176,8 @@ public sealed record UpdatePartyReferenceRequest
         PartsOf(field, address?.Other).Concat(PartsOf($"{field}.{PostalAddress.CountryPart}", address?.Country?.Other));
 
     private static IEnumerable<string> PartsOf(string field, Dictionary<string, JsonElement>? parts) =>
-        Present(parts).Select(name => $"{field}.{name}");
+        ReferenceModelParts.Present(field, parts);
 
     private static IEnumerable<string> Present(Dictionary<string, JsonElement>? properties) =>
-        (properties ?? []).Where(property => property.Value.ValueKind != JsonValueKind.Null).Select(property => property.Key);
+        ReferenceModelParts.Present(properties);
 }

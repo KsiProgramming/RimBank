@@ -66,8 +66,11 @@ public sealed class PartyReferenceDataDirectoryEntryLawsProperties
 
     private static readonly DateOnly _today = DateOnly.FromDateTime(_openDate.UtcDateTime);
 
-    // A foreign Reference id now and then covers party.behavior-qualifier-not-found (roadmap 1.10), and a date of birth
-    // after today party.reference-invalid (1.18); each value is kept, cleared or set.
+    private static readonly PoliticalExposureDescription _exposureDescription = PoliticalExposureDescription.TryCreate("Mayor").Value;
+
+    // A foreign Reference id now and then covers party.behavior-qualifier-not-found (roadmap 1.10), a date of birth or
+    // customer-since date after today party.reference-invalid (1.18, 1.20), and so do a customer-since date before the
+    // date of birth and a political exposure description without an exposure (1.20); each value is kept, cleared or set.
     private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _referenceUpdates =
         from partyReferenceId in Pick(PartyReferenceId.From)
         from taxId in Gen.Elements(null, new PartyIdentifierChange<TaxIdentificationNumber>(null), new PartyIdentifierChange<TaxIdentificationNumber>(_taxId))
@@ -75,9 +78,28 @@ public sealed class PartyReferenceDataDirectoryEntryLawsProperties
         from nationality in Gen.Elements(null, new PartyReferenceChange<CountryCode?>(null), new PartyReferenceChange<CountryCode?>(_france))
         from birthDays in Gen.Choose(-20000, 3)
         from dateOfBirth in Gen.Elements(null, new PartyReferenceChange<DateOnly?>(null), new PartyReferenceChange<DateOnly?>(_today.AddDays(birthDays)))
+        from sinceDays in Gen.Choose(-20000, 3)
+        from customerSince in Gen.Elements(null, new PartyReferenceChange<DateOnly?>(null), new PartyReferenceChange<DateOnly?>(_today.AddDays(sinceDays)))
+        from exposure in Gen.Elements<PartyReferenceChange<PoliticalExposureType?>?>(
+            null,
+            new PartyReferenceChange<PoliticalExposureType?>(null),
+            new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.Foreign),
+            new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.NoExposure))
+        from description in Gen.Elements(
+            null,
+            new PartyReferenceChange<PoliticalExposureDescription?>(null),
+            new PartyReferenceChange<PoliticalExposureDescription?>(_exposureDescription))
         select (PartyReferenceDataDirectoryEntryCommand)new UpdatePartyReferenceDetails(
             partyReferenceId,
-            new PartyReferenceChanges(taxId, null, lei, DateOfBirth: dateOfBirth, Nationality: nationality),
+            new PartyReferenceChanges(
+                taxId,
+                null,
+                lei,
+                DateOfBirth: dateOfBirth,
+                Nationality: nationality,
+                PoliticalExposureType: exposure,
+                PoliticalExposureDescription: description,
+                CustomerSinceDate: customerSince),
             _today);
 
     private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _commands =

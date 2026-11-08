@@ -84,6 +84,35 @@ public sealed class PartyReferenceResponseTests
     }
 
     [Fact]
+    public void Legal_standing_and_documents_become_the_bian_shape()
+    {
+        var details = _details with
+        {
+            LegalStanding = new PartyLegalStanding(PartyLegalStructure.CoOperative, PoliticalExposureType.Foreign, null, new DateOnly(2015, 3, 2)),
+            Documents = new PartyDocuments(
+                new GovernmentIssuedDocument(
+                    PartyDocumentType.PersonalDocument,
+                    GovernmentIssuedDocumentNumber.TryCreate("23AB45678").Value,
+                    null,
+                    null,
+                    new DateOnly(2033, 3, 31)),
+                null),
+        };
+
+        var json = JsonNode.Parse(JsonSerializer.Serialize(
+                PartyReferenceResponse.From(new UpdatePartyReferenceAcknowledged(_entryId, _referenceId, 2, details))))
+            .ShouldNotBeNull().AsObject();
+
+        json["PartyLegalStructure"]!.GetValue<string>().ShouldBe("Co-Operative");
+        json["PoliticalExposureType"]!.GetValue<string>().ShouldBe("Politicalexposureforeign");
+        json.ContainsKey("PoliticalExposureDescriptionRecord").ShouldBeFalse();
+        json["CustomerSinceDate"]!.GetValue<string>().ShouldBe("2015-03-02");
+        json["GovernmentIssuedDocumentDetails"]!.ToJsonString().ShouldBe(
+            """{"PartyDocumentType":"PersonalDocument","DocumentReference":{"DocumentIdentification":{"IdentifierValue":"23AB45678"},"DocumentValidityPeriod":{"ToDateTime":{"DateTimeContent":"2033-03-31"}}}}""");
+        json.ContainsKey("DocumentDirectoryEntryInstanceReference").ShouldBeFalse();
+    }
+
+    [Fact]
     public void The_view_s_reference_section_becomes_the_same_response()
     {
         var view = new PartyReferenceDataDirectoryEntryView(

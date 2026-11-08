@@ -130,6 +130,49 @@ public sealed class PartyReferenceDetailsTests
             .ShouldBe(CompleteReferenceDetails with { Names = Names with { Salutation = null } });
 
     [Fact]
+    public void Legal_standing_and_documents_are_set_from_empty() =>
+        PartyReferenceDetails.Empty.Apply(ReferenceChangesTo(FullestReferenceDetails)).ShouldBe(FullestReferenceDetails);
+
+    [Fact]
+    public void A_given_document_replaces_the_whole_document_and_keeps_the_directory_reference()
+    {
+        var licence = new GovernmentIssuedDocument(
+            PartyDocumentType.PersonalDocument,
+            GovernmentIssuedDocumentNumber.TryCreate("DL-778899").Value,
+            null,
+            null,
+            null);
+
+        FullestReferenceDetails.Apply(PartyReferenceChanges.None with { GovernmentIssuedDocument = new(licence) })
+            .ShouldBe(FullestReferenceDetails with { Documents = Documents with { GovernmentIssuedDocument = licence } });
+    }
+
+    [Fact]
+    public void Clearing_every_legal_standing_and_document_part_leaves_them_unrecorded()
+    {
+        var cleared = FullestReferenceDetails.Apply(PartyReferenceChanges.None with
+        {
+            PartyLegalStructure = new(null),
+            PoliticalExposureType = new(null),
+            PoliticalExposureDescription = new(null),
+            CustomerSinceDate = new(null),
+            GovernmentIssuedDocument = new(null),
+            DocumentDirectoryEntry = new(null),
+        });
+
+        cleared.ShouldBe(CompleteReferenceDetails);
+        cleared.LegalStanding.ShouldBeNull();
+        cleared.Documents.ShouldBeNull();
+        cleared.CurrentLegalStanding.ShouldBe(PartyLegalStanding.Empty);
+        cleared.CurrentDocuments.ShouldBe(PartyDocuments.Empty);
+    }
+
+    [Fact]
+    public void An_address_update_leaves_the_legal_standing_and_documents_unchanged() =>
+        FullestReferenceDetails.Apply(PartyReferenceChanges.None with { PartyAddress = new(null) })
+            .ShouldBe(FullestReferenceDetails with { Addresses = Addresses with { PartyAddress = null } });
+
+    [Fact]
     public void Empty_addresses_and_contact_points_have_nothing()
     {
         PartyAddresses.Empty.HasAny.ShouldBeFalse();

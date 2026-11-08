@@ -104,8 +104,29 @@ internal static class EntryExamples
     public static readonly PartyReferenceDetails CompleteReferenceDetails =
         FullReferenceDetails with { Addresses = Addresses, ContactPoints = ContactPoints };
 
-    // The changes that set every value of the details. The 1.19 parts are only sent when the details have them, so the
-    // changes of a 1.18-shaped Reference stay the ones a 1.18 request makes.
+    public static readonly DateOnly CustomerSince = new(2015, 3, 2);
+
+    public static readonly PartyLegalStanding LegalStanding = new(
+        PartyLegalStructure.PrivateLimitedCompany,
+        PoliticalExposureType.Domestic,
+        PoliticalExposureDescription.TryCreate("Member of a regional council since 2021").Value,
+        CustomerSince);
+
+    public static readonly PartyDocuments Documents = new(
+        new GovernmentIssuedDocument(
+            PartyDocumentType.PersonalDocument,
+            GovernmentIssuedDocumentNumber.TryCreate("23AB45678").Value,
+            GovernmentIssuedDocumentName.TryCreate("Passport").Value,
+            new DateOnly(2023, 4, 1),
+            new DateOnly(2033, 3, 31)),
+        DocumentDirectoryEntryReference.TryCreate("DOC-000123").Value);
+
+    // Every value roadmap 1.10, 1.18, 1.19 and 1.20 record.
+    public static readonly PartyReferenceDetails FullestReferenceDetails =
+        CompleteReferenceDetails with { LegalStanding = LegalStanding, Documents = Documents };
+
+    // The changes that set every value of the details. The 1.19 and 1.20 parts are only sent when the details have them,
+    // so the changes of an earlier-shaped Reference stay the ones its own phase's request makes.
     public static PartyReferenceChanges ReferenceChangesTo(PartyReferenceDetails details) =>
         ReferenceChangesTo(details.Identifiers) with
         {
@@ -121,6 +142,12 @@ internal static class EntryExamples
             EmailAddress = details.ContactPoints is { } email ? new(email.EmailAddress) : null,
             MobileNumber = details.ContactPoints is { } mobile ? new(mobile.MobileNumber) : null,
             SocialNetworkAddress = details.ContactPoints is { } social ? new(social.SocialNetwork) : null,
+            PartyLegalStructure = details.LegalStanding is { } structure ? new(structure.LegalStructure) : null,
+            PoliticalExposureType = details.LegalStanding is { } exposure ? new(exposure.PoliticalExposureType) : null,
+            PoliticalExposureDescription = details.LegalStanding is { } description ? new(description.PoliticalExposureDescription) : null,
+            CustomerSinceDate = details.LegalStanding is { } since ? new(since.CustomerSince) : null,
+            GovernmentIssuedDocument = details.Documents is { } document ? new(document.GovernmentIssuedDocument) : null,
+            DocumentDirectoryEntry = details.Documents is { } directory ? new(directory.DocumentDirectoryEntry) : null,
         };
 
     public static UpdatePartyReferenceDetails UpdateReference(PartyReferenceChanges? changes = null) =>

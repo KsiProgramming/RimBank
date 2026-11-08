@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Alba;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using RimBank.Host;
 using RimBank.Host.Testing;
@@ -40,9 +41,10 @@ public sealed class PostgresqlServer : IAsyncLifetime
     /// Starts <c>RimBank.Host</c> exactly as <c>Program</c> composes it, in <paramref name="environment"/>, on a new
     /// database, trusting <see cref="TestTokens"/> and running at <see cref="Now"/>. The default <c>Test</c> environment
     /// behaves like Production (HTTPS authority, no request-binding exceptions) except that the stores create their
-    /// schema, which Production never does (ADR 0016).
+    /// schema, which Production never does (ADR 0016). With <paramref name="logs"/>, every log entry from Debug up is also
+    /// captured there.
     /// </summary>
-    public async Task<PartyApiHost> StartHostAsync(string environment = "Test")
+    public async Task<PartyApiHost> StartHostAsync(string environment = "Test", CapturedLogs? logs = null)
     {
         var database = await CreateDatabaseAsync();
         await _startup.WaitAsync(TestContext.Current.CancellationToken);
@@ -56,10 +58,19 @@ public sealed class PostgresqlServer : IAsyncLifetime
                 web.UseSetting($"ConnectionStrings:{MessagingNodeRegistration.MessagingNode.ConnectionStringName}", RoleConnectionString(database, MessagingNodeRegistration.MessagingNode.Value));
                 web.UseSetting("RimBank:Postgresql:ProvisionRoles", "true");
                 web.UseSetting(AuthenticationComposition.AuthorityKey, TestTokens.Issuer);
+                if (logs is not null)
+                {
+                    web.UseSetting("Logging:LogLevel:Default", "Debug");
+                }
+
                 web.ConfigureServices(services =>
                 {
                     services.TrustTestTokens();
                     services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now));
+                    if (logs is not null)
+                    {
+                        services.AddSingleton<ILoggerProvider>(logs);
+                    }
                 });
             });
 

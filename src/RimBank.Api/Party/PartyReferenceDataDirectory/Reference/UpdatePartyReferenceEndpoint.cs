@@ -41,11 +41,20 @@ public static class UpdatePartyReferenceEndpoint
                 + "20022 postal addresses: Department, SubDepartment, StreetName, StreetBuildingIdentification, BuildingName, "
                 + "Floor, PostOfficeBox, PostCodeIdentification, TownName and Country.Code, with TownName and Country required. "
                 + "eMailAddress.EmailAddress, CellPhoneNumber.MobileNumber (E.164, for example +33612345678) and "
-                + "SocialNetworkContacts.URLAddress (an https URL) are the contact points. A value left out keeps its value, an "
-                + "empty one clears it, and a given address replaces the whole address. The other BIAN Reference fields are "
-                + "refused with party.reference-field-not-supported until the roadmap phase that records them (1.20 legal, "
-                + "political exposure and corporate details), as are the other parts of the objects above. Send the entry's ETag in If-Match: a missing one is 428, and one "
-                + "that is no longer current is 409. The ETag of the answer is the new version.")
+                + "SocialNetworkContacts.URLAddress (an https URL) are the contact points. The party's declared legal standing "
+                + "is PartyLegalStructure (the BIAN code list, for example PrivateLimitedCompany or Co-Operative), "
+                + "PoliticalExposureType (Politicalexposureforeign, Politicalexposuredomestic or Nopoliticalexposure), "
+                + "PoliticalExposureDescriptionRecord (at most 350 characters, only with a foreign or domestic exposure) and "
+                + "CustomerSinceDate (an ISO 8601 date, from 1900-01-01 to today and not before DateofBirth). "
+                + "GovernmentIssuedDocumentDetails records PartyDocumentType and, in DocumentReference, "
+                + "DocumentIdentification.IdentifierValue (both required), DocumentName and DocumentValidityPeriod "
+                + "(FromDateTime and ToDateTime DateTimeContent dates); DocumentDirectoryEntryInstanceReference records "
+                + "DocumentDirectoryEntryIdentification. A value left out keeps its value, an empty one clears it, and a given "
+                + "address or document replaces the whole of it. CorporateCustomerReference, "
+                + "CorporateCustomerLegalEntityReference, CompanyOfficerReference and CompanyOfficerRole are refused with "
+                + "party.reference-field-not-supported until roadmap phase 1.21, as are the other parts of the objects above. "
+                + "Send the entry's ETag in If-Match: a missing one is 428, and one that is no longer current is 409. The ETag "
+                + "of the answer is the new version.")
             .Produces<PartyReferenceResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status401Unauthorized)

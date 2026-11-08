@@ -83,8 +83,10 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// Demographics Update and Exchange need a registered entry and its own Demographics id
     /// (<c>party.behavior-qualifier-not-found</c> otherwise). Update always records the resulting details, and only a
     /// change makes them unverified again. Exchange needs recorded details (<c>party.demographics-not-recorded</c>).
-    /// Reference Update needs a registered entry and its own Reference id, refuses a date of birth after today
-    /// (<c>party.reference-invalid</c>), and always records the resulting Reference.
+    /// Reference Update needs a registered entry and its own Reference id, refuses a date of birth or customer-since date
+    /// after today, a resulting customer-since date before the date of birth, and a resulting political exposure
+    /// description without a foreign or domestic exposure (<c>party.reference-invalid</c>), and always records the
+    /// resulting Reference.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -139,12 +141,27 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                 PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
             (UpdatePartyReferenceDetails { Changes.DateOfBirth.Value: { } dateOfBirth } update, _) when dateOfBirth > update.Today =>
                 PartyReferenceErrors.DateOfBirthAfterToday,
+            (UpdatePartyReferenceDetails { Changes.CustomerSinceDate.Value: { } since } update, _) when since > update.Today =>
+                PartyReferenceErrors.CustomerSinceDateAfterToday,
             (UpdatePartyReferenceDetails update, { Id: { } entryId }) =>
-                Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new PartyReferenceUpdated(
-                    entryId,
-                    update.PartyReferenceId,
-                    state.CurrentReference.Apply(update.Changes))),
+                DecideReferenceUpdate(entryId, update, state.CurrentReference.Apply(update.Changes)),
             _ => throw new UnreachableException($"The entry does not decide {command}."),
+        };
+
+    // The rules that hold across Reference fields are checked on the resulting Reference (roadmap 1.20, ADR 0032), so a
+    // partial update cannot leave it inconsistent with values it keeps.
+    private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> DecideReferenceUpdate(
+        PartyReferenceDataDirectoryEntryId entryId,
+        UpdatePartyReferenceDetails update,
+        PartyReferenceDetails updated) =>
+        (updated.CurrentLegalStanding, updated.DateOfBirth) switch
+        {
+            ({ PoliticalExposureDescription: not null, PoliticalExposureType: var type }, _) when type?.IsExposed() != true =>
+                PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure,
+            ({ CustomerSince: { } since }, { } born) when since < born =>
+                PartyReferenceErrors.CustomerSinceDateBeforeDateOfBirth,
+            _ => Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(
+                new PartyReferenceUpdated(entryId, update.PartyReferenceId, updated)),
         };
 
     private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> DecideDemographicsUpdate(

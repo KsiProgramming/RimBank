@@ -75,6 +75,36 @@ public sealed class RetrievePartyReferenceEndpointTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task Retrieve_shows_the_legal_standing_and_documents()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        await PutReferenceOkAsync(host, UpdateUrl(registered), Identifiers, "\"1\"", "\"2\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), NamesAndResidency, "\"2\"", "\"3\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), AddressesAndContactPoints, "\"3\"", "\"4\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), LegalStandingAndDocuments, "\"4\"", "\"5\"");
+
+        var result = await host.Alba.Scenario(_ =>
+        {
+            Get(_, RetrieveUrl(registered));
+            _.StatusCodeShouldBeOk();
+            _.Header(HeaderNames.ETag).SingleValueShouldEqual("\"5\"");
+        });
+
+        var body = await result.ReadAsJsonAsync<JsonElement>();
+        body.GetProperty("PartyLegalStructure").GetString().ShouldBe("PrivateLimitedCompany");
+        body.GetProperty("CustomerSinceDate").GetString().ShouldBe("2015-03-02");
+        body.Deserialize<PartyReferenceResponse>(JsonSerializerOptions.Web).ShouldBe(ExpectedWithLegalStandingAndDocuments(registered));
+
+        await host.Alba.Scenario(_ =>
+        {
+            Get(_, RetrieveUrl(registered));
+            _.WithRequestHeader(HeaderNames.IfNoneMatch, "\"5\"");
+            _.StatusCodeShouldBe(304);
+        });
+    }
+
+    [Fact]
     public async Task A_reference_never_updated_answers_the_ids_only()
     {
         await using var host = await server.StartHostAsync();

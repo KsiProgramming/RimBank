@@ -65,3 +65,46 @@ If-Match: "1"
 ### Retrieve the entry: Organisation, its RefreshDate, and ETag "2".
 GET {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Retrieve
 Authorization: Bearer {{token.response.body.$.access_token}}
+
+### Reference BQ (roadmap 1.20, ADR 0032): record the party's declared legal standing and documents. If-Match is the
+# entry's current version ("2" after the Update above). Answers 200 with ETag "3": PartyLegalStructure in BIAN spelling
+# ("PrivateLimitedCompany"), CustomerSinceDate "2015-03-02", the description trimmed, the validity dates as YYYY-MM-DD.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Reference/{{register.response.body.$.ReferenceId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "2"
+
+{
+  "PartyLegalStructure": "private limited company",
+  "PoliticalExposureType": "Politicalexposuredomestic",
+  "PoliticalExposureDescriptionRecord": " Member of a regional council since 2021 ",
+  "CustomerSinceDate": "2015-03-02T10:00:00+01:00",
+  "GovernmentIssuedDocumentDetails": {
+    "PartyDocumentType": "PersonalDocument",
+    "DocumentReference": {
+      "DocumentIdentification": { "IdentifierValue": "23AB45678" },
+      "DocumentName": "Passport",
+      "DocumentValidityPeriod": {
+        "FromDateTime": { "DateTimeContent": "2023-04-01" },
+        "ToDateTime": { "DateTimeContent": "2033-03-31" }
+      }
+    }
+  },
+  "DocumentDirectoryEntryInstanceReference": { "DocumentDirectoryEntryIdentification": "DOC-000123" }
+}
+
+### Retrieve the Reference: the same values, ETag "3". Send If-None-Match: "3" to get 304 Not Modified.
+GET {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Reference/{{register.response.body.$.ReferenceId}}/Retrieve
+Authorization: Bearer {{token.response.body.$.access_token}}
+
+### A description without an exposure is refused on the resulting Reference: 400 application/problem+json with
+# "errorCode": "party.reference-invalid" and errors["PoliticalExposureDescriptionRecord"]. Nothing is stored.
+# CompanyOfficerRole instead would be 400 party.reference-field-not-supported, naming roadmap phase 1.21.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Reference/{{register.response.body.$.ReferenceId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "3"
+
+{ "PoliticalExposureType": "Nopoliticalexposure" }

@@ -92,6 +92,31 @@ public static class PartyReferenceFields
     /// <summary>BIAN <c>SocialNetworkContacts.URLAddress</c>.</summary>
     public const string SocialNetworkContactsUrlAddress = SocialNetworkContacts + "." + UrlAddressPart;
 
+    /// <summary>BIAN <c>PartyLegalStructure</c> (1.20).</summary>
+    public const string PartyLegalStructure = "PartyLegalStructure";
+
+    /// <summary>BIAN <c>PoliticalExposureType</c> (1.20).</summary>
+    public const string PoliticalExposureType = "PoliticalExposureType";
+
+    /// <summary>BIAN <c>PoliticalExposureDescriptionRecord</c> (1.20).</summary>
+    public const string PoliticalExposureDescriptionRecord = "PoliticalExposureDescriptionRecord";
+
+    /// <summary>BIAN <c>CustomerSinceDate</c> (1.20).</summary>
+    public const string CustomerSinceDate = "CustomerSinceDate";
+
+    /// <summary>BIAN <c>GovernmentIssuedDocumentDetails</c> (1.20), a <c>PartyDocument</c> object.</summary>
+    public const string GovernmentIssuedDocumentDetails = "GovernmentIssuedDocumentDetails";
+
+    /// <summary>BIAN <c>DocumentDirectoryEntryInstanceReference</c> (1.20), a <c>DocumentDirectoryEntry</c> object.</summary>
+    public const string DocumentDirectoryEntryInstanceReference = "DocumentDirectoryEntryInstanceReference";
+
+    /// <summary>The part of a BIAN <c>DocumentDirectoryEntry</c> object RimBank records.</summary>
+    public const string DocumentDirectoryEntryIdentificationPart = "DocumentDirectoryEntryIdentification";
+
+    /// <summary>BIAN <c>DocumentDirectoryEntryInstanceReference.DocumentDirectoryEntryIdentification</c>.</summary>
+    public const string DocumentDirectoryEntryIdentification =
+        DocumentDirectoryEntryInstanceReference + "." + DocumentDirectoryEntryIdentificationPart;
+
     /// <summary>The only part of a BIAN <c>Country</c> object RimBank records.</summary>
     public const string CountryCodePart = "Code";
 
@@ -103,19 +128,13 @@ public static class PartyReferenceFields
 
     /// <summary>
     /// Every top-level BIAN <c>UpdateReference</c> field RimBank does not record yet, with the roadmap phase that will
-    /// record it (ADR 0029).
+    /// record it (ADR 0029). The four references to other parties wait for the Associations BQ (1.11, ADR 0032).
     /// </summary>
     public static FrozenDictionary<string, string> Staged { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["PartyLegalStructure"] = "1.20",
-        ["PoliticalExposureType"] = "1.20",
-        ["PoliticalExposureDescriptionRecord"] = "1.20",
-        ["CustomerSinceDate"] = "1.20",
-        ["CorporateCustomerReference"] = "1.20",
-        ["CorporateCustomerLegalEntityReference"] = "1.20",
-        ["CompanyOfficerReference"] = "1.20",
-        ["CompanyOfficerRole"] = "1.20",
-        ["GovernmentIssuedDocumentDetails"] = "1.20",
-        ["DocumentDirectoryEntryInstanceReference"] = "1.20",
+        ["CorporateCustomerReference"] = "1.21",
+        ["CorporateCustomerLegalEntityReference"] = "1.21",
+        ["CompanyOfficerReference"] = "1.21",
+        ["CompanyOfficerRole"] = "1.21",
     }.ToFrozenDictionary(StringComparer.Ordinal);
 }

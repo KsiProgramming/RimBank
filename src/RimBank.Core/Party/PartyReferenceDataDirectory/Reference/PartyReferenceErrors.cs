@@ -54,4 +54,35 @@ public static class PartyReferenceErrors
     {
         [PartyReferenceFields.DateofBirth] = ["The date of birth must not be after today."],
     });
+
+    /// <summary>
+    /// The Update sets a customer-since date after today (400, roadmap 1.20): <c>party.reference-invalid</c> naming
+    /// <see cref="PartyReferenceFields.CustomerSinceDate"/>. The decision checks it against the handler's clock.
+    /// </summary>
+    public static Error CustomerSinceDateAfterToday { get; } = ReferenceInvalid(new Dictionary<string, IReadOnlyList<string>>
+    {
+        [PartyReferenceFields.CustomerSinceDate] = ["The customer-since date must not be after today."],
+    });
+
+    /// <summary>
+    /// The resulting Reference has a customer-since date before the date of birth (400, roadmap 1.20, ADR 0032):
+    /// <c>party.reference-invalid</c> naming <see cref="PartyReferenceFields.CustomerSinceDate"/>.
+    /// </summary>
+    public static Error CustomerSinceDateBeforeDateOfBirth { get; } = ReferenceInvalid(new Dictionary<string, IReadOnlyList<string>>
+    {
+        [PartyReferenceFields.CustomerSinceDate] = ["The customer-since date must not be before the date of birth."],
+    });
+
+    /// <summary>
+    /// The resulting Reference has a political exposure description without a foreign or domestic exposure (400, roadmap
+    /// 1.20, ADR 0032): <c>party.reference-invalid</c> naming <see cref="PartyReferenceFields.PoliticalExposureDescriptionRecord"/>.
+    /// </summary>
+    public static Error PoliticalExposureDescriptionWithoutExposure { get; } = ReferenceInvalid(new Dictionary<string, IReadOnlyList<string>>
+    {
+        [PartyReferenceFields.PoliticalExposureDescriptionRecord] =
+        [
+            "A political exposure description needs a PoliticalExposureType of Politicalexposureforeign or "
+            + "Politicalexposuredomestic; clear the description in the same request when there is no exposure.",
+        ],
+    });
 }
