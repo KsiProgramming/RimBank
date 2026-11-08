@@ -98,15 +98,15 @@ Every group is written test first. After each group, the solution builds and its
 - [x] Run `RimBank.Api.Tests`, `RimBank.Conformance.Tests`, `RimBank.Architecture.Tests` and `RimBank.Host.Tests`.
 
 ## 4. Docs and roadmap
-- [ ] New `docs/adr/0029-reference-fields-in-stages.md` (from `docs/adr/template.md`).
-- [ ] ADR 0024:
+- [x] New `docs/adr/0029-reference-fields-in-stages.md` (from `docs/adr/template.md`).
+- [x] ADR 0024:
   - a "Reference requests (1.10)" paragraph;
   - the `PartyReferenceUpdated` payload in the events table;
   - `party.reference-invalid` and `party.reference-field-not-supported` in the error table;
   - the 1.7 note on `PartyReference`;
   - a link to 0029.
   - Check that `PartyReferenceDataDirectoryCatalogue.cs` still says 1.10 for both Reference rows.
-- [ ] Roadmap:
+- [x] Roadmap:
   - add the rows below right after 1.10;
   - tick **1.10**;
   - run the board sync (`scripts/sync_roadmap_board.py`, dry run) to check that it parses the new rows.
@@ -117,6 +117,6 @@ Every group is written test first. After each group, the solution builds and its
       - `PartyLegalStructure`, `PoliticalExposureType` and `PoliticalExposureDescriptionRecord`, `CustomerSinceDate`;
       - the corporate customer and legal entity references, the company officers and their roles;
       - `GovernmentIssuedDocumentDetails` and `DocumentDirectoryEntryInstanceReference`.
-- [ ] Tech-stack §3.4 tree: the `Reference/` contents. Tech-stack §3.3 `RimBank.Api` folder list: add `Reference/`.
-- [ ] XML docs: the view and entry docs mention the Reference section.
-- [ ] Run a locked restore, `dotnet build -c Release`, `dotnet test --solution RimBank.slnx` and `dotnet format --verify-no-changes`.
+- [x] Tech-stack §3.4 tree: the `Reference/` contents. Tech-stack §3.3 `RimBank.Api` folder list: add `Reference/`.
+- [x] XML docs: the view and entry docs mention the Reference section.
+- [x] Run a locked restore, `dotnet build -c Release`, `dotnet test --solution RimBank.slnx` and `dotnet format --verify-no-changes`.

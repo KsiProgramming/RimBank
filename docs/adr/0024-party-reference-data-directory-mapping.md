@@ -65,7 +65,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 
 **Register request (1.5).** BIAN's Register body has `PartyReference`, `DirectoryEntryDateType`, `DirectoryEntryDate` and `PartyType`. Only `PartyType` is used. The other three are accepted and ignored: the directory records the time of registration as the entry's `OpenDate` (`TimeProvider`, tech-stack §7), and the party's details are Demographics and Reference data, recorded by their own updates (1.9, 1.10). BIAN's generated enum wrappers (`{"Partytypevalues": "Person"}`) are flattened to plain strings (`"Person"`), in the request and the response. Register answers `200` (BIAN's declared status) with the BIAN Register fields and the ids of the entry and its three singleton BQs, and the entry's version as `ETag`.
 
-**Retrieve request (1.7).** `GET /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Retrieve` answers `200` from the entry's view only, with the BIAN Retrieve fields (`PartyType`, `DirectoryEntryDateType` = `OpenDate`, `DirectoryEntryDate`) and the ids of the entry and its three singleton BQs, in the same shape as the Register response. BIAN's `PartyReference` is not returned until Demographics and Reference store it (1.9, 1.10). The entry's version is the strong `ETag` (`"1"`), and an `If-None-Match` that names it (weak comparison, a list or `*`) answers `304 Not Modified` with the `ETag` and no body. A route value that is not an identifier RimBank issues (not a GUID, empty, or not a version 7 GUID) is `400` with the shared `shared.invalid-identifier` code and `errors["partyreferencedatadirectoryid"]`; an unknown entry is `404` `party.party-not-found`.
+**Retrieve request (1.7).** `GET /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Retrieve` answers `200` from the entry's view only, with the BIAN Retrieve fields (`PartyType`, `DirectoryEntryDateType` = `OpenDate`, `DirectoryEntryDate`) and the ids of the entry and its three singleton BQs, in the same shape as the Register response. BIAN's `PartyReference` is not returned: the party's details are served by the Demographics and Reference Retrieves (1.9, 1.10). The entry's version is the strong `ETag` (`"1"`), and an `If-None-Match` that names it (weak comparison, a list or `*`) answers `304 Not Modified` with the `ETag` and no body. A route value that is not an identifier RimBank issues (not a GUID, empty, or not a version 7 GUID) is `400` with the shared `shared.invalid-identifier` code and `errors["partyreferencedatadirectoryid"]`; an unknown entry is `404` `party.party-not-found`.
 
 **Update request (1.8).** `PUT /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Update` takes BIAN's `UpdatePartyReferenceDataDirectoryEntry` body.
 - **What changes.** Only `PartyType` is used, and it is optional. When it is omitted, the entry keeps its type. When it is given, it is read like Register's, except that a blank value is `party.party-type-invalid`.
@@ -82,6 +82,17 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 - **Retrieve** (`GET …/Demographics/{demographicsid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`. Before the first Update, it answers `200` with the ids and `VerificationStatus` `Unverified` only.
 - **Headers and responses.** Update and Exchange require `Idempotency-Key` and `If-Match`, as in 1.8. All three answer `200` with the same body: BIAN's Demographics fields without `EthnicityReligion`, `VerificationStatus`, `VerificationDate` (left out while unverified), and the entry and Demographics ids. Update and Exchange build it from their acknowledgement.
 
+**Reference requests (1.10).** The Reference record lives in the entry (an entity, as decided above), so both operations use the entry's stream, version and inline view. [ADR 0029](0029-reference-fields-in-stages.md) decides which BIAN fields are recorded when.
+- **Ids.** Every route carries `{partyreferencedatadirectoryid}` and `{referenceid}`, checked in the same order as Demographics. A malformed `referenceid` is `400` `shared.invalid-identifier` with `errors["referenceid"]`.
+- **Update** (`PUT …/Reference/{referenceid}/Update`) is a partial update of the party identifiers:
+  - `GovernmentIssuedIdentityReference.TaxIdentificationNumber` and `.NationalRegistrationNumber` (Max35Text);
+  - the LEI (ISO 17442, check digits verified) in `PartyLegalEntityReference.Identification`.
+  - An identifier left out keeps its value, and an empty one clears it. An invalid one is `party.reference-invalid` with the BIAN field names in `errors`.
+  - Every accepted Update appends `PartyReferenceUpdated`, even when nothing changes.
+  - The other BIAN Reference fields are refused with `party.reference-field-not-supported` until the phase that records them (1.18–1.20, ADR 0029).
+- **Retrieve** (`GET …/Reference/{referenceid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`. Before the first Update, it answers `200` with the ids only.
+- **Headers and responses.** Update requires `Idempotency-Key` and `If-Match`, as in 1.8. Both answer `200` with the same body: `GovernmentIssuedIdentityReference`, `PartyLegalEntityReference` (each left out when it holds no identifier), and the entry and Reference ids. Update builds it from its acknowledgement.
+
 **Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its semantics are decided in [ADR 0028](0028-demographics-exchange-as-verification.md) (1.9).
 
 ### Domain events
@@ -92,7 +103,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 | Entry | `PartyReferenceDataDirectoryEntryUpdated` | `UpdatePartyReferenceDataDirectoryEntry` (carries the resulting party type and the `RefreshDate`, 1.8) |
 | Entry | `DemographicsUpdated` | `UpdateDemographics` (carries the full resulting details and their verification status and date, 1.9) |
 | Entry | `DemographicsExchanged` | `ExchangeDemographics` (carries the verification status and date, 1.9, [ADR 0028](0028-demographics-exchange-as-verification.md)) |
-| Entry | `PartyReferenceUpdated` | `UpdatePartyReference` |
+| Entry | `PartyReferenceUpdated` | `UpdatePartyReference` (carries the full resulting Reference: the party identifiers, 1.10, [ADR 0029](0029-reference-fields-in-stages.md)) |
 | Entry | `BankRelationsUpdated` | `UpdateBankRelations` |
 | PartyAssociation | `PartyAssociationRegistered` | `RegisterPartyAssociation` |
 | PartyAssociation | `PartyAssociationUpdated` | `UpdatePartyAssociation` |
@@ -156,6 +167,8 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.exchange-action-type-required` | Validation (400) | A Demographics Exchange has no `ExchangeActionType`, or a blank one (1.9, ADR 0028) |
 | `party.exchange-action-type-invalid` | Validation (400) | An `ExchangeActionType` other than `Verify` or `Reject` (1.9, ADR 0028) |
 | `party.demographics-not-recorded` | BusinessRule (422) | A Demographics Exchange on details that were never recorded, or were all cleared (1.9, ADR 0028) |
+| `party.reference-invalid` | Validation (400) | A Reference Update identifier is not valid (length, or LEI format and check digits); `errors` names each BIAN field (1.10, ADR 0029) |
+| `party.reference-field-not-supported` | Validation (400) | A Reference Update sends a BIAN field RimBank does not record yet; `errors` names each field and its phase (1.10, ADR 0029) |
 | `party.version-conflict` | Conflict (409) | `If-Match` is not the current stream version (1.8, [ADR 0027](0027-optimistic-concurrency-for-commands.md)) |
 | `shared.if-match-required` | PreconditionRequired (428) | A command on an existing entry or association has no `If-Match` (1.8, ADR 0027) |
 | `shared.if-match-invalid` | Validation (400) | `If-Match` is not exactly one strong version tag (1.8, ADR 0027) |
