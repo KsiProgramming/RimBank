@@ -60,7 +60,7 @@ Option 4, chosen when 1.10 was planned.
 |---|---|---|
 | `PartyFullLegalName` | `PartyFullLegalName` | Trimmed, not blank, at most 140 characters (Max140Text) |
 | `PartyNameSalutation` | `PartyNameSalutation` | Trimmed, not blank, at most 35 characters (Max35Text), free text |
-| `DateofBirth` | `DateOnly` | An ISO 8601 date, or the date as written in an ISO 8601 date-time (no time-zone conversion). Not after today (UTC, from the handler's `TimeProvider`). Answered as `YYYY-MM-DD` |
+| `DateofBirth` | `DateOnly` | An ISO 8601 date, or the date as written in an ISO 8601 date-time (no time-zone conversion). From 1900-01-01 to today (UTC, from the handler's `TimeProvider`), both included. Answered as `YYYY-MM-DD` |
 | `Nationality.Code` | `CountryCode` ([ADR 0030](0030-iso-3166-country-codes.md)) | Trimmed and upper-cased, then an officially assigned ISO 3166-1 alpha-2 code |
 | `PartyCountryOfResidence.Code` | `CountryCode` | Same as `Nationality.Code` |
 | `ResidencyStatus.StatusDescription` | `ResidencyStatusCode` | `Resident` or `NonResident`, in any case, stored by name |
@@ -72,7 +72,10 @@ Option 4, chosen when 1.10 was planned.
 - **The future check is the decision's.**
   - Parsing has no clock, so the Reference handler stamps today's UTC date on the decision input, and `Decide` refuses a later birth date with `party.reference-invalid` naming `DateofBirth`.
   - A birth date already recorded is not checked again when an Update keeps it.
-- **No lower bound.** Any past date is accepted. A floor (for example 1900) would be a business rule nobody has asked for yet.
+- **A lower bound of 1900-01-01.**
+  - An earlier date of birth is almost always a typo (for example `0990` for `1990`), and no living party was born before it.
+  - It is refused with `party.reference-invalid` naming `DateofBirth`.
+  - The bound is fixed and needs no clock, so `PartyReferenceChanges.Create` checks it (`EarliestDateOfBirth`), with the format.
 - **BIAN objects, partly recorded.**
   - `Nationality` and `PartyCountryOfResidence` are BIAN `Country` objects, of which only `Code` is recorded. `ResidencyStatus` is an ISO 20022 `Status`, of which only `StatusDescription` and `StatusDateTime` are recorded.
   - Their other parts (`Citizen`, `Tax`, `StatusReason`, …) are refused like `OtherIdentification`, with no phase named.

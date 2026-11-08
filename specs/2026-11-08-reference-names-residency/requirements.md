@@ -51,7 +51,8 @@ Drivers:
 - **Date of birth:**
   - The value is stored as a `DateOnly`.
   - Accepted forms: an ISO date (`1990-05-17`), or an ISO date-time. For a date-time, the calendar date as written is kept, with no time-zone conversion.
-  - A date after today is invalid. "Today" comes from `TimeProvider`: the handler stamps it on the command, and the decision checks it.
+  - A date after today is invalid. "Today" comes from `TimeProvider`: the handler stamps it on the decision input, and the decision checks it.
+  - A date before 1900-01-01 is invalid, checked when the changes are read.
 - **Country fields:**
   - `Nationality` and `PartyCountryOfResidence` keep BIAN's object shape, `{ "Code": "FR" }`.
   - `Code` is parsed as a `CountryCode`.
@@ -90,7 +91,6 @@ Drivers:
 - Rules tied to `PartyType`, such as no birth date or salutation for an Organisation: not chosen. Every field is accepted for both party types.
 - History of nationality or residency, and multiple nationalities: not chosen. BIAN's single `Country` is recorded as the current value.
 - ISO 3166-1 user-assigned or exceptionally reserved codes (for example `XK`), alpha-3 and numeric codes, and subdivisions (ISO 3166-2): not chosen.
-- A lower bound on the birth date: not chosen (see Open questions).
 - FsCheck properties, a separate staged-table pin test (the existing pin is updated to 16) and `.http` demo files: not chosen in the interview.
 - The `Reference/Created`/`Updated` channels (ADR 0024, after 7.2), MCP tools (**1.17**), per-operation scopes (**1.15**), and PII masking and encryption at rest (**7.2**). New code must not log these values.
 
@@ -132,4 +132,4 @@ Drivers:
   - §7: `CountryCode` added to the list of shared value objects.
 
 ## Open questions
-- **Lower bound on `DateofBirth`.** Built without one: only "not in the future" is checked (recorded in ADR 0029). A floor such as 1900-01-01 would catch typos, but it is a business rule the user has not chosen, and adding it later is a small change.
+- None. The lower bound on `DateofBirth` was decided after the first build: 1900-01-01, inclusive, checked in `PartyReferenceChanges.Create` (ADR 0029).

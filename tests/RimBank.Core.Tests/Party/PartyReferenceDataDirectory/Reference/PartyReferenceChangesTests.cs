@@ -83,6 +83,27 @@ public sealed class PartyReferenceChangesTests
             .FieldErrors.ShouldNotBeNull().Keys.ShouldBe(["DateofBirth"]);
 
     [Theory]
+    [InlineData("1899-12-31")]
+    [InlineData("1850-06-01")]
+    [InlineData("0001-01-01")]
+    [InlineData("1899-12-31T23:59:59Z")]
+    public void A_date_of_birth_before_1900_is_invalid(string text)
+    {
+        var error = PartyReferenceChanges.Create(new PartyReferenceInput(DateofBirth: text), []).Error;
+
+        error.Code.ShouldBe("party.reference-invalid");
+        error.FieldErrors.ShouldNotBeNull()["DateofBirth"].ShouldBe(["The date of birth must not be before 1900-01-01."]);
+    }
+
+    [Fact]
+    public void The_first_of_january_1900_is_the_earliest_date_of_birth_accepted()
+    {
+        PartyReferenceChanges.EarliestDateOfBirth.ShouldBe(new DateOnly(1900, 1, 1));
+        PartyReferenceChanges.Create(new PartyReferenceInput(DateofBirth: "1900-01-01"), []).Value.DateOfBirth
+            .ShouldBe(new PartyReferenceChange<DateOnly?>(new DateOnly(1900, 1, 1)));
+    }
+
+    [Theory]
     [InlineData("resident", ResidencyStatusCode.Resident)]
     [InlineData("Resident", ResidencyStatusCode.Resident)]
     [InlineData("NONRESIDENT", ResidencyStatusCode.NonResident)]

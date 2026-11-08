@@ -29,13 +29,20 @@ public sealed record PartyReferenceChanges(
 {
     private const string CountryMessage = "The country must be an ISO 3166-1 alpha-2 code, for example FR.";
 
+    /// <summary>
+    /// The earliest date of birth accepted (inclusive, ADR 0029): an earlier one is almost always a typo. The latest is
+    /// today, checked by the decision because it needs the handler's clock.
+    /// </summary>
+    public static DateOnly EarliestDateOfBirth { get; } = new(1900, 1, 1);
+
     /// <summary>No change at all: an Update that only records that the Reference was reviewed.</summary>
     public static PartyReferenceChanges None { get; } = new(null, null, null);
 
     /// <summary>
     /// Reads the changes a caller sent. Every adapter (HTTP, MCP) builds the changes here, so they accept and refuse
     /// exactly the same values. Fields RimBank does not record yet are refused first, so nothing is updated partly.
-    /// Whether a date of birth is after today is the decision's check, because it needs the handler's clock.
+    /// A date of birth before <see cref="EarliestDateOfBirth"/> is refused here; whether it is after today is the
+    /// decision's check, because it needs the handler's clock.
     /// </summary>
     /// <param name="input">The values sent: <c>null</c> keeps, blank clears.</param>
     /// <param name="unsupportedFields">
@@ -134,6 +141,12 @@ public sealed record PartyReferenceChanges(
         {
             fieldErrors[PartyReferenceFields.DateofBirth] =
                 ["The date of birth must be an ISO 8601 date, for example 1990-05-17, or date-time."];
+            return null;
+        }
+
+        if (date < EarliestDateOfBirth)
+        {
+            fieldErrors[PartyReferenceFields.DateofBirth] = ["The date of birth must not be before 1900-01-01."];
             return null;
         }
 

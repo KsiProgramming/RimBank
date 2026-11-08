@@ -35,7 +35,7 @@ public static class UpdatePartyReferenceEndpoint
                 "Updates the party's Reference as a partial update: GovernmentIssuedIdentityReference.TaxIdentificationNumber, "
                 + "GovernmentIssuedIdentityReference.NationalRegistrationNumber, the LEI (ISO 17442, check digits verified) in "
                 + "PartyLegalEntityReference.Identification, PartyFullLegalName (at most 140 characters), PartyNameSalutation "
-                + "(at most 35), DateofBirth (an ISO 8601 date, not after today), Nationality.Code and "
+                + "(at most 35), DateofBirth (an ISO 8601 date, from 1900-01-01 to today), Nationality.Code and "
                 + "PartyCountryOfResidence.Code (ISO 3166-1 alpha-2), and ResidencyStatus (StatusDescription Resident or "
                 + "NonResident, and an optional StatusDateTime). A value left out keeps its value, and an empty one clears it. "
                 + "The other BIAN Reference fields are refused with party.reference-field-not-supported until the roadmap phase "

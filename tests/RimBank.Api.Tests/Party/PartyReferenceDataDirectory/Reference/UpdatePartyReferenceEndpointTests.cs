@@ -111,6 +111,18 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task A_date_of_birth_before_1900_is_a_validation_problem()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), """{ "DateofBirth": "1899-12-31" }""", "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-invalid");
+        problem.GetProperty("errors").GetProperty("DateofBirth")[0].GetString().ShouldBe("The date of birth must not be before 1900-01-01.");
+    }
+
+    [Fact]
     public async Task A_date_of_birth_after_today_is_a_validation_problem_and_nothing_is_stored()
     {
         await using var host = await server.StartHostAsync();

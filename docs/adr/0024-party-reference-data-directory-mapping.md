@@ -89,7 +89,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
   - the LEI (ISO 17442, check digits verified) in `PartyLegalEntityReference.Identification`.
   - From 1.18, it also updates:
     - `PartyFullLegalName` (Max140Text) and `PartyNameSalutation` (Max35Text);
-    - `DateofBirth` (a calendar date, not after today);
+    - `DateofBirth` (a calendar date, from 1900-01-01 to today);
     - `Nationality.Code` and `PartyCountryOfResidence.Code` (ISO 3166-1 alpha-2, [ADR 0030](0030-iso-3166-country-codes.md));
     - `ResidencyStatus` (`StatusDescription` `Resident` or `NonResident`, and an optional `StatusDateTime`).
   - A value left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. An invalid one is `party.reference-invalid` with the BIAN field names in `errors`.
@@ -177,7 +177,7 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.exchange-action-type-required` | Validation (400) | A Demographics Exchange has no `ExchangeActionType`, or a blank one (1.9, ADR 0028) |
 | `party.exchange-action-type-invalid` | Validation (400) | An `ExchangeActionType` other than `Verify` or `Reject` (1.9, ADR 0028) |
 | `party.demographics-not-recorded` | BusinessRule (422) | A Demographics Exchange on details that were never recorded, or were all cleared (1.9, ADR 0028) |
-| `party.reference-invalid` | Validation (400) | A Reference Update value is not valid: an identifier (length, or LEI format and check digits); from 1.18, a name too long, a date that is not ISO 8601 or a birth date after today, a country that is not ISO 3166-1 alpha-2, or a residency status other than `Resident`/`NonResident`. `errors` names each BIAN field (1.10, 1.18, ADR 0029) |
+| `party.reference-invalid` | Validation (400) | A Reference Update value is not valid: an identifier (length, or LEI format and check digits); from 1.18, a name too long, a date that is not ISO 8601 or a birth date before 1900-01-01 or after today, a country that is not ISO 3166-1 alpha-2, or a residency status other than `Resident`/`NonResident`. `errors` names each BIAN field (1.10, 1.18, ADR 0029) |
 | `party.reference-field-not-supported` | Validation (400) | A Reference Update sends a BIAN field or object part RimBank does not record yet; `errors` names each field and its phase, if one is planned (1.10, ADR 0029) |
 | `party.version-conflict` | Conflict (409) | `If-Match` is not the current stream version (1.8, [ADR 0027](0027-optimistic-concurrency-for-commands.md)) |
 | `shared.if-match-required` | PreconditionRequired (428) | A command on an existing entry or association has no `If-Match` (1.8, ADR 0027) |
