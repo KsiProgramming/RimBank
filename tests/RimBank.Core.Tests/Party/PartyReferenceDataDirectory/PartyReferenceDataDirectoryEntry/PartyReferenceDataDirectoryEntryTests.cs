@@ -71,6 +71,27 @@ public sealed class PartyReferenceDataDirectoryEntryTests
     }
 
     [Fact]
+    public void A_registered_entry_has_an_empty_reference_until_it_is_updated()
+    {
+        var entry = PartyReferenceDataDirectoryEntry.Evolve(PartyReferenceDataDirectoryEntry.Initial, Registered());
+
+        entry.Reference.ShouldBeNull();
+        entry.CurrentReference.ShouldBe(PartyReferenceDetails.Empty);
+    }
+
+    [Fact]
+    public void An_updated_reference_holds_what_the_event_recorded_and_keeps_the_rest_of_the_entry()
+    {
+        var entry = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated(), DetailsUpdated(), ReferenceUpdated() }
+            .Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
+
+        entry.ShouldBe(new PartyReferenceDataDirectoryEntry(
+            EntryId, PartyType.Organisation, OpenDate, Demographics, Reference, BankRelations, RefreshDate,
+            new DemographicsRecord(Details, DemographicsVerificationStatus.Unverified, null),
+            ReferenceDetails));
+    }
+
+    [Fact]
     public void Evolving_an_event_the_entry_does_not_know_is_a_programmer_error()
     {
         Should.Throw<UnreachableException>(() =>

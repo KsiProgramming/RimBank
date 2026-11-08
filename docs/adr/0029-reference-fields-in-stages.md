@@ -1,0 +1,77 @@
+# 0029. Reference BQ: the party identifiers first, the other fields in stages and refused until then
+
+- Status: Accepted
+- Date: 2026-11-08
+- Roadmap phase: 1.10
+
+## Context
+
+Roadmap 1.10 builds the Reference Behavior Qualifier of the Party Reference Data Directory: `Reference/Update` and `Reference/Retrieve` ([ADR 0024](0024-party-reference-data-directory-mapping.md)). Its roadmap row asks for "party identifiers (national ID, tax ID, LEI) as value objects".
+
+What the [BIAN OpenAPI](../../doc-0/release14.0.0/apis-iso20022_ext-ddd/oas3/yamls/PartyReferenceDataDirectory.yaml) gives:
+
+- `UpdateReference` and `RetrieveReference` have **24 top-level fields**, most of them nested ISO 20022 types:
+  - identifiers;
+  - names, birth date, nationality and residency;
+  - postal addresses and contact points;
+  - legal structure, political exposure, corporate officers and documents.
+- `GovernmentIssuedIdentityReference` is a `PartyIdentificationInformation`, with `TaxIdentificationNumber` and `NationalRegistrationNumber` (both Max35Text) among about fifteen parts. `RegistrationAuthorityIdentification` is Max8Text: a registry code, not an LEI.
+- `PartyLegalEntityReference` is a `Party`, "the reference to the legal entity". Its `Identification` is a string.
+- There is no field named for the LEI.
+
+A roadmap phase is about one focused day ([mission](../../specs/mission.md) principle 10). Modelling all 24 fields at once would take several. No other roadmap phase covered the Reference BQ, and Register's policy for fields it does not use is "accept and ignore" (ADR 0024). Applied here, that policy would drop most of the BQ from the plan for good. It would also answer `200` to a caller whose address or birth date was never stored.
+
+## Options considered
+
+1. **All 24 fields in 1.10.**
+   - Pros: the BQ is complete at once.
+   - Cons: several days of work and a large PR, against principle 10.
+2. **Identifiers only, with the other fields accepted and ignored.**
+   - Pros: the smallest change, and it matches Register.
+   - Cons: the other fields are never scheduled, and a `200` hides data that was not stored.
+3. **Identifiers only, with the other fields refused, and no roadmap rows for them.**
+   - Pros: honest answers.
+   - Cons: the fields still have no plan.
+4. **Identifiers in 1.10, the other fields in new roadmap rows, and refused until each row lands.**
+   - Pros: honest answers, every field has a phase, and each phase stays small.
+   - Cons: callers that send the other fields get a 400 until their phase lands.
+
+## Decision
+
+Option 4, chosen when 1.10 was planned.
+
+### The identifiers (1.10)
+
+| BIAN field | Value object | Rule |
+|---|---|---|
+| `GovernmentIssuedIdentityReference.TaxIdentificationNumber` | `TaxIdentificationNumber` | Trimmed, not blank, at most 35 characters (Max35Text). No country format check |
+| `GovernmentIssuedIdentityReference.NationalRegistrationNumber` | `NationalRegistrationNumber` | Same as the tax identification number |
+| `PartyLegalEntityReference.Identification` | `LegalEntityIdentifier` | ISO 17442: trimmed and upper-cased, 18 letters or digits followed by 2 check digits, and the ISO 7064 MOD 97-10 check holds |
+
+- **Where the LEI goes.** The LEI identifies the legal entity, so it goes in `PartyLegalEntityReference.Identification`. That needs no extension field. `RegistrationAuthorityIdentification` is too short for it.
+- **Partial update.** As for Demographics (1.9), an identifier left out keeps its value, an empty one clears it, and every accepted Update appends `PartyReferenceUpdated` with the full resulting Reference.
+- **Validation.** Any invalid identifier is `party.reference-invalid` (400), with every offending BIAN field named in `errors`.
+- **JSON.** Each identifier is stored and sent as a plain string, like `Currency` ([ADR 0009](0009-money-and-currency.md)).
+- **No verification status.** BIAN gives Reference no Exchange, so unlike Demographics ([ADR 0028](0028-demographics-exchange-as-verification.md)) it has no status.
+
+### The other fields, in stages
+
+| Phase | BIAN fields |
+|---|---|
+| 1.18 Names and residency | `PartyFullLegalName`, `PartyNameSalutation`, `DateofBirth`, `Nationality`, `PartyCountryOfResidence`, `ResidencyStatus` |
+| 1.19 Addresses and contact points | `ResidentialAddress`, `PartyAddress`, `CorporateAddress`, `eMailAddress`, `CellPhoneNumber`, `SocialNetworkContacts` |
+| 1.20 Legal, political exposure and corporate details | `PartyLegalStructure`, `PoliticalExposureType`, `PoliticalExposureDescriptionRecord`, `CustomerSinceDate`, `CorporateCustomerReference`, `CorporateCustomerLegalEntityReference`, `CompanyOfficerReference`, `CompanyOfficerRole`, `GovernmentIssuedDocumentDetails`, `DocumentDirectoryEntryInstanceReference` |
+
+- **Refused until their phase lands.** A request that sends any of these fields with a value (not `null`) is `party.reference-field-not-supported` (400). `errors` names each field and the phase that will add it, and nothing is stored. The same applies to any other part of `GovernmentIssuedIdentityReference` or `PartyLegalEntityReference`, such as `OtherIdentification`. No phase is planned for those parts, so their message names none.
+- **The check comes first.** It runs before the identifiers are checked, so a request is never applied partly.
+- **Other properties are ignored.** Properties that are not BIAN Reference fields are ignored, as elsewhere. Staged field names are matched without regard to case.
+- **Where the rule lives.** The field-to-phase table and the error are in the core (`PartyReferenceFields`, `PartyReferenceChanges.Create`). Adapters only report which properties were sent, so HTTP and MCP (1.17) refuse the same fields.
+- **Register is unchanged.** It keeps accepting and ignoring the CR fields it does not use (ADR 0024). Those fields are recorded by the BQs, so nothing is lost.
+
+## Consequences
+
+- **Roadmap.** Rows 1.18, 1.19 and 1.20 are listed right after 1.10. Each one removes its fields from `PartyReferenceFields.Staged`, adds them to `PartyReferenceDetails`, and updates this ADR's table.
+- **Tests.** `PartyReferenceChangesTests` pins that 22 fields are staged across exactly those three phases, so a phase cannot add a field without updating the table.
+- **Clients.** A client that sends a staged field gets a 400 that says when the field will be supported, never a silent drop.
+- **Uniqueness.** Identifiers are not unique across entries. A uniqueness rule (for example one LEI per entry) needs a cross-stream check and its own ADR.
+- **PII.** The identifiers are personal data. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.

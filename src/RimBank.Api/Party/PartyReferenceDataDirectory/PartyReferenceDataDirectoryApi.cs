@@ -16,6 +16,8 @@ public static class PartyReferenceDataDirectoryApi
         endpoints.MapUpdateDemographics();
         endpoints.MapExchangeDemographics();
         endpoints.MapRetrieveDemographics();
+        endpoints.MapUpdatePartyReference();
+        endpoints.MapRetrievePartyReference();
         return endpoints;
     }
 }
