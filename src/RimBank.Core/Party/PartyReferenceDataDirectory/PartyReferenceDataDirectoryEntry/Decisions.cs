@@ -60,6 +60,16 @@ public sealed record ExchangeDemographicsDetails(
     ExchangeActionType Action,
     DateTimeOffset VerificationDate) : PartyReferenceDataDirectoryEntryCommand;
 
+/// <summary>
+/// Update the entry's Reference (BIAN <c>Reference/Update</c>): a partial update of the party identifiers. The handler
+/// has already checked the entry, the Reference id and the expected version.
+/// </summary>
+/// <param name="PartyReferenceId">The Reference the caller named.</param>
+/// <param name="Changes">The changes to apply.</param>
+public sealed record UpdatePartyReferenceDetails(
+    PartyReferenceId PartyReferenceId,
+    PartyReferenceChanges Changes) : PartyReferenceDataDirectoryEntryCommand;
+
 public sealed partial record PartyReferenceDataDirectoryEntry
 {
     /// <inheritdoc />
@@ -71,6 +81,7 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// Demographics Update and Exchange need a registered entry and its own Demographics id
     /// (<c>party.behavior-qualifier-not-found</c> otherwise). Update always records the resulting details, and only a
     /// change makes them unverified again. Exchange needs recorded details (<c>party.demographics-not-recorded</c>).
+    /// Reference Update needs a registered entry and its own Reference id, and always records the resulting Reference.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -98,7 +109,7 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                     entryId,
                     update.PartyType ?? current,
                     update.RefreshDate)),
-            (UpdateDemographicsDetails or ExchangeDemographicsDetails, { Id: null }) =>
+            (UpdateDemographicsDetails or ExchangeDemographicsDetails or UpdatePartyReferenceDetails, { Id: null }) =>
                 PartyReferenceDataDirectoryEntryErrors.PartyNotFound,
             (UpdateDemographicsDetails update, _) when update.DemographicsId != state.DemographicsId =>
                 PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
@@ -121,6 +132,13 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                         _ => throw new UnreachableException($"Undefined action {exchange.Action} was refused above."),
                     },
                     exchange.VerificationDate)),
+            (UpdatePartyReferenceDetails update, _) when update.PartyReferenceId != state.PartyReferenceId =>
+                PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
+            (UpdatePartyReferenceDetails update, { Id: { } entryId }) =>
+                Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(new PartyReferenceUpdated(
+                    entryId,
+                    update.PartyReferenceId,
+                    state.CurrentReference.Apply(update.Changes))),
             _ => throw new UnreachableException($"The entry does not decide {command}."),
         };
 

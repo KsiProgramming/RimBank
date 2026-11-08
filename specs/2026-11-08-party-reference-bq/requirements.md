@@ -35,7 +35,7 @@ Drivers:
 - **Update (partial, as in 1.9):**
   - An omitted identifier keeps its value, and `""` clears it.
   - Every accepted Update appends `PartyReferenceUpdated`, which carries the full resulting identifiers, even when nothing changes.
-  - `PartyReferenceChanges.Parse(...)` returns `Result`. Any invalid identifier gives `party.reference-invalid` (400), with every offending BIAN field named in `errors`.
+  - `PartyReferenceChanges.Create(...)` returns `Result`. Any invalid identifier gives `party.reference-invalid` (400), with every offending BIAN field named in `errors`.
 - **Fields not supported yet:**
   - These are the other 22 top-level BIAN Reference fields, plus every sub-field of `GovernmentIssuedIdentityReference` and `PartyLegalEntityReference` other than the three identifiers.
   - Any of them that is present and not `null` gives `party.reference-field-not-supported` (400). `errors` names each one and says which roadmap phase will add it.

@@ -49,6 +49,11 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjection
                     VerificationDate = exchanged.VerificationDate,
                 },
             },
+            (_, PartyReferenceUpdated updated) => view with
+            {
+                Version = view.Version + 1,
+                Reference = updated.Details,
+            },
             (_, _) => view with { Version = view.Version + 1 },
         };
 }

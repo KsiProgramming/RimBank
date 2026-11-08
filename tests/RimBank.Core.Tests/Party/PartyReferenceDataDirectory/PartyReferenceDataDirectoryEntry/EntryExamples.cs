@@ -56,4 +56,25 @@ internal static class EntryExamples
     public static DemographicsExchanged DetailsExchanged(
         DemographicsVerificationStatus status = DemographicsVerificationStatus.Verified) =>
         new(EntryId, Demographics, status, VerificationDate);
+
+    public const string Lei = "5493001KJTIIGC8Y1R12";
+
+    public static readonly PartyIdentifiers Identifiers = new(
+        TaxIdentificationNumber.TryCreate("FR12345678901").Value,
+        NationalRegistrationNumber.TryCreate("1 85 05 78 006 084 36").Value,
+        LegalEntityIdentifier.TryCreate(Lei).Value);
+
+    public static readonly PartyReferenceDetails ReferenceDetails = new(Identifiers);
+
+    public static PartyReferenceChanges ReferenceChangesTo(PartyIdentifiers identifiers) =>
+        new(
+            new PartyIdentifierChange<TaxIdentificationNumber>(identifiers.TaxIdentificationNumber),
+            new PartyIdentifierChange<NationalRegistrationNumber>(identifiers.NationalRegistrationNumber),
+            new PartyIdentifierChange<LegalEntityIdentifier>(identifiers.LegalEntityIdentifier));
+
+    public static UpdatePartyReferenceDetails UpdateReference(PartyReferenceChanges? changes = null) =>
+        new(Reference, changes ?? ReferenceChangesTo(Identifiers));
+
+    public static PartyReferenceUpdated ReferenceUpdated(PartyReferenceDetails? details = null) =>
+        new(EntryId, Reference, details ?? ReferenceDetails);
 }

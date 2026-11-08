@@ -15,6 +15,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="BankRelationsId">The entry's BankRelations Behavior Qualifier.</param>
 /// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update, if any.</param>
 /// <param name="Demographics">The entry's Demographics record, or <c>null</c> until its first Update (see <see cref="CurrentDemographics"/>).</param>
+/// <param name="Reference">The entry's Reference record, or <c>null</c> until its first Update (see <see cref="CurrentReference"/>).</param>
 public sealed partial record PartyReferenceDataDirectoryEntry(
     PartyReferenceDataDirectoryEntryId? Id,
     PartyType? PartyType,
@@ -23,7 +24,8 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
     PartyReferenceId? PartyReferenceId,
     BankRelationsId? BankRelationsId,
     DateTimeOffset? RefreshDate = null,
-    DemographicsRecord? Demographics = null)
+    DemographicsRecord? Demographics = null,
+    PartyReferenceDetails? Reference = null)
     : IDecider<PartyReferenceDataDirectoryEntry, PartyReferenceDataDirectoryEntryCommand, PartyReferenceDataDirectoryEntryEvent>
 {
     /// <summary>An entry that is not registered yet.</summary>
@@ -34,6 +36,9 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
 
     /// <summary>The entry's Demographics record: empty and unverified until its first Update.</summary>
     public DemographicsRecord CurrentDemographics => Demographics ?? DemographicsRecord.Empty;
+
+    /// <summary>The entry's Reference record: empty until its first Update.</summary>
+    public PartyReferenceDetails CurrentReference => Reference ?? PartyReferenceDetails.Empty;
 
     /// <inheritdoc />
     public static PartyReferenceDataDirectoryEntry Evolve(
@@ -65,6 +70,7 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
                     VerificationDate = exchanged.VerificationDate,
                 },
             },
+            PartyReferenceUpdated updated => state with { Reference = updated.Details },
             _ => throw new UnreachableException($"The entry does not know {domainEvent}."),
         };
 }

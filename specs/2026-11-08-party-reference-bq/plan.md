@@ -6,12 +6,12 @@ Every group is written test first. After each group, the solution builds and its
 - The Testcontainers and Alba tests need Docker. If it is not available locally, they run in CI.
 
 ## 1. Core: identifiers, decision, handler, query and projection
-- [ ] Tests first in `RimBank.Core.Tests/Party/PartyReferenceDataDirectory/` (namespace `RimBank.Party.PartyReferenceDataDirectory.Tests`):
+- [x] Tests first in `RimBank.Core.Tests/Party/PartyReferenceDataDirectory/` (namespace `RimBank.Party.PartyReferenceDataDirectory.Tests`):
   - `Reference/LegalEntityIdentifierTests`:
     - a valid LEI (for example `5493001KJTIIGC8Y1R12`) parses, and is trimmed and upper-cased;
     - the wrong length, a non-alphanumeric character, or check digits that are not numeric → invalid;
     - one changed character → the checksum fails.
-  - `Reference/TaxIdentificationNumberTests` and `NationalRegistrationNumberTests`: trimmed; 35 characters is accepted; 36 is invalid.
+  - `Reference/GovernmentIssuedIdentifierTests` (the tax and national numbers): trimmed; 35 characters is accepted; 36 is invalid.
   - `Reference/PartyReferenceChangesTests`:
     - `null` → keep; `""` or whitespace → clear;
     - several invalid fields → one `party.reference-invalid`, with every BIAN field path in `errors` (`GovernmentIssuedIdentityReference.TaxIdentificationNumber`, `PartyLegalEntityReference.Identification`, …);
@@ -34,19 +34,20 @@ Every group is written test first. After each group, the solution builds and its
     - Given Register + `PartyReferenceUpdated` → Then the section and version 2;
     - with Demographics events interleaved, both sections are kept;
     - after Register only, the section is `null`.
-- [ ] `Reference/`:
+- [x] `Reference/`:
   - `TaxIdentificationNumber.cs`, `NationalRegistrationNumber.cs` and `LegalEntityIdentifier.cs` (`readonly record struct` with `TryCreate → Result`; MOD 97-10 on the LEI);
   - `PartyIdentifiers.cs` (`Empty`, `Apply` and `HasAny`) and `PartyReferenceDetails.cs` (`Identifiers`, plus `Empty`);
-  - `PartyReferenceChanges.cs` (tri-state fields, and `Parse(tax, national, lei, IReadOnlyCollection<string> presentUnsupportedFields) → Result<PartyReferenceChanges>`);
+  - `PartyReferenceChanges.cs` (tri-state fields, and `Create(tax, national, lei, IReadOnlyCollection<string> unsupportedFields) → Result<PartyReferenceChanges>`);
   - `PartyReferenceFields.cs`: the BIAN field names, and the table of unsupported fields to their phase (1.18 / 1.19 / 1.20);
-  - `PartyReferenceErrors.cs`: `ReferenceIdInvalid` (field `referenceid`), `ReferenceInvalid` and `ReferenceFieldNotSupported`;
+  - `PartyReferenceErrors.cs`: `ReferenceIdInvalid` (field `referenceid`), `ReferenceInvalid`, `IdentifierInvalid` and `ReferenceFieldsNotSupported`;
+  - `IPartyIdentifier.cs` and `PartyIdentifierJsonConverter.cs` (identifiers are plain JSON strings, like `Currency`), and `PartyIdentifierChange.cs` (set or clear one identifier);
   - `Events.cs`: `PartyReferenceUpdated` (a `PartyReferenceDataDirectoryEntryEvent`).
-- [ ] Entry state: add `Reference` (`PartyReferenceDetails?`) and the `Evolve` case.
-- [ ] `Decisions.cs`: the decider input `UpdatePartyReferenceDetails(PartyReferenceId, PartyReferenceChanges)` and its `Decide` case.
-- [ ] `Reference/UpdatePartyReference.cs` (`ICommand`: `EntryId`, `PartyReferenceId`, `ExpectedVersion`, `Changes`, `IdempotencyKey`), `UpdatePartyReferenceAcknowledged.cs` and `UpdatePartyReferenceHandler.cs`. Follow `DemographicsCommandFlow`: load, then the checks in order, then `Decide`, then `AppendToEntry`, then acknowledge from the evolved state.
-- [ ] `Reference/RetrievePartyReference.cs` (`IQuery<PartyReferenceDataDirectoryEntryView>`: `EntryId`, `PartyReferenceId`) and `RetrievePartyReferenceHandler.cs`.
-- [ ] View: add `PartyReferenceDetails? Reference` to `PartyReferenceDataDirectoryEntryView`, and the projection case.
-- [ ] Run `RimBank.Core.Tests` and `RimBank.Architecture.Tests` (CQRS roles: the handler uses only the write port; Retrieve uses only the read port).
+- [x] Entry state: add `Reference` (`PartyReferenceDetails?`) and the `Evolve` case.
+- [x] `Decisions.cs`: the decider input `UpdatePartyReferenceDetails(PartyReferenceId, PartyReferenceChanges)` and its `Decide` case.
+- [x] `Reference/UpdatePartyReference.cs` (`ICommand`: `EntryId`, `PartyReferenceId`, `ExpectedVersion`, `Changes`, `IdempotencyKey`), `UpdatePartyReferenceAcknowledged.cs` and `UpdatePartyReferenceHandler.cs`. Follow `DemographicsCommandFlow`: load, then the checks in order, then `Decide`, then `AppendToEntry`, then acknowledge from the evolved state.
+- [x] `Reference/RetrievePartyReference.cs` (`IQuery<PartyReferenceDataDirectoryEntryView>`: `EntryId`, `PartyReferenceId`) and `RetrievePartyReferenceHandler.cs`.
+- [x] View: add `PartyReferenceDetails? Reference` to `PartyReferenceDataDirectoryEntryView`, and the projection case.
+- [x] Run `RimBank.Core.Tests` and `RimBank.Architecture.Tests` (CQRS roles: the handler uses only the write port; Retrieve uses only the read port).
 
 ## 2. PostgreSQL round trip
 - [ ] `PartyReferenceDataDirectoryPostgresql.Configure`: `MapEventType<PartyReferenceUpdated>("party_reference_updated")`.
@@ -86,7 +87,7 @@ Every group is written test first. After each group, the solution builds and its
   - `UpdatePartyReferenceRequest.cs`:
     - the supported fields are typed;
     - the unsupported ones are `JsonElement?` properties with their BIAN names;
-    - `PresentUnsupportedFields()` reports them, and `ToCommand` passes them to `PartyReferenceChanges.Parse`.
+    - `PresentUnsupportedFields()` reports them, and `ToCommand` passes them to `PartyReferenceChanges.Create`.
   - `PartyReferenceResponse.cs`: one shape, with `From(acknowledged)` and `From(view)`.
   - `PartyReferenceRouteValues.cs`.
   - `UpdatePartyReferenceEndpoint.cs` and `RetrievePartyReferenceEndpoint.cs`:

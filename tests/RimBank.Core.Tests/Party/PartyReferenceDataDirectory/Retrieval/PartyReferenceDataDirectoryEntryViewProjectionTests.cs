@@ -81,6 +81,33 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
     }
 
     [Fact]
+    public void An_updated_reference_shows_in_the_view_at_the_stream_version_and_keeps_the_demographics() =>
+        EntryViewSpecification.Given(Registered(), DetailsUpdated(), ReferenceUpdated())
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 3,
+                PartyType.Person,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Demographics: new DemographicsRecord(Details, DemographicsVerificationStatus.Unverified, null),
+                Reference: ReferenceDetails));
+
+    [Fact]
+    public void A_registered_entry_has_no_reference_section_and_reads_as_empty()
+    {
+        var view = PartyReferenceDataDirectoryEntryViewProjection.Project(null, Registered()).ShouldNotBeNull();
+
+        view.Reference.ShouldBeNull();
+        view.CurrentReference.ShouldBe(PartyReferenceDetails.Empty);
+    }
+
+    [Fact]
+    public void A_reference_event_before_registration_leaves_no_view() =>
+        EntryViewSpecification.Given(ReferenceUpdated()).ThenNoView();
+
+    [Fact]
     public void A_demographics_event_before_registration_leaves_no_view() =>
         EntryViewSpecification.Given(DetailsUpdated(), DetailsExchanged()).ThenNoView();
 
@@ -123,7 +150,7 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
     [Fact]
     public void The_view_survives_a_json_round_trip_without_storing_the_typed_id()
     {
-        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated(), DetailsUpdated(), DetailsExchanged() }
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), Updated(), DetailsUpdated(), DetailsExchanged(), ReferenceUpdated() }
             .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
             .ShouldNotBeNull();
 
@@ -133,6 +160,7 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
         var stored = JsonNode.Parse(json).ShouldNotBeNull().AsObject();
         stored.ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.EntryId)).ShouldBeFalse();
         stored.ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.CurrentDemographics)).ShouldBeFalse();
+        stored.ContainsKey(nameof(PartyReferenceDataDirectoryEntryView.CurrentReference)).ShouldBeFalse();
     }
 
     // Stands in for the entry's later events whose data the view does not show (the Behavior Qualifier updates) until they exist.

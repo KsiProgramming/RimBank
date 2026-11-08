@@ -57,8 +57,22 @@ public sealed class PartyReferenceDataDirectoryEntryLawsProperties
         from days in Gen.Choose(0, 60)
         select (PartyReferenceDataDirectoryEntryCommand)new ExchangeDemographicsDetails(demographicsId, action, _openDate.AddDays(days));
 
+    private static readonly LegalEntityIdentifier _lei = LegalEntityIdentifier.TryCreate("5493001KJTIIGC8Y1R12").Value;
+
+    private static readonly TaxIdentificationNumber _taxId = TaxIdentificationNumber.TryCreate("FR12345678901").Value;
+
+    // A foreign Reference id now and then covers party.behavior-qualifier-not-found (roadmap 1.10); each identifier is
+    // kept, cleared or set.
+    private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _referenceUpdates =
+        from partyReferenceId in Pick(PartyReferenceId.From)
+        from taxId in Gen.Elements(null, new PartyIdentifierChange<TaxIdentificationNumber>(null), new PartyIdentifierChange<TaxIdentificationNumber>(_taxId))
+        from lei in Gen.Elements(null, new PartyIdentifierChange<LegalEntityIdentifier>(null), new PartyIdentifierChange<LegalEntityIdentifier>(_lei))
+        select (PartyReferenceDataDirectoryEntryCommand)new UpdatePartyReferenceDetails(
+            partyReferenceId,
+            new PartyReferenceChanges(taxId, null, lei));
+
     private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _commands =
-        Gen.OneOf(_registers, _updates, _demographicsUpdates, _demographicsExchanges);
+        Gen.OneOf(_registers, _updates, _demographicsUpdates, _demographicsExchanges, _referenceUpdates);
 
     [Property]
     public Property Decisions_are_deterministic() => EntryLaws.DecisionsAreDeterministic(_commands);
