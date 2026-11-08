@@ -3,7 +3,7 @@ using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
-// Reading the changes a Reference Update asks for (roadmap 1.10 and 1.18, ADR 0029): null keeps, blank clears, every
+// Reading the changes a Reference Update asks for (roadmap 1.10, 1.18 and 1.19, ADR 0029, ADR 0031): null keeps, blank clears, every
 // invalid value is named with its BIAN field, and the fields RimBank does not record yet are refused with their phase.
 public sealed class PartyReferenceChangesTests
 {
@@ -177,12 +177,12 @@ public sealed class PartyReferenceChangesTests
     [Fact]
     public void A_staged_field_is_refused_with_the_phase_that_adds_it()
     {
-        var error = PartyReferenceChanges.Create(PartyReferenceInput.None, ["eMailAddress", "PoliticalExposureType"]).Error;
+        var error = PartyReferenceChanges.Create(PartyReferenceInput.None, ["PartyLegalStructure", "PoliticalExposureType"]).Error;
 
         error.Kind.ShouldBe(ErrorKind.Validation);
         error.Code.ShouldBe("party.reference-field-not-supported");
         var fieldErrors = error.FieldErrors.ShouldNotBeNull();
-        fieldErrors["eMailAddress"].ShouldHaveSingleItem().ShouldContain("1.19");
+        fieldErrors["PartyLegalStructure"].ShouldHaveSingleItem().ShouldContain("1.20");
         fieldErrors["PoliticalExposureType"].ShouldHaveSingleItem().ShouldContain("1.20");
     }
 
@@ -191,6 +191,12 @@ public sealed class PartyReferenceChangesTests
     [InlineData("Nationality.Citizen")]
     [InlineData("PartyCountryOfResidence.Tax")]
     [InlineData("ResidencyStatus.StatusReason")]
+    [InlineData("ResidentialAddress.AddressType")]
+    [InlineData("PartyAddress.ValidityPeriod")]
+    [InlineData("CorporateAddress.Country.Citizen")]
+    [InlineData("eMailAddress.Identification")]
+    [InlineData("CellPhoneNumber.PhoneNumber")]
+    [InlineData("SocialNetworkContacts.BICAddress")]
     public void A_field_no_phase_adds_is_refused_without_a_phase(string field) =>
         PartyReferenceChanges.Create(PartyReferenceInput.None, [field]).Error
             .FieldErrors.ShouldNotBeNull()[field]
@@ -198,15 +204,15 @@ public sealed class PartyReferenceChangesTests
 
     [Fact]
     public void Unsupported_fields_are_refused_before_the_values_are_checked() =>
-        PartyReferenceChanges.Create(new PartyReferenceInput(new string('1', 36), DateofBirth: "garbage"), ["eMailAddress"]).Error.Code
+        PartyReferenceChanges.Create(new PartyReferenceInput(new string('1', 36), DateofBirth: "garbage"), ["PartyLegalStructure"]).Error.Code
             .ShouldBe("party.reference-field-not-supported");
 
     [Fact]
     public void Every_bian_reference_field_is_either_recorded_or_staged()
     {
-        // The 24 top-level fields of BIAN UpdateReference (PartyReferenceDataDirectory.yaml): two are recorded from 1.10
-        // and six from 1.18.
-        PartyReferenceFields.Staged.Count.ShouldBe(16);
+        // The 24 top-level fields of BIAN UpdateReference (PartyReferenceDataDirectory.yaml): two are recorded from 1.10,
+        // six from 1.18 and six from 1.19.
+        PartyReferenceFields.Staged.Count.ShouldBe(10);
         PartyReferenceFields.Staged.Keys.ShouldNotContain(PartyReferenceFields.GovernmentIssuedIdentityReference);
         PartyReferenceFields.Staged.Keys.ShouldNotContain(PartyReferenceFields.PartyLegalEntityReference);
         string[] recordedIn118 =
@@ -219,6 +225,103 @@ public sealed class PartyReferenceChangesTests
             PartyReferenceFields.ResidencyStatus,
         ];
         PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn118.Contains(field));
-        PartyReferenceFields.Staged.Values.Distinct().Order().ShouldBe(["1.19", "1.20"]);
+        string[] recordedIn119 =
+        [
+            PartyReferenceFields.ResidentialAddress,
+            PartyReferenceFields.PartyAddress,
+            PartyReferenceFields.CorporateAddress,
+            PartyReferenceFields.EMailAddress,
+            PartyReferenceFields.CellPhoneNumber,
+            PartyReferenceFields.SocialNetworkContacts,
+        ];
+        PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn119.Contains(field));
+        PartyReferenceFields.Staged.Values.Distinct().ShouldBe(["1.20"]);
+    }
+
+    [Fact]
+    public void Given_addresses_and_contact_points_are_read_into_their_value_objects() =>
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    ResidentialAddress: new PostalAddressInput(
+                        StreetName: " Rue de Rivoli ",
+                        StreetBuildingIdentification: "12",
+                        PostCodeIdentification: "75001",
+                        TownName: "Paris",
+                        Country: new PartyCountryInput("fr")),
+                    PartyAddress: new PostalAddressInput(
+                        PostOfficeBox: "BP 42",
+                        PostCodeIdentification: "1000",
+                        TownName: "Bruxelles",
+                        Country: new PartyCountryInput("BE")),
+                    CorporateAddress: new PostalAddressInput(
+                        "Finance",
+                        null,
+                        "Avenue Louise",
+                        "54",
+                        "Tour Louise",
+                        "3",
+                        null,
+                        "1050",
+                        "Ixelles",
+                        new PartyCountryInput("BE")),
+                    EmailAddress: " jeanne@example.fr ",
+                    MobileNumber: "+33 6 12 34 56 78",
+                    SocialNetworkUrl: "https://www.linkedin.com/in/jdupont"),
+                [])
+            .Value.ShouldBe(PartyReferenceChanges.None with
+            {
+                ResidentialAddress = new(Addresses.ResidentialAddress),
+                PartyAddress = new(Addresses.PartyAddress),
+                CorporateAddress = new(Addresses.CorporateAddress),
+                EmailAddress = new(ContactPoints.EmailAddress),
+                MobileNumber = new(ContactPoints.MobileNumber),
+                SocialNetworkAddress = new(ContactPoints.SocialNetwork),
+            });
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void A_blank_address_or_contact_point_clears_it(string blank) =>
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    ResidentialAddress: new PostalAddressInput(),
+                    PartyAddress: new PostalAddressInput(StreetName: blank, Country: new PartyCountryInput(blank)),
+                    CorporateAddress: new PostalAddressInput(TownName: blank),
+                    EmailAddress: blank,
+                    MobileNumber: blank,
+                    SocialNetworkUrl: blank),
+                [])
+            .Value.ShouldBe(PartyReferenceChanges.None with
+            {
+                ResidentialAddress = new(null),
+                PartyAddress = new(null),
+                CorporateAddress = new(null),
+                EmailAddress = new(null),
+                MobileNumber = new(null),
+                SocialNetworkAddress = new(null),
+            });
+
+    [Fact]
+    public void Every_invalid_address_part_and_contact_point_is_named_with_its_bian_path()
+    {
+        var error = PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    ResidentialAddress: new PostalAddressInput(StreetName: "Rue de Rivoli", Country: new PartyCountryInput("FR")),
+                    CorporateAddress: new PostalAddressInput(TownName: "Ixelles", Country: new PartyCountryInput("ZZ")),
+                    EmailAddress: "jeanne.example.fr",
+                    MobileNumber: "0612345678",
+                    SocialNetworkUrl: "http://www.linkedin.com/in/jdupont"),
+                [])
+            .Error;
+
+        error.Code.ShouldBe("party.reference-invalid");
+        error.FieldErrors.ShouldNotBeNull().Keys.Order(StringComparer.Ordinal).ShouldBe(
+        [
+            "CellPhoneNumber.MobileNumber",
+            "CorporateAddress.Country.Code",
+            "ResidentialAddress.TownName",
+            "SocialNetworkContacts.URLAddress",
+            "eMailAddress.EmailAddress",
+        ]);
     }
 }

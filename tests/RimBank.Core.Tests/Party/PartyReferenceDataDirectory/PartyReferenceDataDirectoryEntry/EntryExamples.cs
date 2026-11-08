@@ -90,6 +90,22 @@ internal static class EntryExamples
     // Every value roadmap 1.10 and 1.18 record.
     public static readonly PartyReferenceDetails FullReferenceDetails = new(Identifiers, Names, DateOfBirth, Residency);
 
+    public static readonly PartyAddresses Addresses = new(
+        new PostalAddress(null, null, "Rue de Rivoli", "12", null, null, null, "75001", "Paris", CountryCode.From("FR")),
+        new PostalAddress(null, null, null, null, null, null, "BP 42", "1000", "Bruxelles", CountryCode.From("BE")),
+        new PostalAddress("Finance", null, "Avenue Louise", "54", "Tour Louise", "3", null, "1050", "Ixelles", CountryCode.From("BE")));
+
+    public static readonly PartyContactPoints ContactPoints = new(
+        EmailAddress.TryCreate("jeanne@example.fr").Value,
+        MobileNumber.TryCreate("+33612345678").Value,
+        SocialNetworkAddress.TryCreate("https://www.linkedin.com/in/jdupont").Value);
+
+    // Every value roadmap 1.10, 1.18 and 1.19 record.
+    public static readonly PartyReferenceDetails CompleteReferenceDetails =
+        FullReferenceDetails with { Addresses = Addresses, ContactPoints = ContactPoints };
+
+    // The changes that set every value of the details. The 1.19 parts are only sent when the details have them, so the
+    // changes of a 1.18-shaped Reference stay the ones a 1.18 request makes.
     public static PartyReferenceChanges ReferenceChangesTo(PartyReferenceDetails details) =>
         ReferenceChangesTo(details.Identifiers) with
         {
@@ -99,6 +115,12 @@ internal static class EntryExamples
             Nationality = new(details.CurrentResidency.Nationality),
             PartyCountryOfResidence = new(details.CurrentResidency.CountryOfResidence),
             ResidencyStatus = new(details.CurrentResidency.ResidencyStatus),
+            ResidentialAddress = details.Addresses is { } residential ? new(residential.ResidentialAddress) : null,
+            PartyAddress = details.Addresses is { } party ? new(party.PartyAddress) : null,
+            CorporateAddress = details.Addresses is { } corporate ? new(corporate.CorporateAddress) : null,
+            EmailAddress = details.ContactPoints is { } email ? new(email.EmailAddress) : null,
+            MobileNumber = details.ContactPoints is { } mobile ? new(mobile.MobileNumber) : null,
+            SocialNetworkAddress = details.ContactPoints is { } social ? new(social.SocialNetwork) : null,
         };
 
     public static UpdatePartyReferenceDetails UpdateReference(PartyReferenceChanges? changes = null) =>

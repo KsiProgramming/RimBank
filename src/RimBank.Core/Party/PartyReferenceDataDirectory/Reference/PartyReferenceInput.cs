@@ -14,6 +14,14 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="Nationality">BIAN <c>Nationality</c>.</param>
 /// <param name="PartyCountryOfResidence">BIAN <c>PartyCountryOfResidence</c>.</param>
 /// <param name="ResidencyStatus">BIAN <c>ResidencyStatus</c>.</param>
+/// <param name="ResidentialAddress">BIAN <c>ResidentialAddress</c> (1.19).</param>
+/// <param name="PartyAddress">BIAN <c>PartyAddress</c> (1.19).</param>
+/// <param name="CorporateAddress">BIAN <c>CorporateAddress</c> (1.19).</param>
+/// <param name="EmailAddress">
+/// BIAN <c>eMailAddress.EmailAddress</c> (1.19, ADR 0031). An <c>eMailAddress</c> object with no value is sent as blank.
+/// </param>
+/// <param name="MobileNumber">BIAN <c>CellPhoneNumber.MobileNumber</c> (1.19, ADR 0031).</param>
+/// <param name="SocialNetworkUrl">BIAN <c>SocialNetworkContacts.URLAddress</c> (1.19, ADR 0031).</param>
 public sealed record PartyReferenceInput(
     string? TaxIdentificationNumber = null,
     string? NationalRegistrationNumber = null,
@@ -23,7 +31,13 @@ public sealed record PartyReferenceInput(
     string? DateofBirth = null,
     PartyCountryInput? Nationality = null,
     PartyCountryInput? PartyCountryOfResidence = null,
-    ResidencyStatusInput? ResidencyStatus = null)
+    ResidencyStatusInput? ResidencyStatus = null,
+    PostalAddressInput? ResidentialAddress = null,
+    PostalAddressInput? PartyAddress = null,
+    PostalAddressInput? CorporateAddress = null,
+    string? EmailAddress = null,
+    string? MobileNumber = null,
+    string? SocialNetworkUrl = null)
 {
     /// <summary>Nothing sent: every value is kept.</summary>
     public static PartyReferenceInput None { get; } = new();
