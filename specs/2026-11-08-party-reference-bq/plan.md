@@ -50,8 +50,8 @@ Every group is written test first. After each group, the solution builds and its
 - [x] Run `RimBank.Core.Tests` and `RimBank.Architecture.Tests` (CQRS roles: the handler uses only the write port; Retrieve uses only the read port).
 
 ## 2. PostgreSQL round trip
-- [ ] `PartyReferenceDataDirectoryPostgresql.Configure`: `MapEventType<PartyReferenceUpdated>("party_reference_updated")`.
-- [ ] Tests first: `PartyReferenceRoundTripTests` in the Party `.Postgresql.Tests` (Testcontainers, through `IMessageBus`):
+- [x] `PartyReferenceDataDirectoryPostgresql.Configure`: `MapEventType<PartyReferenceUpdated>("party_reference_updated")`.
+- [x] Tests first: `PartyReferenceRoundTripTests` in the Party `.Postgresql.Tests` (Testcontainers, through `IMessageBus`):
   - Register → Update Reference (version 1) → the acknowledgement has version 2, and `RetrievePartyReference` right after returns the section (inline read-your-write);
   - the view version equals the stream version;
   - after Demographics then Reference updates, both sections are present;
