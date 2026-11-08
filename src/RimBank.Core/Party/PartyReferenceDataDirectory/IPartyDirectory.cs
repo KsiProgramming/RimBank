@@ -8,7 +8,8 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <c>.Postgresql</c> adapter.
 /// </summary>
 /// <remarks>
-/// It grows with the operations that need it: Associations (1.11) add the <c>PartyAssociation</c> streams.
+/// It holds the two stream types of the context: the entries and, from roadmap 1.11, the <c>PartyAssociation</c> streams.
+/// Loading a stream of the other type gives no events, so an association id is never mistaken for an entry.
 /// </remarks>
 public interface IPartyDirectory : IWritePort
 {
@@ -40,4 +41,30 @@ public interface IPartyDirectory : IWritePort
         PartyReferenceDataDirectoryEntryId entryId,
         long expectedVersion,
         IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events);
+
+    /// <summary>Loads the events of an association, oldest first (roadmap 1.11).</summary>
+    /// <param name="associationId">The association.</param>
+    /// <param name="cancellationToken">Cancels the load.</param>
+    /// <returns>The association's history, empty if the association does not exist.</returns>
+    Task<IReadOnlyList<PartyAssociationEvent>> LoadAssociationAsync(
+        PartyAssociationId associationId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Starts the stream of a new association with <paramref name="events"/>. The stream is only staged: the handler's
+    /// transaction commits it, and fails if a stream with the same id already exists.
+    /// </summary>
+    /// <param name="associationId">The new association.</param>
+    /// <param name="events">The events its decision returned.</param>
+    void StartAssociation(PartyAssociationId associationId, IReadOnlyList<PartyAssociationEvent> events);
+
+    /// <summary>
+    /// Appends <paramref name="events"/> to an existing association whose stream is at <paramref name="expectedVersion"/>
+    /// (ADR 0027). The events are only staged: the handler's transaction commits them, and fails if another writer
+    /// appended to the stream in the meantime.
+    /// </summary>
+    /// <param name="associationId">The association.</param>
+    /// <param name="expectedVersion">The stream version the handler decided against.</param>
+    /// <param name="events">The events its decision returned.</param>
+    void AppendToAssociation(PartyAssociationId associationId, long expectedVersion, IReadOnlyList<PartyAssociationEvent> events);
 }

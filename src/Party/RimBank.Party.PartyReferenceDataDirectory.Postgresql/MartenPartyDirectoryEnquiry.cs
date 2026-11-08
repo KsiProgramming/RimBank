@@ -18,4 +18,11 @@ public sealed class MartenPartyDirectoryEnquiry(IPartyReferenceDataDirectoryStor
         await using var query = store.QuerySession();
         return await query.LoadAsync<PartyReferenceDataDirectoryEntryView>(entryId.Value, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<PartyAssociationView?> FindAssociationAsync(PartyAssociationId associationId, CancellationToken cancellationToken)
+    {
+        await using var query = store.QuerySession();
+        return await query.LoadAsync<PartyAssociationView>(associationId.Value, cancellationToken);
+    }
 }

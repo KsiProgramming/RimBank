@@ -24,4 +24,19 @@ internal sealed class InMemoryPartyDirectoryEnquiry : IPartyDirectoryEnquiry
             _entries[entryId] = view;
         }
     }
+
+    private readonly Dictionary<PartyAssociationId, PartyAssociationView> _associations = [];
+
+    public Task<PartyAssociationView?> FindAssociationAsync(PartyAssociationId associationId, CancellationToken cancellationToken) =>
+        Task.FromResult(_associations.GetValueOrDefault(associationId));
+
+    /// <summary>Projects the history of <paramref name="associationId"/>, as if its events had been committed earlier.</summary>
+    public void Seed(PartyAssociationId associationId, params PartyAssociationEvent[] events)
+    {
+        var view = events.Aggregate((PartyAssociationView?)null, PartyAssociationViewProjection.Project);
+        if (view is not null)
+        {
+            _associations[associationId] = view;
+        }
+    }
 }

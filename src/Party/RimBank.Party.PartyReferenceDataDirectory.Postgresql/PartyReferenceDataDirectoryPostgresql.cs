@@ -5,7 +5,7 @@ using RimBank.Postgresql;
 namespace RimBank.Party.PartyReferenceDataDirectory.Postgresql;
 
 /// <summary>
-/// Registers the Party Reference Data Directory's store, its inline entry view, and its write and read ports in the
+/// Registers the Party Reference Data Directory's store, its inline entry and association views, and its write and read ports in the
 /// host (ADR 0014, ADR 0016, ADR 0017).
 /// </summary>
 public static class PartyReferenceDataDirectoryPostgresql
@@ -26,7 +26,10 @@ public static class PartyReferenceDataDirectoryPostgresql
         options.Events.MapEventType<DemographicsUpdated>("demographics_updated");
         options.Events.MapEventType<DemographicsExchanged>("demographics_exchanged");
         options.Events.MapEventType<PartyReferenceUpdated>("party_reference_updated");
+        options.Events.MapEventType<PartyAssociationRegistered>("party_association_registered");
+        options.Events.MapEventType<PartyAssociationUpdated>("party_association_updated");
         options.AddInlineView<PartyReferenceDataDirectoryEntryView, PartyReferenceDataDirectoryEntryViewProjection, PartyReferenceDataDirectoryEntryEvent>();
+        options.AddInlineView<PartyAssociationView, PartyAssociationViewProjection, PartyAssociationEvent>();
     }
 
     /// <summary>

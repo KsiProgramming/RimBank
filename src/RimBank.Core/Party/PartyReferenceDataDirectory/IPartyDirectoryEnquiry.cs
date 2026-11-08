@@ -7,7 +7,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// and §8.2, ADR 0024). Its Marten implementation, over the inline-projected documents, lives in the context's
 /// <c>.Postgresql</c> adapter. Command handlers never use it.
 /// </summary>
-/// <remarks>It grows with the queries that need it: Associations (1.11) add the association view.</remarks>
+/// <remarks>It reads the entry views and, from roadmap 1.11, the association views.</remarks>
 public interface IPartyDirectoryEnquiry : IReadPort
 {
     /// <summary>Finds the view of an entry.</summary>
@@ -17,4 +17,10 @@ public interface IPartyDirectoryEnquiry : IReadPort
     Task<PartyReferenceDataDirectoryEntryView?> FindEntryAsync(
         PartyReferenceDataDirectoryEntryId entryId,
         CancellationToken cancellationToken);
+
+    /// <summary>Finds the view of an association (roadmap 1.11).</summary>
+    /// <param name="associationId">The association.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The association's view, or <c>null</c> if the association does not exist.</returns>
+    Task<PartyAssociationView?> FindAssociationAsync(PartyAssociationId associationId, CancellationToken cancellationToken);
 }

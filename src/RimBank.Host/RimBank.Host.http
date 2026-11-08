@@ -108,3 +108,41 @@ Idempotency-Key: {{$guid}}
 If-Match: "3"
 
 { "PoliticalExposureType": "Nopoliticalexposure" }
+
+### Associations BQ (roadmap 1.11, ADR 0033): register a second party, to associate with the first one.
+# @name associate
+POST {{host}}/PartyReferenceDataDirectory/Register
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "PartyType": "Person" }
+
+### Associate them: "the first party is the parent of the second". Answers 200 with ETag "1" (the association's own
+# version), AssociateType in BIAN spelling and FromDateTime "2024-01-01T00:00:00Z". The associate must be registered
+# (422 party.associate-not-registered) and must not be the party itself (422 party.self-association).
+# @name association
+POST {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Associations/Register
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{
+  "AssociateReference": { "PartyReference": "{{associate.response.body.$.PartyReferenceDataDirectoryEntryId}}" },
+  "AssociateType": "partyisparentofparty",
+  "AssociationValidFromToDate": { "FromDateTime": "2024-01-01" }
+}
+
+### End the association: If-Match is the association's ETag. Answers 200 with ETag "2"; the type is kept.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Associations/{{association.response.body.$.AssociationsId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "1"
+
+{ "AssociationValidFromToDate": { "FromDateTime": "2024-01-01", "ToDateTime": "2025-12-31" } }
+
+### Retrieve the association: the same values, ETag "2". Send If-None-Match: "2" to get 304 Not Modified. Only the
+# owning entry finds it: the second party's id in the path is 404 party.association-not-found.
+GET {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Associations/{{association.response.body.$.AssociationsId}}/Retrieve
+Authorization: Bearer {{token.response.body.$.access_token}}
