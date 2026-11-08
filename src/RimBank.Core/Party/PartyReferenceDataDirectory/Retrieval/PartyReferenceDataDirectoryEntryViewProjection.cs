@@ -54,6 +54,11 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjection
                 Version = view.Version + 1,
                 Reference = updated.Details,
             },
+            (_, BankRelationsUpdated updated) => view with
+            {
+                Version = view.Version + 1,
+                BankRelations = updated.Details,
+            },
             (_, _) => view with { Version = view.Version + 1 },
         };
 }
