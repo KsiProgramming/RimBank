@@ -21,6 +21,8 @@ public static class PartyReferenceDataDirectoryApi
         endpoints.MapRegisterPartyAssociation();
         endpoints.MapUpdatePartyAssociation();
         endpoints.MapRetrievePartyAssociation();
+        endpoints.MapUpdateBankRelations();
+        endpoints.MapRetrieveBankRelations();
         return endpoints;
     }
 }

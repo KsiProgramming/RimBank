@@ -22,6 +22,8 @@ public sealed class PartyReferenceDataDirectoryConformanceTests(PostgresqlServer
         RegisterPartyAssociationEndpoint.OperationId,
         UpdatePartyAssociationEndpoint.OperationId,
         RetrievePartyAssociationEndpoint.OperationId,
+        UpdateBankRelationsEndpoint.OperationId,
+        RetrieveBankRelationsEndpoint.OperationId,
     ];
 
     [Fact]

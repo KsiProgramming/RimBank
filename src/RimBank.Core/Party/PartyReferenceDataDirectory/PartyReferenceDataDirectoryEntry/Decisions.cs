@@ -77,6 +77,21 @@ public sealed record UpdatePartyReferenceDetails(
     DateOnly Today,
     IReadOnlyDictionary<PartyReferenceDataDirectoryEntryId, PartyType>? ReferencedParties = null) : PartyReferenceDataDirectoryEntryCommand;
 
+/// <summary>
+/// Update the entry's BankRelations (BIAN <c>BankRelations/Update</c>, roadmap 1.12, ADR 0035): a partial update. The
+/// handler has already checked the entry, the BankRelations id and the expected version.
+/// </summary>
+/// <param name="BankRelationsId">The BankRelations the caller named.</param>
+/// <param name="Changes">The changes to apply.</param>
+/// <param name="ReferencedPartyType">
+/// The party type of the employee or unit to check (<see cref="BankRelationsDetails.ReferenceToCheck"/>), loaded by the
+/// handler from the write side, or <c>null</c> when that entry is not registered or there is nothing to check.
+/// </param>
+public sealed record UpdateBankRelationsDetails(
+    BankRelationsId BankRelationsId,
+    BankRelationsChanges Changes,
+    PartyType? ReferencedPartyType = null) : PartyReferenceDataDirectoryEntryCommand;
+
 public sealed partial record PartyReferenceDataDirectoryEntry
 {
     /// <inheritdoc />
@@ -95,7 +110,10 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// (<c>party.reference-invalid</c>). Corporate references need an organisation's entry, and each reference it sets must
     /// be another registered entry of the right party type (<c>party.corporate-references-need-organisation</c>,
     /// <c>party.self-reference</c>, <c>party.referenced-party-not-registered</c>,
-    /// <c>party.referenced-party-type-mismatch</c>). It always records the resulting Reference.
+    /// <c>party.referenced-party-type-mismatch</c>). It always records the resulting Reference. BankRelations Update needs a
+    /// registered entry and its own BankRelations id, refuses a resulting employee or unit without a type or a relationship
+    /// that ends before it starts (<c>party.bank-relations-invalid</c>), and an employee or unit it sets, or keeps under a new
+    /// type, that is the entry itself, not registered or of the wrong party type (ADR 0035). It always records the result.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,
@@ -126,7 +144,7 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                     entryId,
                     update.PartyType ?? current,
                     update.RefreshDate)),
-            (UpdateDemographicsDetails or ExchangeDemographicsDetails or UpdatePartyReferenceDetails, { Id: null }) =>
+            (UpdateDemographicsDetails or ExchangeDemographicsDetails or UpdatePartyReferenceDetails or UpdateBankRelationsDetails, { Id: null }) =>
                 PartyReferenceDataDirectoryEntryErrors.PartyNotFound,
             (UpdateDemographicsDetails update, _) when update.DemographicsId != state.DemographicsId =>
                 PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
@@ -157,6 +175,10 @@ public sealed partial record PartyReferenceDataDirectoryEntry
                 PartyReferenceErrors.CustomerSinceDateAfterToday,
             (UpdatePartyReferenceDetails update, { Id: { } entryId }) =>
                 DecideReferences(entryId, state.PartyType, update, state.CurrentReference.Apply(update.Changes)),
+            (UpdateBankRelationsDetails update, _) when update.BankRelationsId != state.BankRelationsId =>
+                PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
+            (UpdateBankRelationsDetails update, { Id: { } entryId }) =>
+                DecideBankRelations(entryId, update, state.CurrentBankRelations),
             _ => throw new UnreachableException($"The entry does not decide {command}."),
         };
 
@@ -211,6 +233,29 @@ public sealed partial record PartyReferenceDataDirectoryEntry
             _ => Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(
                 new PartyReferenceUpdated(entryId, update.PartyReferenceId, updated)),
         };
+
+    // The BankRelations rules (roadmap 1.12, ADR 0035), checked on the resulting BankRelations so a partial update cannot
+    // leave it inconsistent with values it keeps: an employee or unit needs a type, the relationship does not end before it
+    // starts, and the employee or unit to check is another registered entry of the party type the relation type needs.
+    private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> DecideBankRelations(
+        PartyReferenceDataDirectoryEntryId entryId,
+        UpdateBankRelationsDetails update,
+        BankRelationsDetails current)
+    {
+        var updated = current.Apply(update.Changes);
+        const string field = BankRelationsFields.BusinessUnitEmployeePartyReference;
+        return (updated, current.ReferenceToCheck(update.Changes), update.ReferencedPartyType) switch
+        {
+            ({ BusinessUnitEmployee: not null, Type: null }, _, _) => BankRelationsErrors.ReferenceWithoutType,
+            ({ StartDate: { } start, EndDate: { } end }, _, _) when end < start => BankRelationsErrors.EndDateBeforeStartDate,
+            (_, { } referenced, _) when referenced == entryId => PartyReferenceErrors.SelfReference(field),
+            (_, not null, null) => PartyReferenceErrors.ReferencedPartyNotRegistered(field),
+            ({ Type: { } type }, not null, { } actual) when actual != type.ReferencedPartyType() =>
+                PartyReferenceErrors.ReferencedPartyTypeMismatch(field, type.ReferencedPartyType()),
+            _ => Decision.Accept<PartyReferenceDataDirectoryEntryEvent>(
+                new BankRelationsUpdated(entryId, update.BankRelationsId, updated)),
+        };
+    }
 
     private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> DecideDemographicsUpdate(
         PartyReferenceDataDirectoryEntryId entryId,
