@@ -4,7 +4,7 @@ using Wolverine;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests;
 
-// Roadmap 1.10, 1.18 and 1.19: the Reference Update and Retrieve dispatched through the message bus. The Update appends to the entry's
+// Roadmap 1.10, 1.18, 1.19 and 1.20: the Reference Update and Retrieve dispatched through the message bus. The Update appends to the entry's
 // stream at the caller's expected version, and the inline view's Reference section follows in the same transaction
 // (ADR 0024, ADR 0027, ADR 0029).
 public sealed class PartyReferenceRoundTripTests(PostgresqlServer server)
@@ -37,7 +37,105 @@ public sealed class PartyReferenceRoundTripTests(PostgresqlServer server)
             SocialNetworkAddress.TryCreate("https://www.linkedin.com/in/jdupont").Value),
     };
 
+    private static readonly PartyReferenceDetails _fullestDetails = _completeDetails with
+    {
+        LegalStanding = new PartyLegalStanding(
+            PartyLegalStructure.CoOperative,
+            PoliticalExposureType.Domestic,
+            PoliticalExposureDescription.TryCreate("Member of a regional council since 2021").Value,
+            new DateOnly(2015, 3, 2)),
+        Documents = new PartyDocuments(
+            new GovernmentIssuedDocument(
+                PartyDocumentType.PersonalDocument,
+                GovernmentIssuedDocumentNumber.TryCreate("23AB45678").Value,
+                GovernmentIssuedDocumentName.TryCreate("Passport").Value,
+                new DateOnly(2023, 4, 1),
+                new DateOnly(2033, 3, 31)),
+            DocumentDirectoryEntryReference.TryCreate("DOC-000123").Value),
+    };
+
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
+
+    [Fact]
+    public async Task Legal_standing_and_documents_round_trip_through_the_stream_and_the_view()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host.Bus);
+
+        var updated = (await UpdateAsync(host.Bus, registered, 1, NewKey(), ChangesTo(_fullestDetails))).Value;
+        var retrieved = (await RetrieveAsync(host.Bus, registered.EntryId, registered.PartyReferenceId)).Value;
+        var refolded = (await UpdateAsync(host.Bus, registered, 2, NewKey(), PartyReferenceChanges.None)).Value;
+
+        updated.Reference.ShouldBe(_fullestDetails);
+        retrieved.Reference.ShouldBe(_fullestDetails);
+        refolded.Reference.ShouldBe(_fullestDetails);
+    }
+
+    [Fact]
+    public async Task Legal_standing_codes_are_stored_by_name_and_document_values_as_plain_strings()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host.Bus);
+        await UpdateAsync(host.Bus, registered, 1, NewKey(), ChangesTo(_fullestDetails));
+
+        async Task<string> EventPart(string path) => await host.ScalarAsync<string>(
+            $"SELECT data #>> '{{Details,{path}}}' FROM {Schema}.mt_events WHERE stream_id = '{registered.EntryId.Value}' AND version = 2");
+        async Task<string> ViewPart(string path) => await host.ScalarAsync<string>(
+            $"SELECT data #>> '{{Reference,{path}}}' FROM {Schema}.mt_doc_partyreferencedatadirectoryentryview WHERE id = '{registered.EntryId.Value}'");
+
+        (await EventPart("LegalStanding,LegalStructure")).ShouldBe("CoOperative");
+        (await EventPart("LegalStanding,PoliticalExposureType")).ShouldBe("Domestic");
+        (await EventPart("LegalStanding,CustomerSince")).ShouldBe("2015-03-02");
+        (await EventPart("Documents,GovernmentIssuedDocument,Type")).ShouldBe("PersonalDocument");
+        (await ViewPart("Documents,GovernmentIssuedDocument,Number")).ShouldBe("23AB45678");
+        (await ViewPart("Documents,DocumentDirectoryEntry")).ShouldBe("DOC-000123");
+    }
+
+    [Fact]
+    public async Task A_reference_event_stored_before_1_20_still_loads_folds_and_rebuilds()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host.Bus);
+        await UpdateAsync(host.Bus, registered, 1, NewKey(), ChangesTo(_fullestDetails));
+
+        // Remove the members 1.20 added, so the event is stored exactly as roadmap 1.19 wrote it.
+        await host.ScalarAsync<int>(
+            $"UPDATE {Schema}.mt_events SET data = data #- '{{Details,LegalStanding}}' #- '{{Details,Documents}}' "
+            + $"WHERE stream_id = '{registered.EntryId.Value}' AND version = 2 RETURNING 1");
+        await host.Store.RebuildViewAsync(
+            ViewRegistration.ProjectionName<PartyReferenceDataDirectoryEntryViewProjection>(),
+            TimeSpan.FromSeconds(60),
+            Cancellation);
+
+        var rebuilt = await host.Enquiry.FindEntryAsync(registered.EntryId, Cancellation);
+        var folded = (await UpdateAsync(host.Bus, registered, 2, NewKey(), PartyReferenceChanges.None)).Value;
+
+        rebuilt.ShouldNotBeNull().CurrentReference.ShouldBe(_completeDetails);
+        rebuilt.CurrentReference.CurrentLegalStanding.ShouldBe(PartyLegalStanding.Empty);
+        rebuilt.CurrentReference.CurrentDocuments.ShouldBe(PartyDocuments.Empty);
+        folded.Reference.ShouldBe(_completeDetails);
+    }
+
+    [Fact]
+    public async Task A_political_exposure_description_without_exposure_appends_nothing()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host.Bus);
+
+        var refused = await UpdateAsync(
+            host.Bus,
+            registered,
+            1,
+            NewKey(),
+            PartyReferenceChanges.None with
+            {
+                PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(
+                    PoliticalExposureDescription.TryCreate("Mayor").Value),
+            });
+
+        refused.Error.ShouldBe(PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure);
+        (await host.Enquiry.FindEntryAsync(registered.EntryId, Cancellation)).ShouldNotBeNull().Version.ShouldBe(1);
+    }
 
     [Fact]
     public async Task Updating_the_reference_commits_the_next_version_and_retrieve_sees_it_at_once()
@@ -231,7 +329,7 @@ public sealed class PartyReferenceRoundTripTests(PostgresqlServer server)
     {
         await using var host = await server.StartHostAsync();
         var registered = await RegisterAsync(host.Bus);
-        await UpdateAsync(host.Bus, registered, 1, NewKey(), ChangesTo(_completeDetails));
+        await UpdateAsync(host.Bus, registered, 1, NewKey(), ChangesTo(_fullestDetails));
         var before = await host.Enquiry.FindEntryAsync(registered.EntryId, Cancellation);
         await using (var session = host.Store.LightweightSession())
         {
@@ -245,7 +343,7 @@ public sealed class PartyReferenceRoundTripTests(PostgresqlServer server)
             Cancellation);
 
         (await host.Enquiry.FindEntryAsync(registered.EntryId, Cancellation)).ShouldBe(before);
-        before.ShouldNotBeNull().CurrentReference.ShouldBe(_completeDetails);
+        before.ShouldNotBeNull().CurrentReference.ShouldBe(_fullestDetails);
     }
 
     [Fact]
@@ -309,7 +407,13 @@ public sealed class PartyReferenceRoundTripTests(PostgresqlServer server)
             new PartyReferenceChange<PostalAddress?>(details.CurrentAddresses.CorporateAddress),
             new PartyReferenceChange<EmailAddress?>(details.CurrentContactPoints.EmailAddress),
             new PartyReferenceChange<MobileNumber?>(details.CurrentContactPoints.MobileNumber),
-            new PartyReferenceChange<SocialNetworkAddress?>(details.CurrentContactPoints.SocialNetwork));
+            new PartyReferenceChange<SocialNetworkAddress?>(details.CurrentContactPoints.SocialNetwork),
+            new PartyReferenceChange<PartyLegalStructure?>(details.CurrentLegalStanding.LegalStructure),
+            new PartyReferenceChange<PoliticalExposureType?>(details.CurrentLegalStanding.PoliticalExposureType),
+            new PartyReferenceChange<PoliticalExposureDescription?>(details.CurrentLegalStanding.PoliticalExposureDescription),
+            new PartyReferenceChange<DateOnly?>(details.CurrentLegalStanding.CustomerSince),
+            new PartyReferenceChange<GovernmentIssuedDocument?>(details.CurrentDocuments.GovernmentIssuedDocument),
+            new PartyReferenceChange<DocumentDirectoryEntryReference?>(details.CurrentDocuments.DocumentDirectoryEntry));
 
     private static Task<Result<PartyReferenceDataDirectoryEntryView>> RetrieveAsync(
         IMessageBus bus,
