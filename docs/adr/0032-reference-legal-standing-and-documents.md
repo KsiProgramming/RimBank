@@ -83,7 +83,7 @@ Option 3. **The directory records what the party declares, never the bank's asse
 
 ## Consequences
 
-- **Roadmap.** Row 1.20 is reworded to the six fields. A new row, **1.21 Reference BQ: corporate and officer references**, is added after 1.11, and the four references are tagged `1.21` in `PartyReferenceFields.Staged`.
+- **Roadmap.** Row 1.20 is reworded to the six fields. A new row, **1.21 Reference BQ: corporate and officer references**, is added after 1.11, and the four references are tagged `1.21` in `PartyReferenceFields.Staged`. 1.21 records them as checked directory entries on organisations only ([ADR 0034](0034-reference-corporate-and-officer-references.md)).
 - **Events.** `PartyReferenceUpdated` keeps its name. `PartyReferenceDetails` gains the nullable `LegalStanding` and `Documents` members, so events and views stored before 1.20 still load, fold and rebuild (proved by the PostgreSQL tests).
 - **Tests.**
   - The cross-field rules are Given / When / Then decision tests, and they are part of the entry's decider laws.

@@ -40,7 +40,7 @@ Run in `src/RimBank.Host/RimBank.Host.http` against `dotnet run --project src/Ri
 - [ ] `POST /PartyReferenceDataDirectory/Register` for an Organisation (A), another Organisation (B) and a Person (P) gives three 201 responses, each with an `ETag`.
 - [ ] `PUT /PartyReferenceDataDirectory/{A}/Reference/{refId}/Update` with `If-Match` and an `Idempotency-Key`, and the body `{"CorporateCustomerReference":{"PartyReference":"<B>"},"CorporateCustomerLegalEntityReference":{"PartyReference":"<B>"},"CompanyOfficerReference":{"PartyReference":"<P>"},"CompanyOfficerRole":"Director"}`, gives a 200 that echoes the four fields and a new `ETag`.
 - [ ] `GET /PartyReferenceDataDirectory/{A}/Reference/{refId}/Retrieve` returns the same four fields.
-- [ ] The same Update with `"CorporateCustomerReference":{"PartyReference":"<P>"}` gives a **422** `application/problem+json` with `errorCode: party.referenced-party-type-mismatch` and `errors` naming `CorporateCustomerReference.PartyReference`.
+- [ ] The same Update with `"CorporateCustomerReference":{"PartyReference":"<P>"}` gives a **422** `application/problem+json` with `errorCode: party.referenced-party-type-mismatch` and a `detail` that starts with `CorporateCustomerReference.PartyReference`.
 - [ ] An Update with `"CompanyOfficerReference":{"PartyReference":"<P>","InvolvementReference":"x"}` gives a **400** `party.reference-field-not-supported`.
 - [ ] `PUT /PartyReferenceDataDirectory/{A}/Update` with `PartyType: Person` gives a **422** `party.corporate-references-need-organisation`.
 

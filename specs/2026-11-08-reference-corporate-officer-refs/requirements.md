@@ -56,11 +56,11 @@ Drivers:
 - **Refused parts:** `InvolvementReference`, at any of the three references, is refused with `party.reference-field-not-supported` and no phase. The role is carried by `CompanyOfficerRole`, as ADR 0033 did for `AssociateType`. A `CompanyOfficerRole` sent as an object (BIAN's `Party` shape) is refused the same way.
 - **Party-type rules (chosen in the interview):**
   1. The four fields are recorded only on an **Organisation** entry. Recording one on a Person entry is `party.corporate-references-need-organisation` (422). This rule is checked in `Decide` on the resulting Reference.
-  2. The corporate customer and legal entity references point at Organisation entries, and the officer at a Person entry. Otherwise the result is `party.referenced-party-type-mismatch` (422), and `errors` names the path.
+  2. The corporate customer and legal entity references point at Organisation entries, and the officer at a Person entry. Otherwise the result is `party.referenced-party-type-mismatch` (422). A business-rule error carries no `errors` map (ADR 0015), so each 422 names the BIAN path at the start of its `detail`.
   3. **The entry's `Update` (1.8) refuses a change of party type to `Person` while any corporate reference is recorded**, with the same `party.corporate-references-need-organisation`. The client clears the references first. Without this, rule 1 could be broken from the other side.
 - **Cross-aggregate checks (handler loads, `Decide` decides):**
   - a reference to the entry itself is `party.self-reference` (422);
-  - a reference that is not a registered entry is `party.referenced-party-not-registered` (422), naming the path. An association id sent as an entry id loads no events, so it fails the same way and is never a cast error (ADR 0033);
+  - a reference that is not a registered entry is `party.referenced-party-not-registered` (422), naming the path in its `detail`. An association id sent as an entry id loads no events, so it fails the same way and is never a cast error (ADR 0033);
   - only the references **given in this request** are loaded and checked. Kept ones were checked when they were recorded.
 - **Partial update (as in 1.18 to 1.20):**
   - an omitted field keeps its value, a given one replaces it, and a blank `PartyReference` or role clears it;
@@ -69,7 +69,7 @@ Drivers:
 - **Malformed input:** an id that is not a Guid v7, or a role that is blank or too long, goes into `party.reference-invalid` (400), and `errors` names each path. The unsupported-field check still runs first, then the input reading, then the handler loads, then `Decide`.
 - **Staged table:** the four fields leave `PartyReferenceFields.Staged`, which becomes empty. The `PartyReferenceChangesTests` pin goes from 4 to 0.
 - **HTTP (`RimBank.Api/Party/PartyReferenceDataDirectory/Reference/`):**
-  - an `InvolvedPartyModel` (`PartyReference`, plus `InvolvementReference` read only to report it as unsupported);
+  - the Associations `InvolvedPartyModel` is reused (`PartyReference`, with its other parts, such as `InvolvementReference`, reported as unsupported). `CompanyOfficerRole` is read as raw JSON, so an object is refused part by part;
   - the Update request and the shared Update/Retrieve response gain the four fields, and empty values are left out of the response;
   - the new error codes are mapped through `RimBank.Problems` (`Error.BusinessRule` → 422).
 - **Demo:** requests in `src/RimBank.Host/RimBank.Host.http` that register an Organisation and a Person, link them through the Reference Update, and show one 422.
@@ -87,7 +87,7 @@ Drivers:
 - **Deriving Associations from these references, or the reverse.** The two stay independent records. A client that wants both registers both.
 - **A role code list.** BIAN gives none, so the role is free text. No phase is planned.
 - **MCP tools (1.17), per-operation scopes (1.15), the Reference channels (after 7.2), and masking and encryption at rest (7.2).**
-- **Checks not chosen in the interview:** extending the FsCheck partial-update law to the new fields, and a dedicated Testcontainers round-trip beyond the minimum that the Definition of done requires (see validation.md).
+- **Checks not chosen in the interview:** a dedicated Testcontainers round-trip beyond the minimum that the Definition of done requires (see validation.md). The FsCheck partial-update law *was* extended in the end: its coverage test fails when a recorded field is missing from the law.
 
 ## Decisions
 | Decision | Choice | Rationale |

@@ -68,7 +68,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 **Retrieve request (1.7).** `GET /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Retrieve` answers `200` from the entry's view only, with the BIAN Retrieve fields (`PartyType`, `DirectoryEntryDateType` = `OpenDate`, `DirectoryEntryDate`) and the ids of the entry and its three singleton BQs, in the same shape as the Register response. BIAN's `PartyReference` is not returned: the party's details are served by the Demographics and Reference Retrieves (1.9, 1.10). The entry's version is the strong `ETag` (`"1"`), and an `If-None-Match` that names it (weak comparison, a list or `*`) answers `304 Not Modified` with the `ETag` and no body. A route value that is not an identifier RimBank issues (not a GUID, empty, or not a version 7 GUID) is `400` with the shared `shared.invalid-identifier` code and `errors["partyreferencedatadirectoryid"]`; an unknown entry is `404` `party.party-not-found`.
 
 **Update request (1.8).** `PUT /PartyReferenceDataDirectory/{partyreferencedatadirectoryid}/Update` takes BIAN's `UpdatePartyReferenceDataDirectoryEntry` body.
-- **What changes.** Only `PartyType` is used, and it is optional. When it is omitted, the entry keeps its type. When it is given, it is read like Register's, except that a blank value is `party.party-type-invalid`.
+- **What changes.** Only `PartyType` is used, and it is optional. When it is omitted, the entry keeps its type. When it is given, it is read like Register's, except that a blank value is `party.party-type-invalid`. From 1.21, an organisation whose Reference records corporate or officer references cannot become a `Person` (`party.corporate-references-need-organisation`, [ADR 0034](0034-reference-corporate-and-officer-references.md)): the client clears them first.
 - **RefreshDate.** Every accepted Update records the time of the update (`TimeProvider`) as the entry's `RefreshDate`, BIAN's second `DirectoryEntryDateType`. An Update with an unchanged type is therefore still a business fact and appends `PartyReferenceDataDirectoryEntryUpdated`.
 - **Ignored fields.** `PartyReference`, `DirectoryEntryDateType` and `DirectoryEntryDate` are accepted and ignored, as in Register.
 - **Headers.** The request requires `Idempotency-Key` and `If-Match` ([ADR 0027](0027-optimistic-concurrency-for-commands.md)): missing → `428` `shared.if-match-required`, malformed → `400` `shared.if-match-invalid`, stale → `409` `party.version-conflict`.
@@ -100,13 +100,18 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
     - `GovernmentIssuedDocumentDetails` (type, number, name and validity period) and `DocumentDirectoryEntryInstanceReference` (an opaque identification).
   - A value left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. An invalid one is `party.reference-invalid` with the BIAN field names in `errors`.
   - Every accepted Update appends `PartyReferenceUpdated`, even when nothing changes.
-  - The four references to other parties (`CorporateCustomerReference`, `CorporateCustomerLegalEntityReference`, `CompanyOfficerReference`, `CompanyOfficerRole`) are refused with `party.reference-field-not-supported` until 1.21, after Associations (ADR 0029, ADR 0032). So are the parts of the objects above that RimBank does not record.
+  - From 1.21, it also updates the corporate customer's references to other parties ([ADR 0034](0034-reference-corporate-and-officer-references.md)):
+    - `CorporateCustomerReference.PartyReference` and `CorporateCustomerLegalEntityReference.PartyReference` (registered organisations) and `CompanyOfficerReference.PartyReference` (a registered person), each another entry of this directory, loaded through the write port;
+    - `CompanyOfficerRole` (Max35Text, only with an officer);
+    - only on an organisation's entry.
+  - The parts of the objects above that RimBank does not record are refused with `party.reference-field-not-supported`, including `InvolvementReference`.
 - **Retrieve** (`GET …/Reference/{referenceid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`. Before the first Update, it answers `200` with the ids only.
 - **Headers and responses.** Update requires `Idempotency-Key` and `If-Match`, as in 1.8. Both answer `200` with the same body:
   - `GovernmentIssuedIdentityReference` and `PartyLegalEntityReference`, each left out when it holds no identifier;
   - from 1.18: the names, `DateofBirth` as `YYYY-MM-DD`, `Nationality` and `PartyCountryOfResidence` as `{ "Code": … }`, and `ResidencyStatus`, each left out when unknown;
   - from 1.19: the three addresses, each part left out when unknown, and the contact points as `{ "EmailAddress": … }`, `{ "MobileNumber": … }` and `{ "URLAddress": … }`, each left out when unknown;
   - from 1.20: the legal structure and political exposure type in BIAN spelling, the description, `CustomerSinceDate` as `YYYY-MM-DD`, the document in BIAN's nested shape (validity dates as `YYYY-MM-DD`) and the directory reference, each left out when unknown;
+  - from 1.21: the three references as `{ "PartyReference": … }` and `CompanyOfficerRole` as a string, each left out when unknown;
   - the entry and Reference ids.
 
   Update builds it from its acknowledgement.
@@ -188,6 +193,10 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner (1.11) |
 | `party.associate-not-registered` | BusinessRule (422) | `AssociateReference` is not an entry of this directory (1.11) |
 | `party.self-association` | BusinessRule (422) | The associate is the owning entry (1.11) |
+| `party.corporate-references-need-organisation` | BusinessRule (422) | Corporate or officer references on an entry that is not an organisation, or an entry Update to `Person` while they are recorded (1.21, [ADR 0034](0034-reference-corporate-and-officer-references.md)) |
+| `party.self-reference` | BusinessRule (422) | A Reference reference names the entry itself (1.21, ADR 0034) |
+| `party.referenced-party-not-registered` | BusinessRule (422) | A Reference reference is not an entry of this directory (1.21, ADR 0034) |
+| `party.referenced-party-type-mismatch` | BusinessRule (422) | The corporate customer or legal entity is not an organisation, or the officer is not a person (1.21, ADR 0034) |
 | `party.association-invalid` | Validation (400) | An Associations value is missing or not valid; `errors` names each BIAN path (1.11, [ADR 0033](0033-party-associations.md)) |
 | `party.association-field-not-supported` | Validation (400) | An Associations request sends a BIAN field or part RimBank does not record (1.11, ADR 0033) |
 | `party.associate-cannot-change` | BusinessRule (422) | An Associations Update names another associate than the registered one (1.11, ADR 0033) |
