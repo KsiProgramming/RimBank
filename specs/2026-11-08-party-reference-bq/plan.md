@@ -1,0 +1,121 @@
+# Plan: Party Reference Data Directory: Reference BQ (party identifiers)
+
+Every group is written test first. After each group, the solution builds and its tests pass (one commit per group).
+- Test namespaces end with `.Tests`, and context namespaces stay flat (tech-stack §3.3, ADR 0026).
+- Use switch expressions only (IDE0066).
+- The Testcontainers and Alba tests need Docker. If it is not available locally, they run in CI.
+
+## 1. Core: identifiers, decision, handler, query and projection
+- [ ] Tests first in `RimBank.Core.Tests/Party/PartyReferenceDataDirectory/` (namespace `RimBank.Party.PartyReferenceDataDirectory.Tests`):
+  - `Reference/LegalEntityIdentifierTests`:
+    - a valid LEI (for example `5493001KJTIIGC8Y1R12`) parses, and is trimmed and upper-cased;
+    - the wrong length, a non-alphanumeric character, or check digits that are not numeric → invalid;
+    - one changed character → the checksum fails.
+  - `Reference/TaxIdentificationNumberTests` and `NationalRegistrationNumberTests`: trimmed; 35 characters is accepted; 36 is invalid.
+  - `Reference/PartyReferenceChangesTests`:
+    - `null` → keep; `""` or whitespace → clear;
+    - several invalid fields → one `party.reference-invalid`, with every BIAN field path in `errors` (`GovernmentIssuedIdentityReference.TaxIdentificationNumber`, `PartyLegalEntityReference.Identification`, …);
+    - unsupported fields present → `party.reference-field-not-supported`, naming each field and its phase (1.18, 1.19 or 1.20);
+    - when both kinds of error apply, the unsupported-field error wins (it is checked first).
+  - `Reference/PartyIdentifiersTests`: `Apply` merges field by field; `HasAny` is false when all are empty.
+  - `Reference/UpdatePartyReferenceTests` (Given / When / Then on the entry decider):
+    - the first Update → `PartyReferenceUpdated` with the full details;
+    - a no-op Update → still appended;
+    - not registered → `party.party-not-found`;
+    - a foreign `PartyReferenceId` → `party.behavior-qualifier-not-found`.
+  - `PartyReferenceDataDirectoryEntryTests`: `Evolve` handles `PartyReferenceUpdated` and keeps the CR and Demographics fields. Extend `EntryExamples`.
+  - `PartyReferenceDataDirectoryEntryLawsProperties`: the generators also produce Reference Updates, and the laws still hold.
+  - `Reference/UpdatePartyReferenceHandlerTests` (`InMemoryPartyDirectory`):
+    - success → an acknowledgement with version n+1 and the decided section;
+    - the checks run in order (entry, then BQ id, then version, then decision);
+    - a failure appends nothing.
+  - `Reference/RetrievePartyReferenceHandlerTests` (`InMemoryPartyDirectoryEnquiry`): the view when the id matches; `party.party-not-found`; `party.behavior-qualifier-not-found`.
+  - `Retrieval/PartyReferenceDataDirectoryEntryViewProjectionTests`:
+    - Given Register + `PartyReferenceUpdated` → Then the section and version 2;
+    - with Demographics events interleaved, both sections are kept;
+    - after Register only, the section is `null`.
+- [ ] `Reference/`:
+  - `TaxIdentificationNumber.cs`, `NationalRegistrationNumber.cs` and `LegalEntityIdentifier.cs` (`readonly record struct` with `TryCreate → Result`; MOD 97-10 on the LEI);
+  - `PartyIdentifiers.cs` (`Empty`, `Apply` and `HasAny`) and `PartyReferenceDetails.cs` (`Identifiers`, plus `Empty`);
+  - `PartyReferenceChanges.cs` (tri-state fields, and `Parse(tax, national, lei, IReadOnlyCollection<string> presentUnsupportedFields) → Result<PartyReferenceChanges>`);
+  - `PartyReferenceFields.cs`: the BIAN field names, and the table of unsupported fields to their phase (1.18 / 1.19 / 1.20);
+  - `PartyReferenceErrors.cs`: `ReferenceIdInvalid` (field `referenceid`), `ReferenceInvalid` and `ReferenceFieldNotSupported`;
+  - `Events.cs`: `PartyReferenceUpdated` (a `PartyReferenceDataDirectoryEntryEvent`).
+- [ ] Entry state: add `Reference` (`PartyReferenceDetails?`) and the `Evolve` case.
+- [ ] `Decisions.cs`: the decider input `UpdatePartyReferenceDetails(PartyReferenceId, PartyReferenceChanges)` and its `Decide` case.
+- [ ] `Reference/UpdatePartyReference.cs` (`ICommand`: `EntryId`, `PartyReferenceId`, `ExpectedVersion`, `Changes`, `IdempotencyKey`), `UpdatePartyReferenceAcknowledged.cs` and `UpdatePartyReferenceHandler.cs`. Follow `DemographicsCommandFlow`: load, then the checks in order, then `Decide`, then `AppendToEntry`, then acknowledge from the evolved state.
+- [ ] `Reference/RetrievePartyReference.cs` (`IQuery<PartyReferenceDataDirectoryEntryView>`: `EntryId`, `PartyReferenceId`) and `RetrievePartyReferenceHandler.cs`.
+- [ ] View: add `PartyReferenceDetails? Reference` to `PartyReferenceDataDirectoryEntryView`, and the projection case.
+- [ ] Run `RimBank.Core.Tests` and `RimBank.Architecture.Tests` (CQRS roles: the handler uses only the write port; Retrieve uses only the read port).
+
+## 2. PostgreSQL round trip
+- [ ] `PartyReferenceDataDirectoryPostgresql.Configure`: `MapEventType<PartyReferenceUpdated>("party_reference_updated")`.
+- [ ] Tests first: `PartyReferenceRoundTripTests` in the Party `.Postgresql.Tests` (Testcontainers, through `IMessageBus`):
+  - Register → Update Reference (version 1) → the acknowledgement has version 2, and `RetrievePartyReference` right after returns the section (inline read-your-write);
+  - the view version equals the stream version;
+  - after Demographics then Reference updates, both sections are present;
+  - after deleting the view document, `RebuildViewAsync` recreates an equal view;
+  - a stale version → `party.version-conflict`;
+  - a foreign `referenceid` → `party.behavior-qualifier-not-found`;
+  - the stored event has the name `party_reference_updated`.
+- [ ] Run the Party `.Postgresql.Tests` and `RimBank.Host.Tests`.
+
+## 3. HTTP Reference endpoints
+- [ ] Tests first in `RimBank.Api.Tests/Party/PartyReferenceDataDirectory/Reference/`:
+  - `UpdatePartyReferenceRequestTests`:
+    - BIAN JSON names (`GovernmentIssuedIdentityReference.TaxIdentificationNumber`, `PartyLegalEntityReference.Identification`, …);
+    - every unsupported BIAN property, at the top level or inside the two supported objects, is detected when present and not `null`;
+    - an explicit `null` counts as absent.
+  - `PartyReferenceResponseTests`: mapping from the acknowledgement and from the view; empty identifiers and empty objects are omitted.
+  - `UpdatePartyReferenceEndpointTests` and `RetrievePartyReferenceEndpointTests` (Alba, Testcontainers, test-signed JWTs). Each case starts with Register and uses the returned `PartyReferenceId`:
+    - Update with `If-Match: "1"` → 200, `ETag` `"2"`, and the body shows the identifiers. GET Retrieve then shows the same, and `If-None-Match: "2"` → 304.
+    - Retrieve before any Update → 200 with the ids only.
+    - A partial Update keeps the omitted identifiers, and `""` clears one.
+    - Errors:
+      - 400 for an invalid LEI checksum or a 36-character tax ID (`party.reference-invalid` with `errors`);
+      - 400 `party.reference-field-not-supported` for `{"DateofBirth":…}`, with `errors["DateofBirth"]` naming 1.18;
+      - 400 for `not-a-guid` in either id;
+      - 400 for no `Idempotency-Key`, and 400 for `W/"1"`;
+      - 401 with no token;
+      - 404 for an unknown entry, and 404 for a foreign `referenceid`;
+      - 409 for a stale `If-Match`;
+      - 428 for no `If-Match`.
+    - An idempotent replay returns the same 200 and `ETag`.
+    - Every error is `application/problem+json` with `type`, `errorCode` and `traceId`.
+- [ ] `src/RimBank.Api/Party/PartyReferenceDataDirectory/Reference/`:
+  - `UpdatePartyReferenceRequest.cs`:
+    - the supported fields are typed;
+    - the unsupported ones are `JsonElement?` properties with their BIAN names;
+    - `PresentUnsupportedFields()` reports them, and `ToCommand` passes them to `PartyReferenceChanges.Parse`.
+  - `PartyReferenceResponse.cs`: one shape, with `From(acknowledged)` and `From(view)`.
+  - `PartyReferenceRouteValues.cs`.
+  - `UpdatePartyReferenceEndpoint.cs` and `RetrievePartyReferenceEndpoint.cs`:
+    - the BIAN route and `OperationId` (`Reference/Update`, `Reference/Retrieve`), the tag `Reference` and the BIAN summary;
+    - a description (`If-Match`, where the LEI goes, the unsupported fields and their phases), and `Produces…` for every status;
+    - the flow: parse the ids, then `ReadIfMatch` (Update), then `ToCommand`, then `InvokeAsync`, then `ETag` and 200, or `error.ToHttpResult()`.
+- [ ] `PartyReferenceDataDirectoryApi` maps both endpoints. Add the operations to `PartyReferenceDataDirectoryConformanceTests._implemented`. Check `OpenApiDocumentTests`.
+- [ ] Run `RimBank.Api.Tests`, `RimBank.Conformance.Tests`, `RimBank.Architecture.Tests` and `RimBank.Host.Tests`.
+
+## 4. Docs and roadmap
+- [ ] New `docs/adr/0029-reference-fields-in-stages.md` (from `docs/adr/template.md`).
+- [ ] ADR 0024:
+  - a "Reference requests (1.10)" paragraph;
+  - the `PartyReferenceUpdated` payload in the events table;
+  - `party.reference-invalid` and `party.reference-field-not-supported` in the error table;
+  - the 1.7 note on `PartyReference`;
+  - a link to 0029.
+  - Check that `PartyReferenceDataDirectoryCatalogue.cs` still says 1.10 for both Reference rows.
+- [ ] Roadmap:
+  - add the rows below right after 1.10;
+  - tick **1.10**;
+  - run the board sync (`scripts/sync_roadmap_board.py`, dry run) to check that it parses the new rows.
+  - The rows:
+    - **1.18 Reference BQ: names and residency:** `PartyFullLegalName`, `PartyNameSalutation`, `DateofBirth`, `Nationality`, `PartyCountryOfResidence` (an ISO 3166 country value object) and `ResidencyStatus`.
+    - **1.19 Reference BQ: addresses and contact points:** `ResidentialAddress`, `PartyAddress` and `CorporateAddress` (ISO 20022 postal address), and `eMailAddress`, `CellPhoneNumber` and `SocialNetworkContacts`.
+    - **1.20 Reference BQ: legal, political exposure and corporate details:**
+      - `PartyLegalStructure`, `PoliticalExposureType` and `PoliticalExposureDescriptionRecord`, `CustomerSinceDate`;
+      - the corporate customer and legal entity references, the company officers and their roles;
+      - `GovernmentIssuedDocumentDetails` and `DocumentDirectoryEntryInstanceReference`.
+- [ ] Tech-stack §3.4 tree: the `Reference/` contents. Tech-stack §3.3 `RimBank.Api` folder list: add `Reference/`.
+- [ ] XML docs: the view and entry docs mention the Reference section.
+- [ ] Run a locked restore, `dotnet build -c Release`, `dotnet test --solution RimBank.slnx` and `dotnet format --verify-no-changes`.
