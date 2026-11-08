@@ -150,5 +150,16 @@ public sealed class RegisterPartyHandlerTests
             long expectedVersion,
             IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events) =>
             Started = true;
+
+        public Task<IReadOnlyList<PartyAssociationEvent>> LoadAssociationAsync(
+            PartyAssociationId associationId,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<PartyAssociationEvent>>([]);
+
+        public void StartAssociation(PartyAssociationId associationId, IReadOnlyList<PartyAssociationEvent> events) =>
+            Started = true;
+
+        public void AppendToAssociation(PartyAssociationId associationId, long expectedVersion, IReadOnlyList<PartyAssociationEvent> events) =>
+            Started = true;
     }
 }

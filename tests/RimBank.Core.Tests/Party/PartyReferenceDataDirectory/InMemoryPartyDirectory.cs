@@ -49,4 +49,42 @@ internal sealed class InMemoryPartyDirectory : IPartyDirectory
     /// <summary>The events of <paramref name="entryId"/>, or none.</summary>
     public IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> StreamOf(PartyReferenceDataDirectoryEntryId entryId) =>
         _entries.TryGetValue(entryId, out var events) ? [.. events] : [];
+
+    private readonly Dictionary<PartyAssociationId, List<PartyAssociationEvent>> _associations = [];
+
+    /// <summary>Every association stream, for assertions.</summary>
+    public IReadOnlyCollection<PartyAssociationId> Associations => _associations.Keys;
+
+    public Task<IReadOnlyList<PartyAssociationEvent>> LoadAssociationAsync(
+        PartyAssociationId associationId,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(StreamOf(associationId));
+
+    public void StartAssociation(PartyAssociationId associationId, IReadOnlyList<PartyAssociationEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        if (!_associations.TryAdd(associationId, [.. events]))
+        {
+            throw new InvalidOperationException($"The association stream {associationId} already exists.");
+        }
+    }
+
+    public void AppendToAssociation(PartyAssociationId associationId, long expectedVersion, IReadOnlyList<PartyAssociationEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        if (!_associations.TryGetValue(associationId, out var stream) || stream.Count != expectedVersion)
+        {
+            throw new InvalidOperationException($"The association stream {associationId} is not at version {expectedVersion}.");
+        }
+
+        stream.AddRange(events);
+    }
+
+    /// <summary>Preloads the history of <paramref name="associationId"/>, as if it had been committed earlier.</summary>
+    public void Seed(PartyAssociationId associationId, params PartyAssociationEvent[] events) =>
+        StartAssociation(associationId, events);
+
+    /// <summary>The events of <paramref name="associationId"/>, or none.</summary>
+    public IReadOnlyList<PartyAssociationEvent> StreamOf(PartyAssociationId associationId) =>
+        _associations.TryGetValue(associationId, out var events) ? [.. events] : [];
 }

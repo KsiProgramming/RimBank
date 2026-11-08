@@ -16,7 +16,7 @@ public sealed class MartenPartyDirectory(IDocumentSession session) : IPartyDirec
         CancellationToken cancellationToken)
     {
         var stream = await session.Events.FetchStreamAsync(entryId.Value, token: cancellationToken);
-        return [.. stream.Select(stored => (PartyReferenceDataDirectoryEntryEvent)stored.Data)];
+        return [.. stream.Select(stored => stored.Data).OfType<PartyReferenceDataDirectoryEntryEvent>()];
     }
 
     /// <inheritdoc />
@@ -34,5 +34,28 @@ public sealed class MartenPartyDirectory(IDocumentSession session) : IPartyDirec
     {
         ArgumentNullException.ThrowIfNull(events);
         session.Events.Append(entryId.Value, expectedVersion + events.Count, [.. events]);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<PartyAssociationEvent>> LoadAssociationAsync(
+        PartyAssociationId associationId,
+        CancellationToken cancellationToken)
+    {
+        var stream = await session.Events.FetchStreamAsync(associationId.Value, token: cancellationToken);
+        return [.. stream.Select(stored => stored.Data).OfType<PartyAssociationEvent>()];
+    }
+
+    /// <inheritdoc />
+    public void StartAssociation(PartyAssociationId associationId, IReadOnlyList<PartyAssociationEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        session.Events.StartStream(associationId.Value, [.. events]);
+    }
+
+    /// <inheritdoc />
+    public void AppendToAssociation(PartyAssociationId associationId, long expectedVersion, IReadOnlyList<PartyAssociationEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        session.Events.Append(associationId.Value, expectedVersion + events.Count, [.. events]);
     }
 }
