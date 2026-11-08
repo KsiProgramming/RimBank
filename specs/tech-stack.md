@@ -86,7 +86,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Api/                # the HTTP API of every context, one folder per context (ADR 0025)
 │  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match, If-Match: ADR 0027)
-│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/, Demographics/, Reference/
+│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/, Demographics/, Reference/, Associations/
 │  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
 │  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018); one retry on a lost concurrency race (ADR 0027)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
@@ -179,11 +179,19 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ Events.cs                           # PartyReferenceUpdated
 │  ├─ UpdatePartyReference.cs             # command, with its acknowledgement and handler
 │  └─ RetrievePartyReference.cs           # query over the entry's view, with its handler
-├─ Associations/                          # Behavior Qualifier as its own aggregate (ADR 0024)
+├─ Associations/                          # Behavior Qualifier as its own aggregate (ADR 0024, 1.11, ADR 0033)
 │  ├─ PartyAssociation.cs                 # state + evolve
 │  ├─ PartyAssociationId.cs
-│  ├─ Events.cs
-│  ├─ Decisions.cs
+│  ├─ PartyRelationshipType.cs            # the 9 BIAN relationship types, BIAN names (…s.cs reads them in any case)
+│  ├─ AssociationValidityPeriod.cs        # FromDateTime / ToDateTime in UTC, from not after to
+│  ├─ PartyAssociationInput.cs            # the raw values an adapter sends
+│  ├─ PartyAssociationTerms.cs            # what Register records; refuses the fields in PartyAssociationFields.NotRecorded
+│  ├─ PartyAssociationChanges.cs          # the partial-update changes of Update
+│  ├─ Events.cs                           # PartyAssociationRegistered, PartyAssociationUpdated
+│  ├─ Decisions.cs                        # pure decide: the owner and associate checks come from the handler's write-side loads
+│  ├─ RegisterPartyAssociation.cs         # command, with its handler; PartyAssociationAcknowledged answers Register and Update
+│  ├─ UpdatePartyAssociation.cs           # command, with its handler
+│  ├─ RetrievePartyAssociation.cs         # query over the association's view, with its handler
 │  ├─ PartyAssociationView.cs
 │  └─ PartyAssociationViewProjection.cs
 ├─ BankRelations/

@@ -6,6 +6,15 @@ Every group is written test first. After each group, the solution builds and its
 - Business rules live in `RimBank.Core`. The adapters only translate the transport (memory: business logic in core).
 - The Testcontainers and Alba tests need Docker. If it is not available locally, they run in CI.
 
+## As built (differences from the plan below)
+- **Commits.** One per group, in order: aggregate; flows and ports (with the Marten port members, so the solution builds); PostgreSQL wiring and round trips; HTTP; docs.
+- **Input readers.** Register reads `PartyAssociationTerms` (associate and type required) and Update reads `PartyAssociationChanges`; both share `PartyAssociationInputReader`. The fields class is `PartyAssociationFields`, and its `NotRecorded` set names no phase: none of the refused fields is planned (1.21 is about Reference fields).
+- **One acknowledgement and one request model.** `PartyAssociationAcknowledged` answers Register and Update, and `PartyAssociationRequest` is the body of both, because BIAN's two bodies are the same.
+- **One more error code.** `party.association-already-registered` (409) completes the decider for a replayed Register (ADR 0033).
+- **Write-side owner check.** The Register decision takes `OwnerIsRegistered` and `AssociateIsRegistered` from the handler's loads of the two entry streams, so `Decide` stays pure.
+- **Stream types.** `MartenPartyDirectory.LoadEntryAsync` and `LoadAssociationAsync` keep only their own event type, so an association id sent as an associate is `party.associate-not-registered`, not a cast failure. `PartyAssociationRoundTripTests` and `RegisterPartyAssociationHandlerTests` pin it.
+- **Tests.** The value and input tests are `PartyRelationshipTypesTests`, `AssociationValidityPeriodTests` and `PartyAssociationInputTests`; the PostgreSQL port behaviour is covered by `PartyAssociationRoundTripTests` rather than new cases in `MartenPartyDirectoryTests`.
+
 ## 1. Domain: the `PartyAssociation` aggregate
 - [ ] `Associations/PartyAssociationId.cs`: a Guid v7 `readonly record struct` implementing `ITypedId<PartyAssociationId>` (ADR 0008), with its typed-ID contract test.
 - [ ] `Associations/PartyRelationshipType.cs` (enum, 9 values) and `PartyRelationshipTypes.cs` (BIAN spelling, reading in any case, after the `PartyTypes` pattern).

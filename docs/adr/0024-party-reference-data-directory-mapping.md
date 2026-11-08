@@ -111,6 +111,13 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 
   Update builds it from its acknowledgement.
 
+**Associations requests (1.11).** An association is its own aggregate (decided above), so its operations use the association's own stream, version and inline view. [ADR 0033](0033-party-associations.md) decides which BIAN fields are recorded.
+- **Ids.** Every route carries `{partyreferencedatadirectoryid}` (the owner), and Update and Retrieve also `{associationsid}`. A malformed one is `400` `shared.invalid-identifier`, naming that parameter in `errors`.
+- **Register** (`POST …/{partyreferencedatadirectoryid}/Associations/Register`) records `AssociateReference.PartyReference` (the associate's entry id) and `AssociateType` (both required) and an optional `AssociationValidFromToDate`. The checks run in order: the request values (`400`), the owner (`404` `party.party-not-found`), the associate is not the owner (`422` `party.self-association`), and the associate is registered (`422` `party.associate-not-registered`). Both entries are loaded from their streams through `PartyDirectory`. It answers `200` with `ETag` `"1"`.
+- **Update** (`PUT …/Associations/{associationsid}/Update`) is a partial update of the type and the validity period. The checks run in order: the ids, the request values, the association exists and its owner is the path's entry (`404` `party.association-not-found`), the `If-Match` version (`409` `party.version-conflict`), and the associate is unchanged (`422` `party.associate-cannot-change`).
+- **Retrieve** (`GET …/Associations/{associationsid}/Retrieve`) answers from `PartyAssociationView`, with the association's version as `ETag` and `304` on a matching `If-None-Match`. Only the owning entry finds it.
+- **Headers and responses.** Register requires `Idempotency-Key`, and Update also `If-Match`, as in 1.8. All three answer `200` with the same body: `AssociationsId`, `PartyReferenceDataDirectoryEntryId` (the owner), `AssociateReference` `{ "PartyReference": … }`, `AssociateType` in BIAN spelling and `AssociationValidFromToDate` (bounds in UTC, left out when unknown). Register and Update build it from their acknowledgement.
+
 **Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its semantics are decided in [ADR 0028](0028-demographics-exchange-as-verification.md) (1.9).
 
 ### Domain events
@@ -123,8 +130,8 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 | Entry | `DemographicsExchanged` | `ExchangeDemographics` (carries the verification status and date, 1.9, [ADR 0028](0028-demographics-exchange-as-verification.md)) |
 | Entry | `PartyReferenceUpdated` | `UpdatePartyReference` (carries the full resulting Reference: the party identifiers from 1.10, and the names, date of birth, nationality and residency from 1.18, [ADR 0029](0029-reference-fields-in-stages.md)) |
 | Entry | `BankRelationsUpdated` | `UpdateBankRelations` |
-| PartyAssociation | `PartyAssociationRegistered` | `RegisterPartyAssociation` |
-| PartyAssociation | `PartyAssociationUpdated` | `UpdatePartyAssociation` |
+| PartyAssociation | `PartyAssociationRegistered` | `RegisterPartyAssociation` (carries the owner, the associate, the type and the validity period, 1.11, [ADR 0033](0033-party-associations.md)) |
+| PartyAssociation | `PartyAssociationUpdated` | `UpdatePartyAssociation` (carries the resulting type and validity period, 1.11) |
 
 The exact names are fixed by the phase that adds each event, within this list. Each phase may add events (for example a no-op guard needs none), and any addition updates this table.
 
@@ -178,9 +185,13 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.party-type-required` | Validation (400) | The Register request has no `PartyType`, or an empty one (1.5) |
 | `party.party-not-found` | NotFound (404) | The path's entry does not exist (any command or query on an entry, including `Associations/Register`) |
 | `party.behavior-qualifier-not-found` | NotFound (404) | The path's Demographics, Reference or BankRelations id does not belong to the entry |
-| `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner |
-| `party.associate-not-registered` | BusinessRule (422) | `AssociateReference` is not an entry of this directory |
-| `party.self-association` | BusinessRule (422) | The associate is the owning entry |
+| `party.association-not-found` | NotFound (404) | The association does not exist, or the path's entry is not its owner (1.11) |
+| `party.associate-not-registered` | BusinessRule (422) | `AssociateReference` is not an entry of this directory (1.11) |
+| `party.self-association` | BusinessRule (422) | The associate is the owning entry (1.11) |
+| `party.association-invalid` | Validation (400) | An Associations value is missing or not valid; `errors` names each BIAN path (1.11, [ADR 0033](0033-party-associations.md)) |
+| `party.association-field-not-supported` | Validation (400) | An Associations request sends a BIAN field or part RimBank does not record (1.11, ADR 0033) |
+| `party.associate-cannot-change` | BusinessRule (422) | An Associations Update names another associate than the registered one (1.11, ADR 0033) |
+| `party.association-already-registered` | Conflict (409) | Register on an association stream that already exists; only a replayed decision meets it (1.11, ADR 0033) |
 | `party.demographics-invalid` | Validation (400) | A Demographics Update text is longer than its ISO 20022 type allows; `errors` names each BIAN field (1.9) |
 | `party.exchange-action-type-required` | Validation (400) | A Demographics Exchange has no `ExchangeActionType`, or a blank one (1.9, ADR 0028) |
 | `party.exchange-action-type-invalid` | Validation (400) | An `ExchangeActionType` other than `Verify` or `Reject` (1.9, ADR 0028) |
