@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
@@ -22,10 +24,12 @@ public sealed record PartyReferenceDetails(
     /// <summary>The Reference of a newly registered entry: nothing recorded.</summary>
     public static PartyReferenceDetails Empty { get; } = new(PartyIdentifiers.Empty);
 
-    /// <summary>The party's names: empty when none is recorded.</summary>
+    /// <summary>The party's names: empty when none is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
     public PartyNames CurrentNames => Names ?? PartyNames.Empty;
 
-    /// <summary>The party's nationality and residency: empty when none is recorded.</summary>
+    /// <summary>The party's nationality and residency: empty when none is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
     public PartyResidency CurrentResidency => Residency ?? PartyResidency.Empty;
 
     /// <summary>The Reference after a partial update.</summary>

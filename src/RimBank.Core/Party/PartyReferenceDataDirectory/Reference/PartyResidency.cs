@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using RimBank.SharedKernel;
 
 namespace RimBank.Party.PartyReferenceDataDirectory;
@@ -19,7 +20,8 @@ public sealed record PartyResidency(
     /// <summary>Nothing recorded.</summary>
     public static PartyResidency Empty { get; } = new(null, null, null);
 
-    /// <summary>Whether any part is recorded.</summary>
+    /// <summary>Whether any part is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
     public bool HasAny => this != Empty;
 
     /// <summary>The residency after a partial update: a part the changes leave out keeps its value.</summary>

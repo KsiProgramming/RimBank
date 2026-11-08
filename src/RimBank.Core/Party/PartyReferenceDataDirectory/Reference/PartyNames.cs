@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace RimBank.Party.PartyReferenceDataDirectory;
 
 /// <summary>
@@ -11,7 +13,8 @@ public sealed record PartyNames(PartyFullLegalName? FullLegalName, PartyNameSalu
     /// <summary>No name recorded.</summary>
     public static PartyNames Empty { get; } = new(null, null);
 
-    /// <summary>Whether any name is recorded.</summary>
+    /// <summary>Whether any name is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
     public bool HasAny => this != Empty;
 
     /// <summary>The names after a partial update: a name the changes leave out keeps its value.</summary>
