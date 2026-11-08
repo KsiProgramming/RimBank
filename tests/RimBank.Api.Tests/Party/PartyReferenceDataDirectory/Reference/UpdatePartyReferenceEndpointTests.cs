@@ -354,7 +354,7 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
     }
 
     [Fact]
-    public async Task A_reference_field_RimBank_does_not_record_yet_is_refused_with_its_phase_and_nothing_is_stored()
+    public async Task A_reference_part_RimBank_does_not_record_is_refused_and_nothing_is_stored()
     {
         await using var host = await server.StartHostAsync();
         var registered = await RegisterAsync(host);
@@ -363,6 +363,7 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
               "GovernmentIssuedIdentityReference": { "TaxIdentificationNumber": "FR12345678901", "OtherIdentification": "X1" },
               "Nationality": { "Code": "FR", "Citizen": "Jane" },
               "CompanyOfficerRole": { "Identification": "Director" },
+              "CompanyOfficerReference": { "PartyReference": "x", "InvolvementReference": "Director" },
               "PartyAddress": null,
               "NotABianField": "ignored"
             }
@@ -373,10 +374,15 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
         problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-field-not-supported");
         var errors = problem.GetProperty("errors");
         errors.EnumerateObject().Select(field => field.Name).ShouldBe(
-            ["Nationality.Citizen", "CompanyOfficerRole", "GovernmentIssuedIdentityReference.OtherIdentification"],
+            [
+                "Nationality.Citizen",
+                "CompanyOfficerRole.Identification",
+                "CompanyOfficerReference.InvolvementReference",
+                "GovernmentIssuedIdentityReference.OtherIdentification",
+            ],
             ignoreOrder: true);
         errors.GetProperty("Nationality.Citizen")[0].GetString().ShouldBe("RimBank does not record this field.");
-        errors.GetProperty("CompanyOfficerRole")[0].GetString().ShouldNotBeNull().ShouldContain("1.21");
+        errors.GetProperty("CompanyOfficerReference.InvolvementReference")[0].GetString().ShouldBe("RimBank does not record this field.");
         (await host.ScalarAsync<long>(
             $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
             .ShouldBe(1);

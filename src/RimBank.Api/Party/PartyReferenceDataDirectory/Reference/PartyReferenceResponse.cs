@@ -31,6 +31,10 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// <param name="CustomerSinceDate">BIAN <c>CustomerSinceDate</c>, as an ISO 8601 date (<c>YYYY-MM-DD</c>, ADR 0032).</param>
 /// <param name="GovernmentIssuedDocumentDetails">BIAN <c>GovernmentIssuedDocumentDetails</c>.</param>
 /// <param name="DocumentDirectoryEntryInstanceReference">BIAN <c>DocumentDirectoryEntryInstanceReference</c>.</param>
+/// <param name="CorporateCustomerReference">BIAN <c>CorporateCustomerReference</c>, with the entry id in its <c>PartyReference</c>.</param>
+/// <param name="CorporateCustomerLegalEntityReference">BIAN <c>CorporateCustomerLegalEntityReference</c>.</param>
+/// <param name="CompanyOfficerReference">BIAN <c>CompanyOfficerReference</c>.</param>
+/// <param name="CompanyOfficerRole">BIAN <c>CompanyOfficerRole</c>, as the role text (ADR 0034).</param>
 public sealed record PartyReferenceResponse(
     [property: JsonPropertyName("PartyReferenceDataDirectoryEntryId")] Guid PartyReferenceDataDirectoryEntryId,
     [property: JsonPropertyName("ReferenceId")] Guid ReferenceId,
@@ -53,7 +57,11 @@ public sealed record PartyReferenceResponse(
     [property: JsonPropertyName("PoliticalExposureDescriptionRecord"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PoliticalExposureDescriptionRecord = null,
     [property: JsonPropertyName("CustomerSinceDate"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CustomerSinceDate = null,
     [property: JsonPropertyName("GovernmentIssuedDocumentDetails"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PartyDocumentModel? GovernmentIssuedDocumentDetails = null,
-    [property: JsonPropertyName("DocumentDirectoryEntryInstanceReference"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DocumentDirectoryEntryModel? DocumentDirectoryEntryInstanceReference = null)
+    [property: JsonPropertyName("DocumentDirectoryEntryInstanceReference"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DocumentDirectoryEntryModel? DocumentDirectoryEntryInstanceReference = null,
+    [property: JsonPropertyName("CorporateCustomerReference"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] InvolvedPartyModel? CorporateCustomerReference = null,
+    [property: JsonPropertyName("CorporateCustomerLegalEntityReference"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] InvolvedPartyModel? CorporateCustomerLegalEntityReference = null,
+    [property: JsonPropertyName("CompanyOfficerReference"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] InvolvedPartyModel? CompanyOfficerReference = null,
+    [property: JsonPropertyName("CompanyOfficerRole"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CompanyOfficerRole = null)
 {
     /// <summary>The response for an Update's acknowledgement.</summary>
     /// <param name="acknowledged">The outcome of <see cref="UpdatePartyReference"/>.</param>
@@ -85,6 +93,7 @@ public sealed record PartyReferenceResponse(
         var contactPoints = reference.CurrentContactPoints;
         var legalStanding = reference.CurrentLegalStanding;
         var documents = reference.CurrentDocuments;
+        var corporate = reference.CurrentCorporateReferences;
         return new PartyReferenceResponse(
             entryId.Value,
             referenceId.Value,
@@ -129,8 +138,19 @@ public sealed record PartyReferenceResponse(
             PartyDocumentModel.From(documents.GovernmentIssuedDocument),
             documents.DocumentDirectoryEntry is { } directory
                 ? new DocumentDirectoryEntryModel { DocumentDirectoryEntryIdentification = directory.Value }
-                : null);
+                : null,
+            InvolvedPartyOf(corporate.CorporateCustomer),
+            InvolvedPartyOf(corporate.LegalEntity),
+            InvolvedPartyOf(corporate.CompanyOfficer),
+            corporate.CompanyOfficerRole?.Value);
     }
+
+    private static InvolvedPartyModel? InvolvedPartyOf(PartyReferenceDataDirectoryEntryId? entryId) =>
+        entryId switch
+        {
+            null => null,
+            { } referenced => new InvolvedPartyModel { PartyReference = referenced.ToString() },
+        };
 
     private static CountryModel? CountryOf(SharedKernel.CountryCode? country) =>
         country switch

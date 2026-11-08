@@ -173,11 +173,13 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ GovernmentIssuedDocument.cs         # declared documents (1.20): type, number, name and validity period, the opaque
 │  ├─ DocumentDirectoryEntryReference.cs  #   directory reference, and PartyDocuments
 │  ├─ PartyDocuments.cs
-│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth, residency, addresses, contact points, legal standing, documents
+│  ├─ CompanyOfficerRole.cs               # corporate and officer references (1.21, ADR 0034): the officer's Max35Text role, and
+│  ├─ PartyCorporateReferences.cs         #   the corporate customer, legal entity and officer as checked directory entry ids
+│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth, residency, addresses, contact points, legal standing, documents, corporate references
 │  ├─ PartyReferenceInput.cs              # the raw values an adapter sends
-│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.21
+│  ├─ PartyReferenceChanges.cs            # the partial-update changes, and the entries they reference; refuses unrecorded BIAN parts
 │  ├─ Events.cs                           # PartyReferenceUpdated
-│  ├─ UpdatePartyReference.cs             # command, with its acknowledgement and handler
+│  ├─ UpdatePartyReference.cs             # command, with its acknowledgement and handler (which loads the referenced entries, 1.21)
 │  └─ RetrievePartyReference.cs           # query over the entry's view, with its handler
 ├─ Associations/                          # Behavior Qualifier as its own aggregate (ADR 0024, 1.11, ADR 0033)
 │  ├─ PartyAssociation.cs                 # state + evolve

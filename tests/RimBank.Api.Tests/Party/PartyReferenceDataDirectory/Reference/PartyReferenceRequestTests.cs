@@ -119,12 +119,43 @@ public sealed class PartyReferenceRequestTests
         Read("{}").ToCommand(_entryId, _referenceId, 1, _key).Value.Changes.ShouldBe(PartyReferenceChanges.None);
 
     [Fact]
-    public void Staged_fields_and_unrecorded_parts_are_unsupported_whatever_their_case()
+    public void The_corporate_and_officer_references_are_read_from_their_party_reference() =>
+        Read(
+                $$"""
+                {
+                  "CorporateCustomerReference": { "PartyReference": "{{_companyId}}" },
+                  "CorporateCustomerLegalEntityReference": { "PartyReference": "{{_companyId}}" },
+                  "CompanyOfficerReference": { "PartyReference": "{{_officerId}}" },
+                  "CompanyOfficerRole": " Director "
+                }
+                """)
+            .ToCommand(_entryId, _referenceId, 1, _key)
+            .Value.Changes.ShouldBe(PartyReferenceChanges.None with
+            {
+                CorporateCustomer = new(_companyId),
+                LegalEntity = new(_companyId),
+                CompanyOfficer = new(_officerId),
+                CompanyOfficerRole = new(CompanyOfficerRole.TryCreate("Director").Value),
+            });
+
+    [Fact]
+    public void Empty_references_and_an_empty_role_object_clear_them() =>
+        Read("""{ "CorporateCustomerReference": {}, "CompanyOfficerReference": { "PartyReference": "" }, "CompanyOfficerRole": {} }""")
+            .ToCommand(_entryId, _referenceId, 1, _key)
+            .Value.Changes.ShouldBe(PartyReferenceChanges.None with
+            {
+                CorporateCustomer = new(null),
+                CompanyOfficer = new(null),
+                CompanyOfficerRole = new(null),
+            });
+
+    [Fact]
+    public void Unrecorded_parts_are_unsupported_whatever_the_case_of_their_object()
     {
         var request = Read(
             """
             {
-              "companyofficerreference": { "PartyReference": "x" },
+              "companyofficerreference": { "PartyReference": "x", "InvolvementReference": "Director" },
               "CompanyOfficerRole": { "PartyRole": "Director" },
               "GovernmentIssuedIdentityReference": { "OtherIdentification": "X1", "Declaration": null },
               "PartyLegalEntityReference": { "ContactPoint": "x" },
@@ -136,8 +167,8 @@ public sealed class PartyReferenceRequestTests
 
         request.UnsupportedFields().ShouldBe(
             [
-                "CompanyOfficerReference",
-                "CompanyOfficerRole",
+                "CompanyOfficerReference.InvolvementReference",
+                "CompanyOfficerRole.PartyRole",
                 "GovernmentIssuedIdentityReference.OtherIdentification",
                 "PartyLegalEntityReference.ContactPoint",
                 "Nationality.Citizen",
@@ -215,6 +246,12 @@ public sealed class PartyReferenceRequestTests
     public void An_unsupported_field_makes_the_command_a_validation_error() =>
         Read("""{ "Nationality": { "Code": "FR", "Citizen": "Jane" } }""").ToCommand(_entryId, _referenceId, 1, _key)
             .Error.Code.ShouldBe("party.reference-field-not-supported");
+
+    private static readonly PartyReferenceDataDirectoryEntryId _companyId =
+        PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(new DateTimeOffset(2026, 11, 8, 9, 1, 0, TimeSpan.Zero)));
+
+    private static readonly PartyReferenceDataDirectoryEntryId _officerId =
+        PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(new DateTimeOffset(2026, 11, 8, 9, 2, 0, TimeSpan.Zero)));
 
     private static UpdatePartyReferenceRequest Read(string json) =>
         JsonSerializer.Deserialize<UpdatePartyReferenceRequest>(json, JsonSerializerOptions.Web).ShouldNotBeNull();

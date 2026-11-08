@@ -28,6 +28,10 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="CustomerSinceDate">The change of the customer-since date (1.20).</param>
 /// <param name="GovernmentIssuedDocument">The change of the government-issued document (1.20).</param>
 /// <param name="DocumentDirectoryEntry">The change of the document directory reference (1.20).</param>
+/// <param name="CorporateCustomer">The change of the corporate customer reference (1.21).</param>
+/// <param name="LegalEntity">The change of the legal entity reference (1.21).</param>
+/// <param name="CompanyOfficer">The change of the company officer reference (1.21).</param>
+/// <param name="CompanyOfficerRole">The change of the company officer's role (1.21).</param>
 public sealed record PartyReferenceChanges(
     PartyIdentifierChange<TaxIdentificationNumber>? TaxIdentificationNumber,
     PartyIdentifierChange<NationalRegistrationNumber>? NationalRegistrationNumber,
@@ -49,8 +53,25 @@ public sealed record PartyReferenceChanges(
     PartyReferenceChange<PoliticalExposureDescription?>? PoliticalExposureDescription = null,
     PartyReferenceChange<DateOnly?>? CustomerSinceDate = null,
     PartyReferenceChange<GovernmentIssuedDocument?>? GovernmentIssuedDocument = null,
-    PartyReferenceChange<DocumentDirectoryEntryReference?>? DocumentDirectoryEntry = null)
+    PartyReferenceChange<DocumentDirectoryEntryReference?>? DocumentDirectoryEntry = null,
+    PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>? CorporateCustomer = null,
+    PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>? LegalEntity = null,
+    PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>? CompanyOfficer = null,
+    PartyReferenceChange<CompanyOfficerRole?>? CompanyOfficerRole = null)
 {
+    /// <summary>
+    /// The directory entries this Update references (1.21, ADR 0034), each with the BIAN path that names it: the ones it
+    /// sets, never the ones it keeps or clears. The handler loads them through the write port so the decision can check
+    /// them.
+    /// </summary>
+    /// <returns>The BIAN path and the entry id of each reference set, in BIAN order.</returns>
+    public IReadOnlyList<(string Field, PartyReferenceDataDirectoryEntryId EntryId)> ReferencedEntries() =>
+    [
+        .. Referenced(PartyReferenceFields.CorporateCustomerPartyReference, CorporateCustomer),
+        .. Referenced(PartyReferenceFields.LegalEntityPartyReference, LegalEntity),
+        .. Referenced(PartyReferenceFields.CompanyOfficerPartyReference, CompanyOfficer),
+    ];
+
     /// <summary>
     /// The earliest date of birth accepted (inclusive, ADR 0029): an earlier one is almost always a typo. The latest is
     /// today, checked by the decision because it needs the handler's clock.
@@ -121,7 +142,11 @@ public sealed record PartyReferenceChanges(
                 fieldErrors),
             ReadDocument(input.GovernmentIssuedDocument, fieldErrors),
             ReadText<DocumentDirectoryEntryReference>(
-                input.DocumentDirectoryEntryIdentification, PartyReferenceFields.DocumentDirectoryEntryIdentification, fieldErrors));
+                input.DocumentDirectoryEntryIdentification, PartyReferenceFields.DocumentDirectoryEntryIdentification, fieldErrors),
+            ReadEntry(input.CorporateCustomerReference, PartyReferenceFields.CorporateCustomerPartyReference, fieldErrors),
+            ReadEntry(input.CorporateCustomerLegalEntityReference, PartyReferenceFields.LegalEntityPartyReference, fieldErrors),
+            ReadEntry(input.CompanyOfficerReference, PartyReferenceFields.CompanyOfficerPartyReference, fieldErrors),
+            ReadText<CompanyOfficerRole>(input.CompanyOfficerRole, PartyReferenceFields.CompanyOfficerRole, fieldErrors));
 
         return fieldErrors.Count switch
         {
@@ -229,6 +254,40 @@ public sealed record PartyReferenceChanges(
         }
 
         return new PartyReferenceChange<TCode?>(code.Value);
+    }
+
+    private static IEnumerable<(string Field, PartyReferenceDataDirectoryEntryId EntryId)> Referenced(
+        string field,
+        PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>? change) =>
+        change?.Value switch
+        {
+            { } entryId => [(field, entryId)],
+            null => [],
+        };
+
+    private static PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>? ReadEntry(
+        string? text,
+        string field,
+        Dictionary<string, IReadOnlyList<string>> fieldErrors)
+    {
+        if (text is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return new PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>(null);
+        }
+
+        var entryId = PartyReferenceDataDirectoryEntryId.TryCreate(text.Trim());
+        if (entryId.IsFailure)
+        {
+            fieldErrors[field] = ["The party reference must be the PartyReferenceDataDirectoryEntryId returned by Register."];
+            return null;
+        }
+
+        return new PartyReferenceChange<PartyReferenceDataDirectoryEntryId?>(entryId.Value);
     }
 
     private static PartyReferenceChange<GovernmentIssuedDocument?>? ReadDocument(

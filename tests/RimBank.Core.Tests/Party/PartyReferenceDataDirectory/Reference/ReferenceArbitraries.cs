@@ -39,6 +39,12 @@ internal static class ReferenceArbitraries
             null,
             null));
 
+    private static readonly PartyReferenceDataDirectoryEntryId[] _entries =
+    [
+        PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero))),
+        PartyReferenceDataDirectoryEntryId.From(Guid.CreateVersion7(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero))),
+    ];
+
     // Built by applying changes that set every field to the empty Reference, so each generated Reference has the shape
     // Apply gives (an empty group is null).
     public static readonly Gen<PartyReferenceDetails> Details =
@@ -61,6 +67,10 @@ internal static class ReferenceArbitraries
         from since in OrNullValue(new DateOnly(2015, 3, 2))
         from document in _documents
         from directory in OrNull(DocumentDirectoryEntryReference.TryCreate("DOC-000123").Value)
+        from corporateCustomer in OrNullValue(_entries)
+        from legalEntity in OrNullValue(_entries)
+        from officer in OrNullValue(_entries)
+        from role in OrNull(CompanyOfficerRole.TryCreate("Director").Value)
         select PartyReferenceDetails.Empty.Apply(new PartyReferenceChanges(
             new(identifiers.TaxIdentificationNumber),
             new(identifiers.NationalRegistrationNumber),
@@ -82,12 +92,16 @@ internal static class ReferenceArbitraries
             new(description),
             new(since),
             new(document),
-            new(directory)));
+            new(directory),
+            new(corporateCustomer),
+            new(legalEntity),
+            new(officer),
+            new(role)));
 
     // For each field: omitted (keep), cleared, or set to a generated value.
     public static readonly Gen<PartyReferenceChanges> PartialChanges =
         from target in Details
-        from sent in Gen.ArrayOf(Gen.Elements(0, 1, 2), 21)
+        from sent in Gen.ArrayOf(Gen.Elements(0, 1, 2), 25)
         select Pick(ChangesTo(target), sent);
 
     // The changes that set every field of the details, clearing the unknown ones.
@@ -113,7 +127,11 @@ internal static class ReferenceArbitraries
             new(details.CurrentLegalStanding.PoliticalExposureDescription),
             new(details.CurrentLegalStanding.CustomerSince),
             new(details.CurrentDocuments.GovernmentIssuedDocument),
-            new(details.CurrentDocuments.DocumentDirectoryEntry));
+            new(details.CurrentDocuments.DocumentDirectoryEntry),
+            new(details.CurrentCorporateReferences.CorporateCustomer),
+            new(details.CurrentCorporateReferences.LegalEntity),
+            new(details.CurrentCorporateReferences.CompanyOfficer),
+            new(details.CurrentCorporateReferences.CompanyOfficerRole));
 
     // 0 omits the field, 1 clears it, 2 sends the full change's value.
     private static PartyReferenceChanges Pick(PartyReferenceChanges full, int[] sent) =>
@@ -138,7 +156,11 @@ internal static class ReferenceArbitraries
             Choose(full.PoliticalExposureDescription, sent[17]),
             ChooseValue(full.CustomerSinceDate, sent[18]),
             Choose(full.GovernmentIssuedDocument, sent[19]),
-            Choose(full.DocumentDirectoryEntry, sent[20]));
+            Choose(full.DocumentDirectoryEntry, sent[20]),
+            ChooseValue(full.CorporateCustomer, sent[21]),
+            ChooseValue(full.LegalEntity, sent[22]),
+            ChooseValue(full.CompanyOfficer, sent[23]),
+            Choose(full.CompanyOfficerRole, sent[24]));
 
     private static PartyReferenceChange<T?>? Choose<T>(PartyReferenceChange<T?>? full, int sent)
         where T : class =>

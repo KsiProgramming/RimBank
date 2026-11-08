@@ -100,7 +100,6 @@ Authorization: Bearer {{token.response.body.$.access_token}}
 
 ### A description without an exposure is refused on the resulting Reference: 400 application/problem+json with
 # "errorCode": "party.reference-invalid" and errors["PoliticalExposureDescriptionRecord"]. Nothing is stored.
-# CompanyOfficerRole instead would be 400 party.reference-field-not-supported, naming roadmap phase 1.21.
 PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Reference/{{register.response.body.$.ReferenceId}}/Update
 Authorization: Bearer {{token.response.body.$.access_token}}
 Content-Type: application/json
@@ -146,3 +145,49 @@ If-Match: "1"
 # owning entry finds it: the second party's id in the path is 404 party.association-not-found.
 GET {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Associations/{{association.response.body.$.AssociationsId}}/Retrieve
 Authorization: Bearer {{token.response.body.$.access_token}}
+
+### Reference BQ (roadmap 1.21, ADR 0034): register the group the first party (an organisation since its Update) belongs to.
+# @name group
+POST {{host}}/PartyReferenceDataDirectory/Register
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+
+{ "PartyType": "Organisation" }
+
+### Link the first party to its group (an organisation) and its officer (the second party, a person). Each reference is
+# loaded on the write side: it must be registered (422 party.referenced-party-not-registered), not the party itself
+# (422 party.self-reference), and of the right type (422 party.referenced-party-type-mismatch). Answers 200 with ETag
+# "4", the role trimmed.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Reference/{{register.response.body.$.ReferenceId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "3"
+
+{
+  "CorporateCustomerReference": { "PartyReference": "{{group.response.body.$.PartyReferenceDataDirectoryEntryId}}" },
+  "CorporateCustomerLegalEntityReference": { "PartyReference": "{{group.response.body.$.PartyReferenceDataDirectoryEntryId}}" },
+  "CompanyOfficerReference": { "PartyReference": "{{associate.response.body.$.PartyReferenceDataDirectoryEntryId}}" },
+  "CompanyOfficerRole": " Director "
+}
+
+### The group as the officer: 422 application/problem+json, "errorCode": "party.referenced-party-type-mismatch", and a
+# detail naming CompanyOfficerReference.PartyReference. Nothing is stored.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Reference/{{register.response.body.$.ReferenceId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "4"
+
+{ "CompanyOfficerReference": { "PartyReference": "{{group.response.body.$.PartyReferenceDataDirectoryEntryId}}" } }
+
+### An organisation with corporate references cannot become a person: 422 party.corporate-references-need-organisation.
+# Clear the four references first.
+PUT {{host}}/PartyReferenceDataDirectory/{{register.response.body.$.PartyReferenceDataDirectoryEntryId}}/Update
+Authorization: Bearer {{token.response.body.$.access_token}}
+Content-Type: application/json
+Idempotency-Key: {{$guid}}
+If-Match: "4"
+
+{ "PartyType": "Person" }

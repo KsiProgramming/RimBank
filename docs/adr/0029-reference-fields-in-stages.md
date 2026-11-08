@@ -109,13 +109,22 @@ Option 4, chosen when 1.10 was planned.
 | `GovernmentIssuedDocumentDetails` | `GovernmentIssuedDocument` | `PartyDocumentType` and the number (required), the name and the validity period |
 | `DocumentDirectoryEntryInstanceReference` | `DocumentDirectoryEntryReference` | `DocumentDirectoryEntryIdentification`, Max35Text, opaque |
 
-### The other fields, in stages
+### Corporate and officer references (recorded from 1.21)
 
-| Phase | BIAN fields |
-|---|---|
-| 1.21 Corporate and officer references | `CorporateCustomerReference`, `CorporateCustomerLegalEntityReference`, `CompanyOfficerReference`, `CompanyOfficerRole` |
+The four fields were planned for 1.20. They reference other parties, so they moved to 1.21, after the Associations BQ (1.11, ADR 0032). [ADR 0034](0034-reference-corporate-and-officer-references.md) gives the full rules.
 
-The four fields were planned for 1.20. They reference other parties, so they moved to 1.21, after the Associations BQ (1.11, ADR 0032).
+| BIAN field | Recorded as | Rule |
+|---|---|---|
+| `CorporateCustomerReference` | `PartyReferenceDataDirectoryEntryId` | Its `PartyReference`: another registered entry, an organisation |
+| `CorporateCustomerLegalEntityReference` | `PartyReferenceDataDirectoryEntryId` | Its `PartyReference`: another registered entry, an organisation |
+| `CompanyOfficerReference` | `PartyReferenceDataDirectoryEntryId` | Its `PartyReference`: another registered entry, a person |
+| `CompanyOfficerRole` | `CompanyOfficerRole` | Max35Text, only with an officer |
+
+They are recorded only on an organisation's entry. `InvolvementReference` is refused, with no phase named.
+
+### The fields in stages
+
+Since 1.21, every BIAN Reference field is recorded and `PartyReferenceFields.Staged` is empty. A field a later BIAN release adds would be staged there with its phase.
 
 - **Refused until their phase lands.** A request that sends any of these fields with a value (not `null`) is `party.reference-field-not-supported` (400). `errors` names each field and the phase that will add it, and nothing is stored. The same applies to any other part of `GovernmentIssuedIdentityReference` or `PartyLegalEntityReference`, such as `OtherIdentification`. No phase is planned for those parts, so their message names none.
 - **The check comes first.** It runs before the identifiers are checked, so a request is never applied partly.
@@ -126,7 +135,7 @@ The four fields were planned for 1.20. They reference other parties, so they mov
 ## Consequences
 
 - **Roadmap.** Rows 1.18, 1.19 and 1.20 are listed right after 1.10, and 1.21 right after 1.11. Each one removes its fields from `PartyReferenceFields.Staged`, adds them to `PartyReferenceDetails`, and updates this ADR's table.
-- **Tests.** `PartyReferenceChangesTests` pins the staged fields and their phases, so a phase cannot add a field without updating the table: 22 across three phases at 1.10, 16 across 1.19 and 1.20 after 1.18, 10, all for 1.20, after 1.19, and 4, all for 1.21, since 1.20.
+- **Tests.** `PartyReferenceChangesTests` pins the staged fields and their phases, so a phase cannot add a field without updating the table: 22 across three phases at 1.10, 16 across 1.19 and 1.20 after 1.18, 10, all for 1.20, after 1.19, 4, all for 1.21, after 1.20, and none since 1.21.
 - **Clients.** A client that sends a staged field gets a 400 that says when the field will be supported, never a silent drop.
 - **Uniqueness.** Identifiers are not unique across entries. A uniqueness rule (for example one LEI per entry) needs a cross-stream check and its own ADR.
-- **PII.** The identifiers, from 1.18 the names, birth date, nationality and residency, from 1.19 the addresses and contact points, and from 1.20 the declared legal standing and documents, are personal data; political exposure and identity documents are sensitive. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.
+- **PII.** The identifiers, from 1.18 the names, birth date, nationality and residency, from 1.19 the addresses and contact points, from 1.20 the declared legal standing and documents, and from 1.21 the corporate customer's references and its officer's role, are personal data; political exposure and identity documents are sensitive. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.

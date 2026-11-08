@@ -28,11 +28,11 @@ internal static class DemographicsScenarios
     public static string Url(string entryId, string demographicsId, string operation) =>
         $"/PartyReferenceDataDirectory/{entryId}/Demographics/{demographicsId}/{operation}";
 
-    public static async Task<RegisterPartyResponse> RegisterAsync(PartyApiHost host)
+    public static async Task<RegisterPartyResponse> RegisterAsync(PartyApiHost host, string partyType = "Person")
     {
         var result = await host.Alba.Scenario(_ =>
         {
-            _.Post.Text("""{ "PartyType": "Person" }""").ToUrl(RegisterPartyEndpoint.Route);
+            _.Post.Text($$"""{ "PartyType": "{{partyType}}" }""").ToUrl(RegisterPartyEndpoint.Route);
             _.WithRequestHeader(HeaderNames.ContentType, "application/json");
             _.WithRequestHeader(HeaderNames.Authorization, "Bearer " + TestTokens.Issue());
             _.WithRequestHeader("Idempotency-Key", Guid.CreateVersion7().ToString());
