@@ -53,6 +53,28 @@ internal static class ReferenceScenarios
         }
         """;
 
+    public const string LegalStandingAndDocuments =
+        """
+        {
+          "PartyLegalStructure": "private limited company",
+          "PoliticalExposureType": "Politicalexposuredomestic",
+          "PoliticalExposureDescriptionRecord": " Member of a regional council since 2021 ",
+          "CustomerSinceDate": "2015-03-02T10:00:00+01:00",
+          "GovernmentIssuedDocumentDetails": {
+            "PartyDocumentType": "PersonalDocument",
+            "DocumentReference": {
+              "DocumentIdentification": { "IdentifierValue": "23AB45678" },
+              "DocumentName": "Passport",
+              "DocumentValidityPeriod": {
+                "FromDateTime": { "DateTimeContent": "2023-04-01" },
+                "ToDateTime": { "DateTimeContent": "2033-03-31T00:00:00Z" }
+              }
+            }
+          },
+          "DocumentDirectoryEntryInstanceReference": { "DocumentDirectoryEntryIdentification": " DOC-000123 " }
+        }
+        """;
+
     public static string ReferenceUrl(Guid entryId, Guid referenceId, string operation) =>
         ReferenceUrl(entryId.ToString(), referenceId.ToString(), operation);
 
@@ -119,5 +141,29 @@ internal static class ReferenceScenarios
             EMailAddress = new EmailAddressModel { EmailAddress = "jeanne@example.fr" },
             CellPhoneNumber = new MobileNumberModel { MobileNumber = "+33612345678" },
             SocialNetworkContacts = new SocialNetworkContactModel { URLAddress = "https://www.linkedin.com/in/jdupont" },
+        };
+
+    public static PartyReferenceResponse ExpectedWithLegalStandingAndDocuments(RegisterPartyResponse registered) =>
+        ExpectedWithAddressesAndContactPoints(registered) with
+        {
+            PartyLegalStructure = "PrivateLimitedCompany",
+            PoliticalExposureType = "Politicalexposuredomestic",
+            PoliticalExposureDescriptionRecord = "Member of a regional council since 2021",
+            CustomerSinceDate = "2015-03-02",
+            GovernmentIssuedDocumentDetails = new PartyDocumentModel
+            {
+                PartyDocumentType = "PersonalDocument",
+                DocumentReference = new DocumentModel
+                {
+                    DocumentIdentification = new IdentifierModel { IdentifierValue = "23AB45678" },
+                    DocumentName = "Passport",
+                    DocumentValidityPeriod = new DateTimePeriodModel
+                    {
+                        FromDateTime = new DateTimeModel { DateTimeContent = "2023-04-01" },
+                        ToDateTime = new DateTimeModel { DateTimeContent = "2033-03-31" },
+                    },
+                },
+            },
+            DocumentDirectoryEntryInstanceReference = new DocumentDirectoryEntryModel { DocumentDirectoryEntryIdentification = "DOC-000123" },
         };
 }

@@ -177,13 +177,13 @@ public sealed class PartyReferenceChangesTests
     [Fact]
     public void A_staged_field_is_refused_with_the_phase_that_adds_it()
     {
-        var error = PartyReferenceChanges.Create(PartyReferenceInput.None, ["PartyLegalStructure", "PoliticalExposureType"]).Error;
+        var error = PartyReferenceChanges.Create(PartyReferenceInput.None, ["CompanyOfficerRole", "CorporateCustomerReference"]).Error;
 
         error.Kind.ShouldBe(ErrorKind.Validation);
         error.Code.ShouldBe("party.reference-field-not-supported");
         var fieldErrors = error.FieldErrors.ShouldNotBeNull();
-        fieldErrors["PartyLegalStructure"].ShouldHaveSingleItem().ShouldContain("1.20");
-        fieldErrors["PoliticalExposureType"].ShouldHaveSingleItem().ShouldContain("1.20");
+        fieldErrors["CompanyOfficerRole"].ShouldHaveSingleItem().ShouldContain("1.21");
+        fieldErrors["CorporateCustomerReference"].ShouldHaveSingleItem().ShouldContain("1.21");
     }
 
     [Theory]
@@ -197,6 +197,11 @@ public sealed class PartyReferenceChangesTests
     [InlineData("eMailAddress.Identification")]
     [InlineData("CellPhoneNumber.PhoneNumber")]
     [InlineData("SocialNetworkContacts.BICAddress")]
+    [InlineData("GovernmentIssuedDocumentDetails.PartyReference")]
+    [InlineData("GovernmentIssuedDocumentDetails.DocumentReference.DocumentStatus")]
+    [InlineData("GovernmentIssuedDocumentDetails.DocumentReference.DocumentIdentification.IdentifierIssuerReference")]
+    [InlineData("GovernmentIssuedDocumentDetails.DocumentReference.DocumentValidityPeriod.ToDateTime.TimeZoneCode")]
+    [InlineData("DocumentDirectoryEntryInstanceReference.DirectoryEntryStatus")]
     public void A_field_no_phase_adds_is_refused_without_a_phase(string field) =>
         PartyReferenceChanges.Create(PartyReferenceInput.None, [field]).Error
             .FieldErrors.ShouldNotBeNull()[field]
@@ -204,15 +209,15 @@ public sealed class PartyReferenceChangesTests
 
     [Fact]
     public void Unsupported_fields_are_refused_before_the_values_are_checked() =>
-        PartyReferenceChanges.Create(new PartyReferenceInput(new string('1', 36), DateofBirth: "garbage"), ["PartyLegalStructure"]).Error.Code
+        PartyReferenceChanges.Create(new PartyReferenceInput(new string('1', 36), DateofBirth: "garbage"), ["CompanyOfficerRole"]).Error.Code
             .ShouldBe("party.reference-field-not-supported");
 
     [Fact]
     public void Every_bian_reference_field_is_either_recorded_or_staged()
     {
         // The 24 top-level fields of BIAN UpdateReference (PartyReferenceDataDirectory.yaml): two are recorded from 1.10,
-        // six from 1.18 and six from 1.19.
-        PartyReferenceFields.Staged.Count.ShouldBe(10);
+        // six from 1.18, six from 1.19 and six from 1.20; the four references to other parties wait for 1.21 (ADR 0032).
+        PartyReferenceFields.Staged.Count.ShouldBe(4);
         PartyReferenceFields.Staged.Keys.ShouldNotContain(PartyReferenceFields.GovernmentIssuedIdentityReference);
         PartyReferenceFields.Staged.Keys.ShouldNotContain(PartyReferenceFields.PartyLegalEntityReference);
         string[] recordedIn118 =
@@ -235,8 +240,101 @@ public sealed class PartyReferenceChangesTests
             PartyReferenceFields.SocialNetworkContacts,
         ];
         PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn119.Contains(field));
-        PartyReferenceFields.Staged.Values.Distinct().ShouldBe(["1.20"]);
+        string[] recordedIn120 =
+        [
+            PartyReferenceFields.PartyLegalStructure,
+            PartyReferenceFields.PoliticalExposureType,
+            PartyReferenceFields.PoliticalExposureDescriptionRecord,
+            PartyReferenceFields.CustomerSinceDate,
+            PartyReferenceFields.GovernmentIssuedDocumentDetails,
+            PartyReferenceFields.DocumentDirectoryEntryInstanceReference,
+        ];
+        PartyReferenceFields.Staged.Keys.ShouldNotContain(field => recordedIn120.Contains(field));
+        PartyReferenceFields.Staged.Keys.Order(StringComparer.Ordinal).ShouldBe(
+        [
+            "CompanyOfficerReference",
+            "CompanyOfficerRole",
+            "CorporateCustomerLegalEntityReference",
+            "CorporateCustomerReference",
+        ]);
+        PartyReferenceFields.Staged.Values.Distinct().ShouldBe(["1.21"]);
     }
+
+    [Fact]
+    public void Given_legal_standing_and_documents_are_read_into_their_value_objects() =>
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    PartyLegalStructure: "private limited company",
+                    PoliticalExposureType: "politicalexposuredomestic",
+                    PoliticalExposureDescription: " Member of a regional council since 2021 ",
+                    CustomerSinceDate: "2015-03-02T10:00:00+01:00",
+                    GovernmentIssuedDocument: new PartyDocumentInput("PersonalDocument", "23AB45678", "Passport", "2023-04-01", "2033-03-31"),
+                    DocumentDirectoryEntryIdentification: " DOC-000123 "),
+                [])
+            .Value.ShouldBe(PartyReferenceChanges.None with
+            {
+                PartyLegalStructure = new(LegalStanding.LegalStructure),
+                PoliticalExposureType = new(LegalStanding.PoliticalExposureType),
+                PoliticalExposureDescription = new(LegalStanding.PoliticalExposureDescription),
+                CustomerSinceDate = new(CustomerSince),
+                GovernmentIssuedDocument = new(Documents.GovernmentIssuedDocument),
+                DocumentDirectoryEntry = new(Documents.DocumentDirectoryEntry),
+            });
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void A_blank_legal_standing_or_document_clears_it(string blank) =>
+        PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    PartyLegalStructure: blank,
+                    PoliticalExposureType: blank,
+                    PoliticalExposureDescription: blank,
+                    CustomerSinceDate: blank,
+                    GovernmentIssuedDocument: new PartyDocumentInput(blank, blank),
+                    DocumentDirectoryEntryIdentification: blank),
+                [])
+            .Value.ShouldBe(PartyReferenceChanges.None with
+            {
+                PartyLegalStructure = new(null),
+                PoliticalExposureType = new(null),
+                PoliticalExposureDescription = new(null),
+                CustomerSinceDate = new(null),
+                GovernmentIssuedDocument = new(null),
+                DocumentDirectoryEntry = new(null),
+            });
+
+    [Fact]
+    public void Every_invalid_legal_standing_and_document_value_is_named_with_its_bian_path()
+    {
+        var error = PartyReferenceChanges.Create(
+                new PartyReferenceInput(
+                    PartyLegalStructure: "Trust",
+                    PoliticalExposureType: "PEP",
+                    PoliticalExposureDescription: new string('d', 351),
+                    CustomerSinceDate: "02/03/2015",
+                    GovernmentIssuedDocument: new PartyDocumentInput("PersonalDocument", ValidFrom: "2033-01-01", ValidTo: "2023-01-01"),
+                    DocumentDirectoryEntryIdentification: new string('D', 36)),
+                [])
+            .Error;
+
+        error.Code.ShouldBe("party.reference-invalid");
+        error.FieldErrors.Keys.Order(StringComparer.Ordinal).ShouldBe(
+        [
+            "CustomerSinceDate",
+            "DocumentDirectoryEntryInstanceReference.DocumentDirectoryEntryIdentification",
+            "GovernmentIssuedDocumentDetails.DocumentReference.DocumentIdentification.IdentifierValue",
+            "GovernmentIssuedDocumentDetails.DocumentReference.DocumentValidityPeriod.ToDateTime.DateTimeContent",
+            "PartyLegalStructure",
+            "PoliticalExposureDescriptionRecord",
+            "PoliticalExposureType",
+        ]);
+    }
+
+    [Fact]
+    public void A_customer_since_date_before_1900_is_invalid() =>
+        PartyReferenceChanges.Create(new PartyReferenceInput(CustomerSinceDate: "1899-12-31"), []).Error
+            .FieldErrors["CustomerSinceDate"].ShouldBe(["The customer-since date must not be before 1900-01-01."]);
 
     [Fact]
     public void Given_addresses_and_contact_points_are_read_into_their_value_objects() =>

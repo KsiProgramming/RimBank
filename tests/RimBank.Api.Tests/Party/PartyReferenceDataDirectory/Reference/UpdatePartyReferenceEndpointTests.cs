@@ -108,6 +108,130 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task Legal_standing_and_documents_are_recorded_normalised_and_kept_by_a_later_update()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        await PutReferenceOkAsync(host, UpdateUrl(registered), Identifiers, "\"1\"", "\"2\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), NamesAndResidency, "\"2\"", "\"3\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), AddressesAndContactPoints, "\"3\"", "\"4\"");
+
+        var updated = await PutReferenceOkAsync(host, UpdateUrl(registered), LegalStandingAndDocuments, "\"4\"", "\"5\"");
+        var kept = await PutReferenceOkAsync(
+            host,
+            UpdateUrl(registered),
+            """{ "PoliticalExposureType": "Nopoliticalexposure", "PoliticalExposureDescriptionRecord": "", "DocumentDirectoryEntryInstanceReference": {} }""",
+            "\"5\"",
+            "\"6\"");
+
+        updated.ShouldBe(ExpectedWithLegalStandingAndDocuments(registered));
+        kept.ShouldBe(ExpectedWithLegalStandingAndDocuments(registered) with
+        {
+            PoliticalExposureType = "Nopoliticalexposure",
+            PoliticalExposureDescriptionRecord = null,
+            DocumentDirectoryEntryInstanceReference = null,
+        });
+    }
+
+    [Fact]
+    public async Task Invalid_legal_standing_and_documents_are_a_validation_problem_naming_each_bian_path()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        var body = $$"""
+            {
+              "PartyLegalStructure": "Trust",
+              "PoliticalExposureType": "PEP",
+              "CustomerSinceDate": "02/03/2015",
+              "GovernmentIssuedDocumentDetails": { "PartyDocumentType": "PersonalDocument" },
+              "DocumentDirectoryEntryInstanceReference": { "DocumentDirectoryEntryIdentification": "{{new string('D', 36)}}" }
+            }
+            """;
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), body, "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-invalid");
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).ShouldBe(
+            [
+                "PartyLegalStructure",
+                "PoliticalExposureType",
+                "CustomerSinceDate",
+                "GovernmentIssuedDocumentDetails.DocumentReference.DocumentIdentification.IdentifierValue",
+                "DocumentDirectoryEntryInstanceReference.DocumentDirectoryEntryIdentification",
+            ],
+            ignoreOrder: true);
+    }
+
+    [Theory]
+    [InlineData("""{ "PoliticalExposureType": "Nopoliticalexposure", "PoliticalExposureDescriptionRecord": "Mayor" }""", "PoliticalExposureDescriptionRecord")]
+    [InlineData("""{ "DateofBirth": "1990-05-17", "CustomerSinceDate": "1990-05-16" }""", "CustomerSinceDate")]
+    public async Task A_resulting_reference_that_breaks_a_cross_field_rule_is_a_validation_problem_and_nothing_is_stored(string body, string field)
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), body, "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-invalid");
+        problem.GetProperty("errors").EnumerateObject().Select(error => error.Name).ShouldBe([field]);
+        (await host.ScalarAsync<long>(
+            $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
+            .ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task A_customer_since_date_after_today_is_a_validation_problem()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        var later = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(2).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), $$"""{ "CustomerSinceDate": "{{later}}" }""", "\"1\"", 400);
+
+        problem.GetProperty("errors").GetProperty("CustomerSinceDate")[0].GetString()
+            .ShouldBe("The customer-since date must not be after today.");
+    }
+
+    [Fact]
+    public async Task An_unrecorded_document_part_is_refused_without_a_phase_and_nothing_is_stored()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        var body = """
+            {
+              "GovernmentIssuedDocumentDetails": {
+                "PartyReference": { "Identification": "x" },
+                "PartyDocumentType": "PersonalDocument",
+                "DocumentReference": {
+                  "DocumentIdentification": { "IdentifierValue": "23AB45678", "IdentifierIssuerReference": { "PartyReference": "Prefecture" } },
+                  "DocumentStatus": { "StatusDescription": "Valid" },
+                  "DocumentValidityPeriod": { "ToDateTime": { "DateTimeContent": "2033-03-31", "TimeZoneCode": "CET" } }
+                }
+              },
+              "DocumentDirectoryEntryInstanceReference": { "DocumentDirectoryEntryIdentification": "DOC-1", "DirectoryEntryStatus": {} }
+            }
+            """;
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), body, "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-field-not-supported");
+        var errors = problem.GetProperty("errors");
+        errors.EnumerateObject().Select(field => field.Name).ShouldBe(
+            [
+                "GovernmentIssuedDocumentDetails.PartyReference",
+                "GovernmentIssuedDocumentDetails.DocumentReference.DocumentStatus",
+                "GovernmentIssuedDocumentDetails.DocumentReference.DocumentIdentification.IdentifierIssuerReference",
+                "GovernmentIssuedDocumentDetails.DocumentReference.DocumentValidityPeriod.ToDateTime.TimeZoneCode",
+                "DocumentDirectoryEntryInstanceReference.DirectoryEntryStatus",
+            ],
+            ignoreOrder: true);
+        errors.GetProperty("GovernmentIssuedDocumentDetails.PartyReference")[0].GetString().ShouldBe("RimBank does not record this field.");
+        (await host.ScalarAsync<long>(
+            $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
+            .ShouldBe(1);
+    }
+
+    [Fact]
     public async Task Invalid_addresses_and_contact_points_are_a_validation_problem_naming_each_bian_path()
     {
         await using var host = await server.StartHostAsync();
@@ -238,7 +362,7 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
             {
               "GovernmentIssuedIdentityReference": { "TaxIdentificationNumber": "FR12345678901", "OtherIdentification": "X1" },
               "Nationality": { "Code": "FR", "Citizen": "Jane" },
-              "PartyLegalStructure": "SAS",
+              "CompanyOfficerRole": { "Identification": "Director" },
               "PartyAddress": null,
               "NotABianField": "ignored"
             }
@@ -249,10 +373,10 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
         problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-field-not-supported");
         var errors = problem.GetProperty("errors");
         errors.EnumerateObject().Select(field => field.Name).ShouldBe(
-            ["Nationality.Citizen", "PartyLegalStructure", "GovernmentIssuedIdentityReference.OtherIdentification"],
+            ["Nationality.Citizen", "CompanyOfficerRole", "GovernmentIssuedIdentityReference.OtherIdentification"],
             ignoreOrder: true);
         errors.GetProperty("Nationality.Citizen")[0].GetString().ShouldBe("RimBank does not record this field.");
-        errors.GetProperty("PartyLegalStructure")[0].GetString().ShouldNotBeNull().ShouldContain("1.20");
+        errors.GetProperty("CompanyOfficerRole")[0].GetString().ShouldNotBeNull().ShouldContain("1.21");
         (await host.ScalarAsync<long>(
             $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
             .ShouldBe(1);

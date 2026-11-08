@@ -124,7 +124,7 @@ public sealed class PartyReferenceRequestTests
         var request = Read(
             """
             {
-              "partylegalstructure": "SAS",
+              "companyofficerreference": { "PartyReference": "x" },
               "CompanyOfficerRole": { "PartyRole": "Director" },
               "GovernmentIssuedIdentityReference": { "OtherIdentification": "X1", "Declaration": null },
               "PartyLegalEntityReference": { "ContactPoint": "x" },
@@ -136,7 +136,7 @@ public sealed class PartyReferenceRequestTests
 
         request.UnsupportedFields().ShouldBe(
             [
-                "PartyLegalStructure",
+                "CompanyOfficerReference",
                 "CompanyOfficerRole",
                 "GovernmentIssuedIdentityReference.OtherIdentification",
                 "PartyLegalEntityReference.ContactPoint",
@@ -148,8 +148,68 @@ public sealed class PartyReferenceRequestTests
     }
 
     [Fact]
+    public void The_BIAN_legal_standing_and_document_fields_become_the_changes()
+    {
+        var changes = Read(ReferenceScenarios.LegalStandingAndDocuments).ToCommand(_entryId, _referenceId, 1, _key).Value.Changes;
+
+        changes.ShouldBe(PartyReferenceChanges.None with
+        {
+            PartyLegalStructure = new PartyReferenceChange<PartyLegalStructure?>(PartyLegalStructure.PrivateLimitedCompany),
+            PoliticalExposureType = new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.Domestic),
+            PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(
+                PoliticalExposureDescription.TryCreate("Member of a regional council since 2021").Value),
+            CustomerSinceDate = new PartyReferenceChange<DateOnly?>(new DateOnly(2015, 3, 2)),
+            GovernmentIssuedDocument = new PartyReferenceChange<GovernmentIssuedDocument?>(new GovernmentIssuedDocument(
+                PartyDocumentType.PersonalDocument,
+                GovernmentIssuedDocumentNumber.TryCreate("23AB45678").Value,
+                GovernmentIssuedDocumentName.TryCreate("Passport").Value,
+                new DateOnly(2023, 4, 1),
+                new DateOnly(2033, 3, 31))),
+            DocumentDirectoryEntry = new PartyReferenceChange<DocumentDirectoryEntryReference?>(
+                DocumentDirectoryEntryReference.TryCreate("DOC-000123").Value),
+        });
+    }
+
+    [Fact]
+    public void Empty_document_objects_clear_them() =>
+        Read("""{ "GovernmentIssuedDocumentDetails": { "DocumentReference": {} }, "DocumentDirectoryEntryInstanceReference": {} }""")
+            .ToCommand(_entryId, _referenceId, 1, _key).Value.Changes
+            .ShouldBe(PartyReferenceChanges.None with
+            {
+                GovernmentIssuedDocument = new PartyReferenceChange<GovernmentIssuedDocument?>(null),
+                DocumentDirectoryEntry = new PartyReferenceChange<DocumentDirectoryEntryReference?>(null),
+            });
+
+    [Fact]
+    public void Unrecorded_document_parts_are_unsupported_at_any_depth() =>
+        Read(
+                """
+                {
+                  "GovernmentIssuedDocumentDetails": {
+                    "PartyReference": {},
+                    "DocumentReference": {
+                      "DocumentVersion": "2",
+                      "DocumentIdentification": { "IdentifierStartDate": {} },
+                      "DocumentValidityPeriod": { "Extra": 1, "FromDateTime": { "DaylightSavingIndicator": "N" } }
+                    }
+                  },
+                  "DocumentDirectoryEntryInstanceReference": { "DirectoryEntryDate": {} }
+                }
+                """)
+            .UnsupportedFields().ShouldBe(
+                [
+                    "GovernmentIssuedDocumentDetails.PartyReference",
+                    "GovernmentIssuedDocumentDetails.DocumentReference.DocumentVersion",
+                    "GovernmentIssuedDocumentDetails.DocumentReference.DocumentIdentification.IdentifierStartDate",
+                    "GovernmentIssuedDocumentDetails.DocumentReference.DocumentValidityPeriod.Extra",
+                    "GovernmentIssuedDocumentDetails.DocumentReference.DocumentValidityPeriod.FromDateTime.DaylightSavingIndicator",
+                    "DocumentDirectoryEntryInstanceReference.DirectoryEntryDate",
+                ],
+                ignoreOrder: true);
+
+    [Fact]
     public void Fields_sent_as_null_and_properties_that_are_not_BIAN_s_are_not_unsupported() =>
-        Read("""{ "PartyLegalStructure": null, "Nationality": { "Citizen": null }, "NotABianField": "x" }""").UnsupportedFields().ShouldBeEmpty();
+        Read("""{ "CompanyOfficerRole": null, "Nationality": { "Citizen": null }, "NotABianField": "x" }""").UnsupportedFields().ShouldBeEmpty();
 
     [Fact]
     public void An_unsupported_field_makes_the_command_a_validation_error() =>

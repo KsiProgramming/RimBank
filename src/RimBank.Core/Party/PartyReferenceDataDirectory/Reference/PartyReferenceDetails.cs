@@ -5,7 +5,8 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <summary>
 /// The record of the entry's Reference Behavior Qualifier, an entity of the entry (ADR 0024), shared by the entry's state
 /// and its view. Roadmap 1.10 records the party identifiers, 1.18 the names, date of birth, nationality and residency,
-/// and 1.19 the postal addresses and contact points; 1.20 adds the other BIAN Reference fields (ADR 0029).
+/// 1.19 the postal addresses and contact points, and 1.20 the declared legal standing and documents (ADR 0029, ADR 0032).
+/// The references to other parties wait for 1.21.
 /// </summary>
 /// <remarks>
 /// The parts added after 1.10 are <c>null</c> when nothing is recorded, so a Reference stored before them (an event or a
@@ -20,14 +21,32 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="ContactPoints">
 /// The party's email, mobile and social network contacts (1.19), or <c>null</c> when none is recorded.
 /// </param>
+/// <param name="LegalStanding">
+/// The party's declared legal structure, political exposure and customer-since date (1.20), or <c>null</c> when none is
+/// recorded.
+/// </param>
+/// <param name="Documents">
+/// The party's declared government-issued document and document directory reference (1.20), or <c>null</c> when none is
+/// recorded.
+/// </param>
 public sealed record PartyReferenceDetails(
     PartyIdentifiers Identifiers,
     PartyNames? Names = null,
     DateOnly? DateOfBirth = null,
     PartyResidency? Residency = null,
     PartyAddresses? Addresses = null,
-    PartyContactPoints? ContactPoints = null)
+    PartyContactPoints? ContactPoints = null,
+    PartyLegalStanding? LegalStanding = null,
+    PartyDocuments? Documents = null)
 {
+    /// <summary>The party's declared legal standing: empty when none is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
+    public PartyLegalStanding CurrentLegalStanding => LegalStanding ?? PartyLegalStanding.Empty;
+
+    /// <summary>The party's declared documents: empty when none is recorded. Computed, so it is not stored.</summary>
+    [JsonIgnore]
+    public PartyDocuments CurrentDocuments => Documents ?? PartyDocuments.Empty;
+
     /// <summary>The Reference of a newly registered entry: nothing recorded.</summary>
     public static PartyReferenceDetails Empty { get; } = new(PartyIdentifiers.Empty);
 
@@ -57,12 +76,16 @@ public sealed record PartyReferenceDetails(
         var residency = CurrentResidency.Apply(changes);
         var addresses = CurrentAddresses.Apply(changes);
         var contactPoints = CurrentContactPoints.Apply(changes);
+        var legalStanding = CurrentLegalStanding.Apply(changes);
+        var documents = CurrentDocuments.Apply(changes);
         return new PartyReferenceDetails(
             Identifiers.Apply(changes),
             names.HasAny ? names : null,
             changes.DateOfBirth.ApplyTo(DateOfBirth),
             residency.HasAny ? residency : null,
             addresses.HasAny ? addresses : null,
-            contactPoints.HasAny ? contactPoints : null);
+            contactPoints.HasAny ? contactPoints : null,
+            legalStanding.HasAny ? legalStanding : null,
+            documents.HasAny ? documents : null);
     }
 }

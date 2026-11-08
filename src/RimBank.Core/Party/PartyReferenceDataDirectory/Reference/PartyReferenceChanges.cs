@@ -22,6 +22,12 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="EmailAddress">The change of the email address (1.19).</param>
 /// <param name="MobileNumber">The change of the mobile number (1.19).</param>
 /// <param name="SocialNetworkAddress">The change of the social network profile (1.19).</param>
+/// <param name="PartyLegalStructure">The change of the legal structure (1.20).</param>
+/// <param name="PoliticalExposureType">The change of the declared political exposure (1.20).</param>
+/// <param name="PoliticalExposureDescription">The change of the political exposure description (1.20).</param>
+/// <param name="CustomerSinceDate">The change of the customer-since date (1.20).</param>
+/// <param name="GovernmentIssuedDocument">The change of the government-issued document (1.20).</param>
+/// <param name="DocumentDirectoryEntry">The change of the document directory reference (1.20).</param>
 public sealed record PartyReferenceChanges(
     PartyIdentifierChange<TaxIdentificationNumber>? TaxIdentificationNumber,
     PartyIdentifierChange<NationalRegistrationNumber>? NationalRegistrationNumber,
@@ -37,13 +43,25 @@ public sealed record PartyReferenceChanges(
     PartyReferenceChange<PostalAddress?>? CorporateAddress = null,
     PartyReferenceChange<EmailAddress?>? EmailAddress = null,
     PartyReferenceChange<MobileNumber?>? MobileNumber = null,
-    PartyReferenceChange<SocialNetworkAddress?>? SocialNetworkAddress = null)
+    PartyReferenceChange<SocialNetworkAddress?>? SocialNetworkAddress = null,
+    PartyReferenceChange<PartyLegalStructure?>? PartyLegalStructure = null,
+    PartyReferenceChange<PoliticalExposureType?>? PoliticalExposureType = null,
+    PartyReferenceChange<PoliticalExposureDescription?>? PoliticalExposureDescription = null,
+    PartyReferenceChange<DateOnly?>? CustomerSinceDate = null,
+    PartyReferenceChange<GovernmentIssuedDocument?>? GovernmentIssuedDocument = null,
+    PartyReferenceChange<DocumentDirectoryEntryReference?>? DocumentDirectoryEntry = null)
 {
     /// <summary>
     /// The earliest date of birth accepted (inclusive, ADR 0029): an earlier one is almost always a typo. The latest is
     /// today, checked by the decision because it needs the handler's clock.
     /// </summary>
     public static DateOnly EarliestDateOfBirth { get; } = new(1900, 1, 1);
+
+    /// <summary>
+    /// The earliest customer-since date accepted (inclusive, ADR 0032), for the same reason as
+    /// <see cref="EarliestDateOfBirth"/>. The latest is today, checked by the decision.
+    /// </summary>
+    public static DateOnly EarliestCustomerSinceDate { get; } = new(1900, 1, 1);
 
     /// <summary>No change at all: an Update that only records that the Reference was reviewed.</summary>
     public static PartyReferenceChanges None { get; } = new(null, null, null);
@@ -81,7 +99,7 @@ public sealed record PartyReferenceChanges(
             ReadIdentifier<LegalEntityIdentifier>(input.LegalEntityIdentifier, PartyReferenceFields.LegalEntityIdentifier, fieldErrors),
             ReadText<PartyFullLegalName>(input.PartyFullLegalName, PartyReferenceFields.PartyFullLegalName, fieldErrors),
             ReadText<PartyNameSalutation>(input.PartyNameSalutation, PartyReferenceFields.PartyNameSalutation, fieldErrors),
-            ReadDateOfBirth(input.DateofBirth, fieldErrors),
+            ReadDate(input.DateofBirth, PartyReferenceFields.DateofBirth, "date of birth", EarliestDateOfBirth, fieldErrors),
             ReadCountry(input.Nationality, PartyReferenceFields.NationalityCode, fieldErrors),
             ReadCountry(input.PartyCountryOfResidence, PartyReferenceFields.PartyCountryOfResidenceCode, fieldErrors),
             ReadResidencyStatus(input.ResidencyStatus, fieldErrors),
@@ -90,7 +108,20 @@ public sealed record PartyReferenceChanges(
             ReadAddress(input.CorporateAddress, PartyReferenceFields.CorporateAddress, fieldErrors),
             ReadText<EmailAddress>(input.EmailAddress, PartyReferenceFields.EMailAddressEmailAddress, fieldErrors),
             ReadText<MobileNumber>(input.MobileNumber, PartyReferenceFields.CellPhoneNumberMobileNumber, fieldErrors),
-            ReadText<SocialNetworkAddress>(input.SocialNetworkUrl, PartyReferenceFields.SocialNetworkContactsUrlAddress, fieldErrors));
+            ReadText<SocialNetworkAddress>(input.SocialNetworkUrl, PartyReferenceFields.SocialNetworkContactsUrlAddress, fieldErrors),
+            ReadCode(input.PartyLegalStructure, PartyLegalStructures.Read, PartyReferenceFields.PartyLegalStructure, fieldErrors),
+            ReadCode(input.PoliticalExposureType, PoliticalExposureTypes.Read, PartyReferenceFields.PoliticalExposureType, fieldErrors),
+            ReadText<PoliticalExposureDescription>(
+                input.PoliticalExposureDescription, PartyReferenceFields.PoliticalExposureDescriptionRecord, fieldErrors),
+            ReadDate(
+                input.CustomerSinceDate,
+                PartyReferenceFields.CustomerSinceDate,
+                "customer-since date",
+                EarliestCustomerSinceDate,
+                fieldErrors),
+            ReadDocument(input.GovernmentIssuedDocument, fieldErrors),
+            ReadText<DocumentDirectoryEntryReference>(
+                input.DocumentDirectoryEntryIdentification, PartyReferenceFields.DocumentDirectoryEntryIdentification, fieldErrors));
 
         return fieldErrors.Count switch
         {
@@ -141,7 +172,12 @@ public sealed record PartyReferenceChanges(
         return new PartyReferenceChange<TText?>(value.Value);
     }
 
-    private static PartyReferenceChange<DateOnly?>? ReadDateOfBirth(string? text, Dictionary<string, IReadOnlyList<string>> fieldErrors)
+    private static PartyReferenceChange<DateOnly?>? ReadDate(
+        string? text,
+        string field,
+        string name,
+        DateOnly earliest,
+        Dictionary<string, IReadOnlyList<string>> fieldErrors)
     {
         if (text is null)
         {
@@ -155,18 +191,72 @@ public sealed record PartyReferenceChanges(
 
         if (!PartyReferenceDates.TryReadDate(text, out var date))
         {
-            fieldErrors[PartyReferenceFields.DateofBirth] =
-                ["The date of birth must be an ISO 8601 date, for example 1990-05-17, or date-time."];
+            fieldErrors[field] = [$"The {name} must be an ISO 8601 date, for example 1990-05-17, or date-time."];
             return null;
         }
 
-        if (date < EarliestDateOfBirth)
+        if (date < earliest)
         {
-            fieldErrors[PartyReferenceFields.DateofBirth] = ["The date of birth must not be before 1900-01-01."];
+            fieldErrors[field] = [$"The {name} must not be before {earliest:yyyy-MM-dd}."];
             return null;
         }
 
         return new PartyReferenceChange<DateOnly?>(date);
+    }
+
+    private static PartyReferenceChange<TCode?>? ReadCode<TCode>(
+        string? text,
+        Func<string, Result<TCode>> read,
+        string field,
+        Dictionary<string, IReadOnlyList<string>> fieldErrors)
+        where TCode : struct, Enum
+    {
+        if (text is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return new PartyReferenceChange<TCode?>(null);
+        }
+
+        var code = read(text);
+        if (code.IsFailure)
+        {
+            fieldErrors[field] = [code.Error.Message];
+            return null;
+        }
+
+        return new PartyReferenceChange<TCode?>(code.Value);
+    }
+
+    private static PartyReferenceChange<GovernmentIssuedDocument?>? ReadDocument(
+        PartyDocumentInput? document,
+        Dictionary<string, IReadOnlyList<string>> fieldErrors)
+    {
+        if (document is null)
+        {
+            return null;
+        }
+
+        if (document.IsBlank)
+        {
+            return new PartyReferenceChange<GovernmentIssuedDocument?>(null);
+        }
+
+        var read = PartyReferenceDataDirectory.GovernmentIssuedDocument.TryCreate(document);
+        if (read.IsFailure)
+        {
+            foreach (var (part, messages) in read.Error.FieldErrors)
+            {
+                fieldErrors[$"{PartyReferenceFields.GovernmentIssuedDocumentDetails}.{part}"] = messages;
+            }
+
+            return null;
+        }
+
+        return new PartyReferenceChange<GovernmentIssuedDocument?>(read.Value);
     }
 
     private static PartyReferenceChange<CountryCode?>? ReadCountry(

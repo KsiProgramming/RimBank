@@ -97,6 +97,114 @@ public sealed class UpdatePartyReferenceTests
             .Then(ReferenceUpdated(ReferenceDetails with { DateOfBirth = Today.AddDays(5) }));
 
     [Fact]
+    public void An_update_with_legal_standing_and_documents_records_them_with_the_other_values() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(CompleteReferenceDetails))
+            .When(UpdateReference(ReferenceChangesTo(FullestReferenceDetails)))
+            .Then(ReferenceUpdated(FullestReferenceDetails));
+
+    [Fact]
+    public void A_partial_update_keeps_the_legal_standing_and_documents() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(FullestReferenceDetails))
+            .When(UpdateReference(PartyReferenceChanges.None with
+            {
+                PartyLegalStructure = new PartyReferenceChange<PartyLegalStructure?>(PartyLegalStructure.PublicLimitedCompany),
+            }))
+            .Then(ReferenceUpdated(FullestReferenceDetails with
+            {
+                LegalStanding = LegalStanding with { LegalStructure = PartyLegalStructure.PublicLimitedCompany },
+            }));
+
+    [Fact]
+    public void A_customer_since_date_after_today_is_refused() =>
+        Decide(PartyReferenceChanges.None with { CustomerSinceDate = new PartyReferenceChange<DateOnly?>(Today.AddDays(1)) })
+            .Error.ShouldBe(PartyReferenceErrors.CustomerSinceDateAfterToday);
+
+    [Fact]
+    public void A_customer_since_date_of_today_is_accepted() =>
+        EntrySpecification.Given(Registered())
+            .When(UpdateReference(PartyReferenceChanges.None with { CustomerSinceDate = new PartyReferenceChange<DateOnly?>(Today) }))
+            .Then(ReferenceUpdated(PartyReferenceDetails.Empty with
+            {
+                LegalStanding = PartyLegalStanding.Empty with { CustomerSince = Today },
+            }));
+
+    [Fact]
+    public void A_customer_since_date_before_the_date_of_birth_in_the_same_request_is_refused() =>
+        Decide(PartyReferenceChanges.None with
+            {
+                DateOfBirth = new PartyReferenceChange<DateOnly?>(DateOfBirth),
+                CustomerSinceDate = new PartyReferenceChange<DateOnly?>(DateOfBirth.AddDays(-1)),
+            })
+            .Error.ShouldBe(PartyReferenceErrors.CustomerSinceDateBeforeDateOfBirth);
+
+    [Fact]
+    public void A_customer_since_date_before_the_recorded_date_of_birth_is_refused() =>
+        Decide(
+                PartyReferenceChanges.None with { CustomerSinceDate = new PartyReferenceChange<DateOnly?>(DateOfBirth.AddYears(-1)) },
+                ReferenceUpdated(FullReferenceDetails))
+            .Error.ShouldBe(PartyReferenceErrors.CustomerSinceDateBeforeDateOfBirth);
+
+    [Fact]
+    public void A_date_of_birth_after_the_recorded_customer_since_date_is_refused() =>
+        Decide(
+                PartyReferenceChanges.None with { DateOfBirth = new PartyReferenceChange<DateOnly?>(CustomerSince.AddDays(1)) },
+                ReferenceUpdated(FullestReferenceDetails))
+            .Error.ShouldBe(PartyReferenceErrors.CustomerSinceDateBeforeDateOfBirth);
+
+    [Fact]
+    public void A_customer_since_date_on_the_date_of_birth_is_accepted() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(FullReferenceDetails))
+            .When(UpdateReference(PartyReferenceChanges.None with { CustomerSinceDate = new PartyReferenceChange<DateOnly?>(DateOfBirth) }))
+            .Then(ReferenceUpdated(FullReferenceDetails with
+            {
+                LegalStanding = PartyLegalStanding.Empty with { CustomerSince = DateOfBirth },
+            }));
+
+    [Fact]
+    public void A_political_exposure_description_without_a_type_is_refused() =>
+        Decide(PartyReferenceChanges.None with
+            {
+                PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(LegalStanding.PoliticalExposureDescription),
+            })
+            .Error.ShouldBe(PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure);
+
+    [Fact]
+    public void A_political_exposure_description_with_no_exposure_is_refused() =>
+        Decide(PartyReferenceChanges.None with
+            {
+                PoliticalExposureType = new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.NoExposure),
+                PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(LegalStanding.PoliticalExposureDescription),
+            })
+            .Error.ShouldBe(PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure);
+
+    [Fact]
+    public void Declaring_no_exposure_while_keeping_the_recorded_description_is_refused() =>
+        Decide(
+                PartyReferenceChanges.None with
+                {
+                    PoliticalExposureType = new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.NoExposure),
+                },
+                ReferenceUpdated(FullestReferenceDetails))
+            .Error.ShouldBe(PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure);
+
+    [Fact]
+    public void Declaring_no_exposure_and_clearing_the_description_is_accepted() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(FullestReferenceDetails))
+            .When(UpdateReference(PartyReferenceChanges.None with
+            {
+                PoliticalExposureType = new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.NoExposure),
+                PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(null),
+            }))
+            .Then(ReferenceUpdated(FullestReferenceDetails with
+            {
+                LegalStanding = LegalStanding with
+                {
+                    PoliticalExposureType = PoliticalExposureType.NoExposure,
+                    PoliticalExposureDescription = null,
+                },
+            }));
+
+    [Fact]
     public void An_entry_that_is_not_registered_has_no_reference_to_update() =>
         EntrySpecification.Given()
             .When(UpdateReference())
@@ -107,4 +215,11 @@ public sealed class UpdatePartyReferenceTests
         EntrySpecification.Given(Registered())
             .When(UpdateReference() with { PartyReferenceId = PartyReferenceId.From(Guid.CreateVersion7(OpenDate.AddMinutes(5))) })
             .ThenFails(ErrorKind.NotFound, "party.behavior-qualifier-not-found");
+
+    private static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
+        PartyReferenceChanges changes,
+        params PartyReferenceDataDirectoryEntryEvent[] history) =>
+        PartyReferenceDataDirectoryEntry.Decide(
+            UpdateReference(changes),
+            history.Prepend(Registered()).Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve));
 }

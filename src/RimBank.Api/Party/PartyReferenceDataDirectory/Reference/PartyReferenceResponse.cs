@@ -25,6 +25,12 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// <param name="EMailAddress">BIAN <c>eMailAddress</c>.</param>
 /// <param name="CellPhoneNumber">BIAN <c>CellPhoneNumber</c>.</param>
 /// <param name="SocialNetworkContacts">BIAN <c>SocialNetworkContacts</c>.</param>
+/// <param name="PartyLegalStructure">BIAN <c>PartyLegalStructure</c>, in BIAN spelling (for example <c>Co-Operative</c>).</param>
+/// <param name="PoliticalExposureType">BIAN <c>PoliticalExposureType</c>, in BIAN spelling.</param>
+/// <param name="PoliticalExposureDescriptionRecord">BIAN <c>PoliticalExposureDescriptionRecord</c>.</param>
+/// <param name="CustomerSinceDate">BIAN <c>CustomerSinceDate</c>, as an ISO 8601 date (<c>YYYY-MM-DD</c>, ADR 0032).</param>
+/// <param name="GovernmentIssuedDocumentDetails">BIAN <c>GovernmentIssuedDocumentDetails</c>.</param>
+/// <param name="DocumentDirectoryEntryInstanceReference">BIAN <c>DocumentDirectoryEntryInstanceReference</c>.</param>
 public sealed record PartyReferenceResponse(
     [property: JsonPropertyName("PartyReferenceDataDirectoryEntryId")] Guid PartyReferenceDataDirectoryEntryId,
     [property: JsonPropertyName("ReferenceId")] Guid ReferenceId,
@@ -41,7 +47,13 @@ public sealed record PartyReferenceResponse(
     [property: JsonPropertyName("CorporateAddress"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PostalAddressModel? CorporateAddress = null,
     [property: JsonPropertyName("eMailAddress"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] EmailAddressModel? EMailAddress = null,
     [property: JsonPropertyName("CellPhoneNumber"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] MobileNumberModel? CellPhoneNumber = null,
-    [property: JsonPropertyName("SocialNetworkContacts"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SocialNetworkContactModel? SocialNetworkContacts = null)
+    [property: JsonPropertyName("SocialNetworkContacts"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SocialNetworkContactModel? SocialNetworkContacts = null,
+    [property: JsonPropertyName("PartyLegalStructure"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PartyLegalStructure = null,
+    [property: JsonPropertyName("PoliticalExposureType"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PoliticalExposureType = null,
+    [property: JsonPropertyName("PoliticalExposureDescriptionRecord"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PoliticalExposureDescriptionRecord = null,
+    [property: JsonPropertyName("CustomerSinceDate"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CustomerSinceDate = null,
+    [property: JsonPropertyName("GovernmentIssuedDocumentDetails"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PartyDocumentModel? GovernmentIssuedDocumentDetails = null,
+    [property: JsonPropertyName("DocumentDirectoryEntryInstanceReference"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DocumentDirectoryEntryModel? DocumentDirectoryEntryInstanceReference = null)
 {
     /// <summary>The response for an Update's acknowledgement.</summary>
     /// <param name="acknowledged">The outcome of <see cref="UpdatePartyReference"/>.</param>
@@ -71,6 +83,8 @@ public sealed record PartyReferenceResponse(
         var residency = reference.CurrentResidency;
         var addresses = reference.CurrentAddresses;
         var contactPoints = reference.CurrentContactPoints;
+        var legalStanding = reference.CurrentLegalStanding;
+        var documents = reference.CurrentDocuments;
         return new PartyReferenceResponse(
             entryId.Value,
             referenceId.Value,
@@ -107,7 +121,15 @@ public sealed record PartyReferenceResponse(
             PostalAddressModel.From(addresses.CorporateAddress),
             contactPoints.EmailAddress is { } email ? new EmailAddressModel { EmailAddress = email.Value } : null,
             contactPoints.MobileNumber is { } mobile ? new MobileNumberModel { MobileNumber = mobile.Value } : null,
-            contactPoints.SocialNetwork is { } social ? new SocialNetworkContactModel { URLAddress = social.Value } : null);
+            contactPoints.SocialNetwork is { } social ? new SocialNetworkContactModel { URLAddress = social.Value } : null,
+            legalStanding.LegalStructure?.ToBianName(),
+            legalStanding.PoliticalExposureType?.ToBianName(),
+            legalStanding.PoliticalExposureDescription?.Value,
+            legalStanding.CustomerSince?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            PartyDocumentModel.From(documents.GovernmentIssuedDocument),
+            documents.DocumentDirectoryEntry is { } directory
+                ? new DocumentDirectoryEntryModel { DocumentDirectoryEntryIdentification = directory.Value }
+                : null);
     }
 
     private static CountryModel? CountryOf(SharedKernel.CountryCode? country) =>
