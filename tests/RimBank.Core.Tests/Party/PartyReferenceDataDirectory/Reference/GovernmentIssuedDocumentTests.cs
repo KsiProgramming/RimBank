@@ -4,7 +4,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 // validity period optional, every invalid part named by its BIAN path relative to the document.
 public sealed class GovernmentIssuedDocumentTests
 {
-    private static readonly PartyDocumentInput Passport = new(
+    private static readonly PartyDocumentInput _passport = new(
         " PersonalDocument ",
         " 23AB45678 ",
         " Passport ",
@@ -13,7 +13,7 @@ public sealed class GovernmentIssuedDocumentTests
 
     [Fact]
     public void A_full_document_is_read_and_trimmed() =>
-        GovernmentIssuedDocument.TryCreate(Passport).Value.ShouldBe(new GovernmentIssuedDocument(
+        GovernmentIssuedDocument.TryCreate(_passport).Value.ShouldBe(new GovernmentIssuedDocument(
             PartyDocumentType.PersonalDocument,
             GovernmentIssuedDocumentNumber.TryCreate("23AB45678").Value,
             GovernmentIssuedDocumentName.TryCreate("Passport").Value,
@@ -41,38 +41,38 @@ public sealed class GovernmentIssuedDocumentTests
 
     [Fact]
     public void An_unknown_type_is_invalid() =>
-        GovernmentIssuedDocument.TryCreate(Passport with { PartyDocumentType = "DrivingLicence" }).Error
+        GovernmentIssuedDocument.TryCreate(_passport with { PartyDocumentType = "DrivingLicence" }).Error
             .FieldErrors.Keys.ShouldBe(["PartyDocumentType"]);
 
     [Theory]
     [InlineData(35, true)]
     [InlineData(36, false)]
     public void The_number_is_at_most_35_characters(int length, bool accepted) =>
-        GovernmentIssuedDocument.TryCreate(Passport with { DocumentNumber = new string('9', length) }).IsSuccess.ShouldBe(accepted);
+        GovernmentIssuedDocument.TryCreate(_passport with { DocumentNumber = new string('9', length) }).IsSuccess.ShouldBe(accepted);
 
     [Theory]
     [InlineData(140, true)]
     [InlineData(141, false)]
     public void The_name_is_at_most_140_characters(int length, bool accepted) =>
-        GovernmentIssuedDocument.TryCreate(Passport with { DocumentName = new string('n', length) }).IsSuccess.ShouldBe(accepted);
+        GovernmentIssuedDocument.TryCreate(_passport with { DocumentName = new string('n', length) }).IsSuccess.ShouldBe(accepted);
 
     [Fact]
     public void A_validity_that_ends_before_it_starts_is_invalid() =>
-        GovernmentIssuedDocument.TryCreate(Passport with { ValidFrom = "2033-04-01", ValidTo = "2023-03-31" }).Error
+        GovernmentIssuedDocument.TryCreate(_passport with { ValidFrom = "2033-04-01", ValidTo = "2023-03-31" }).Error
             .FieldErrors.Keys.ShouldBe(["DocumentReference.DocumentValidityPeriod.ToDateTime.DateTimeContent"]);
 
     [Fact]
     public void A_validity_of_one_day_is_accepted() =>
-        GovernmentIssuedDocument.TryCreate(Passport with { ValidFrom = "2024-01-01", ValidTo = "2024-01-01" }).IsSuccess.ShouldBeTrue();
+        GovernmentIssuedDocument.TryCreate(_passport with { ValidFrom = "2024-01-01", ValidTo = "2024-01-01" }).IsSuccess.ShouldBeTrue();
 
     [Fact]
     public void A_date_that_is_not_iso_is_named_with_its_path() =>
-        GovernmentIssuedDocument.TryCreate(Passport with { ValidFrom = "01/04/2023" }).Error
+        GovernmentIssuedDocument.TryCreate(_passport with { ValidFrom = "01/04/2023" }).Error
             .FieldErrors.Keys.ShouldBe(["DocumentReference.DocumentValidityPeriod.FromDateTime.DateTimeContent"]);
 
     [Fact]
     public void An_expired_document_can_be_recorded() =>
-        GovernmentIssuedDocument.TryCreate(Passport with { ValidFrom = "2000-01-01", ValidTo = "2010-01-01" }).IsSuccess.ShouldBeTrue();
+        GovernmentIssuedDocument.TryCreate(_passport with { ValidFrom = "2000-01-01", ValidTo = "2010-01-01" }).IsSuccess.ShouldBeTrue();
 
     [Fact]
     public void A_document_whose_parts_are_all_blank_is_blank() =>

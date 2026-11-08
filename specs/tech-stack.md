@@ -167,9 +167,15 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ MobileNumber.cs                     #   https profile URL, plain JSON strings through PartyReferenceTextJsonConverter
 │  ├─ SocialNetworkAddress.cs
 │  ├─ PartyContactPoints.cs               # the email, mobile and social network contacts (1.19)
-│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth, residency, addresses and contact points
+│  ├─ PartyLegalStructure.cs              # declared legal standing (1.20, ADR 0032): the BIAN code lists as enums with their
+│  ├─ PoliticalExposureType.cs            #   BIAN spelling (…s.cs), the Max350Text PoliticalExposureDescription,
+│  ├─ PartyLegalStanding.cs               #   and PartyLegalStanding (legal structure, political exposure, customer-since date)
+│  ├─ GovernmentIssuedDocument.cs         # declared documents (1.20): type, number, name and validity period, the opaque
+│  ├─ DocumentDirectoryEntryReference.cs  #   directory reference, and PartyDocuments
+│  ├─ PartyDocuments.cs
+│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth, residency, addresses, contact points, legal standing, documents
 │  ├─ PartyReferenceInput.cs              # the raw values an adapter sends
-│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.20
+│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.21
 │  ├─ Events.cs                           # PartyReferenceUpdated
 │  ├─ UpdatePartyReference.cs             # command, with its acknowledgement and handler
 │  └─ RetrievePartyReference.cs           # query over the entry's view, with its handler

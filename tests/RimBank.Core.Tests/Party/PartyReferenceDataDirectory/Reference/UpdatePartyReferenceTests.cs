@@ -131,10 +131,10 @@ public sealed class UpdatePartyReferenceTests
     [Fact]
     public void A_customer_since_date_before_the_date_of_birth_in_the_same_request_is_refused() =>
         Decide(PartyReferenceChanges.None with
-            {
-                DateOfBirth = new PartyReferenceChange<DateOnly?>(DateOfBirth),
-                CustomerSinceDate = new PartyReferenceChange<DateOnly?>(DateOfBirth.AddDays(-1)),
-            })
+        {
+            DateOfBirth = new PartyReferenceChange<DateOnly?>(DateOfBirth),
+            CustomerSinceDate = new PartyReferenceChange<DateOnly?>(DateOfBirth.AddDays(-1)),
+        })
             .Error.ShouldBe(PartyReferenceErrors.CustomerSinceDateBeforeDateOfBirth);
 
     [Fact]
@@ -163,18 +163,18 @@ public sealed class UpdatePartyReferenceTests
     [Fact]
     public void A_political_exposure_description_without_a_type_is_refused() =>
         Decide(PartyReferenceChanges.None with
-            {
-                PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(LegalStanding.PoliticalExposureDescription),
-            })
+        {
+            PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(LegalStanding.PoliticalExposureDescription),
+        })
             .Error.ShouldBe(PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure);
 
     [Fact]
     public void A_political_exposure_description_with_no_exposure_is_refused() =>
         Decide(PartyReferenceChanges.None with
-            {
-                PoliticalExposureType = new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.NoExposure),
-                PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(LegalStanding.PoliticalExposureDescription),
-            })
+        {
+            PoliticalExposureType = new PartyReferenceChange<PoliticalExposureType?>(PoliticalExposureType.NoExposure),
+            PoliticalExposureDescription = new PartyReferenceChange<PoliticalExposureDescription?>(LegalStanding.PoliticalExposureDescription),
+        })
             .Error.ShouldBe(PartyReferenceErrors.PoliticalExposureDescriptionWithoutExposure);
 
     [Fact]
