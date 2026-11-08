@@ -6,19 +6,39 @@ Every group is written test first. After each group, the solution builds and its
 - Do not log any name, birth date, nationality or residency value (7.2).
 - The Testcontainers and Alba tests need Docker. If it is not available locally, they run in CI.
 
+## As built (differences from the plan below)
+- **Commits.** The HTTP adapter (group 4) was committed with the core (group 2). Once the six fields leave `Staged`, an adapter that does not map them would silently drop them, so no commit may sit between the two. The commits are SharedKernel → core and HTTP → PostgreSQL → docs.
+- **`CountryCode.TryCreate` is exact**, like `Currency`. The Party core trims and upper-cases client input before parsing it (ADR 0030).
+- **`PartyReferenceChanges.Create(PartyReferenceInput, unsupportedFields)`.**
+  - A raw-value input record replaces the long positional parameter list.
+  - Unrecorded `Country`/`Status` parts arrive through the existing `unsupportedFields` list (`Nationality.Citizen`), so no presence flags were needed.
+- **`Today` lives on `UpdatePartyReferenceDetails`** (the decision input), not on the `UpdatePartyReference` command. The handler takes it from `TimeProvider`, and the tests use `FixedTimeProvider`.
+- **1.10 plumbing generalised so names reuse it:**
+  - `IPartyReferenceText<T>` (base of `IPartyIdentifier<T>`);
+  - `PartyReferenceTextJsonConverter<T>` (was `PartyIdentifierJsonConverter`);
+  - `PartyReferenceText` (was `PartyIdentifierText`);
+  - `PartyReferenceErrors.ValueInvalid` (was `IdentifierInvalid`);
+  - new `PartyReferenceChange<T>` for the 1.18 values.
+- **Test files.**
+  - The name, date and residency parsing cases are in `PartyReferenceChangesTests`.
+  - Apply is covered by a new `PartyReferenceDetailsTests`.
+  - The PostgreSQL cases extend the existing `PartyReferenceRoundTripTests`.
+  - The entry laws generator now also varies nationality and birth date.
+- **Stored JSON.** The new computed members (`CurrentNames`, `CurrentResidency`, `HasAny`) are `[JsonIgnore]`, so events and views store only data. `CountryCode` needs no registration: its converter is applied by attribute.
+
 ## 1. SharedKernel: `CountryCode` (ISO 3166-1 alpha-2)
-- [ ] Tests first in `tests/RimBank.SharedKernel.Tests/Countries/`:
+- [x] Tests first in `tests/RimBank.SharedKernel.Tests/Countries/`:
   - `CountryCodeTests`:
     - `fr` and ` FR ` parse to `FR`;
     - an unknown code (`ZZ`), a user-assigned code (`XK`), an alpha-3 code (`FRA`), an empty value and a non-letter value are invalid, with a stable error code;
     - equality and `ToString`.
   - `CountryCodeJsonTests`: written and read as a plain string; an invalid string fails to read.
   - `CountryCodeTableSnapshotTests` and `Iso3166.snapshot.csv`: `CountryCode.All` matches the snapshot exactly. This mirrors `CurrencyTableSnapshotTests`.
-- [ ] `src/RimBank.SharedKernel/CountryCode.cs`, `CountryCode.Iso3166.cs` (the embedded table of officially assigned codes) and `CountryCodeJsonConverter.cs`, following the `Currency` pattern: private constructor, `FrozenDictionary` lookup, `All`, and `Create` returning `Result<CountryCode>`.
-- [ ] Architecture tests stay green (SharedKernel uses the BCL only).
+- [x] `src/RimBank.SharedKernel/CountryCode.cs`, `CountryCode.Iso3166.cs` (the embedded table of officially assigned codes) and `CountryCodeJsonConverter.cs`, following the `Currency` pattern: private constructor, `FrozenDictionary` lookup, `All`, and `Create` returning `Result<CountryCode>`.
+- [x] Architecture tests stay green (SharedKernel uses the BCL only).
 
 ## 2. Core: value objects, changes, decision and projection
-- [ ] Tests first in `tests/RimBank.Core.Tests/Party/PartyReferenceDataDirectory/Reference/`:
+- [x] Tests first in `tests/RimBank.Core.Tests/Party/PartyReferenceDataDirectory/Reference/`:
   - `PartyNameTests`:
     - the legal name is trimmed; 140 characters is accepted and 141 is invalid;
     - the salutation: 35 characters is accepted and 36 is invalid;
@@ -47,7 +67,7 @@ Every group is written test first. After each group, the solution builds and its
     - the new fields reach the Reference section;
     - a 1.10-shaped `PartyReferenceUpdated` (identifiers only) still projects, with the new parts empty.
   - `EntryExamples`: add the 1.18 sample values.
-- [ ] Production code in `src/RimBank.Core/Party/PartyReferenceDataDirectory/Reference/`:
+- [x] Production code in `src/RimBank.Core/Party/PartyReferenceDataDirectory/Reference/`:
   - `PartyFullLegalName`, `PartyNameSalutation` (value objects); `PartyNames` (both, optional, `Empty`/`Apply`).
   - `ResidencyStatusCode` (closed set `Resident`/`NonResident`), `ResidencyStatus` (code + optional `StatusDateTime`).
   - `PartyResidency` (`Nationality`, `CountryOfResidence` as `CountryCode?`, `ResidencyStatus?`, `Empty`/`Apply`).
@@ -61,14 +81,14 @@ Every group is written test first. After each group, the solution builds and its
   - `PartyReferenceUpdated` is unchanged in name, and its `Details` grows. Update the view projection.
 
 ## 3. PostgreSQL: event and view round-trip
-- [ ] Tests first in `tests/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/`, in a new `ReferenceRoundTripTests` or by extending `MartenPartyDirectoryTests` / `MartenPartyDirectoryEnquiryTests`:
+- [x] Tests first in `tests/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests/`, in a new `ReferenceRoundTripTests` or by extending `MartenPartyDirectoryTests` / `MartenPartyDirectoryEnquiryTests`:
   - an Update with every 1.18 field → the stream folds back to the same `PartyReferenceDetails`, and the inline view holds the same values, with `CountryCode` and `DateOnly` serialised as plain strings;
   - a stored 1.10 `PartyReferenceUpdated` JSON (no new members) still loads and folds;
   - a projection rebuild from the stream gives the same view.
-- [ ] Register `CountryCodeJsonConverter` wherever `CurrencyJsonConverter` and the identifier converters are registered for the Party store, if they are not picked up by attribute.
+- [x] Register `CountryCodeJsonConverter` wherever `CurrencyJsonConverter` and the identifier converters are registered for the Party store, if they are not picked up by attribute.
 
 ## 4. HTTP adapter and conformance
-- [ ] Tests first in `tests/RimBank.Api.Tests/Party/PartyReferenceDataDirectory/Reference/`:
+- [x] Tests first in `tests/RimBank.Api.Tests/Party/PartyReferenceDataDirectory/Reference/`:
   - `PartyReferenceRequestTests`: BIAN JSON → presence flags and raw values, including `Nationality: { Code }`, `ResidencyStatus: { StatusDescription, StatusDateTime }` and unknown sub-parts reported as present.
   - `PartyReferenceResponseTests`: empty fields are left out; `DateofBirth` is `YYYY-MM-DD`; countries are `{ "Code": "FR" }`.
   - `UpdatePartyReferenceEndpointTests`:
@@ -78,24 +98,24 @@ Every group is written test first. After each group, the solution builds and its
     - an `If-Match` mismatch is still 409.
   - `RetrievePartyReferenceEndpointTests`: GET returns the 1.18 fields; 304 on a matching `If-None-Match`.
   - `ReferenceScenarios`: add the 1.18 sample payload.
-- [ ] Production code in `src/RimBank.Api/Party/PartyReferenceDataDirectory/Reference/`:
+- [x] Production code in `src/RimBank.Api/Party/PartyReferenceDataDirectory/Reference/`:
   - new `CountryModel` (`Code`) and `ResidencyStatusModel` (`StatusDescription`, `StatusDateTime`);
   - `UpdatePartyReferenceRequest` and `PartyReferenceResponse` gain the six fields;
   - the endpoint passes the raw values and sub-part presence to `PartyReferenceChanges.Create`, with no business rule in the adapter (memory: business logic in core).
-- [ ] Conformance: there is no new route, so `PartyReferenceDataDirectoryCatalogue` is unchanged. Check that `PartyReferenceDataDirectorySpecificationTests` still passes with the larger body.
+- [x] Conformance: there is no new route, so `PartyReferenceDataDirectoryCatalogue` is unchanged. Check that `PartyReferenceDataDirectorySpecificationTests` still passes with the larger body.
 
 ## 5. Docs and roadmap
-- [ ] `docs/adr/0030-iso-3166-country-codes.md` (from `template.md`).
-- [ ] Amend ADR 0029:
+- [x] `docs/adr/0030-iso-3166-country-codes.md` (from `template.md`).
+- [x] Amend ADR 0029:
   - a "Recorded (1.18)" table;
   - the date-only `DateofBirth`;
   - the residency code set;
   - the refused sub-parts;
   - the staged table now holds 16 fields.
-- [ ] Amend ADR 0024: the Reference paragraph.
-- [ ] `specs/tech-stack.md`:
+- [x] Amend ADR 0024: the Reference paragraph.
+- [x] `specs/tech-stack.md`:
   - §3: the SharedKernel comment;
   - §3.4: the `Reference/` tree;
   - §7: the list of shared value objects.
-- [ ] Tick **1.18** in `specs/roadmap.md`.
-- [ ] Run `dotnet format --verify-no-changes`, then `dotnet build` and `dotnet test` (with Docker) for the whole solution.
+- [x] Tick **1.18** in `specs/roadmap.md`.
+- [x] Run `dotnet format --verify-no-changes`, then `dotnet build` and `dotnet test` (with Docker) for the whole solution.

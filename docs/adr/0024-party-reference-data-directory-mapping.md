@@ -87,11 +87,21 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 - **Update** (`PUT …/Reference/{referenceid}/Update`) is a partial update of the party identifiers:
   - `GovernmentIssuedIdentityReference.TaxIdentificationNumber` and `.NationalRegistrationNumber` (Max35Text);
   - the LEI (ISO 17442, check digits verified) in `PartyLegalEntityReference.Identification`.
-  - An identifier left out keeps its value, and an empty one clears it. An invalid one is `party.reference-invalid` with the BIAN field names in `errors`.
+  - From 1.18, it also updates:
+    - `PartyFullLegalName` (Max140Text) and `PartyNameSalutation` (Max35Text);
+    - `DateofBirth` (a calendar date, not after today);
+    - `Nationality.Code` and `PartyCountryOfResidence.Code` (ISO 3166-1 alpha-2, [ADR 0030](0030-iso-3166-country-codes.md));
+    - `ResidencyStatus` (`StatusDescription` `Resident` or `NonResident`, and an optional `StatusDateTime`).
+  - A value left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. An invalid one is `party.reference-invalid` with the BIAN field names in `errors`.
   - Every accepted Update appends `PartyReferenceUpdated`, even when nothing changes.
-  - The other BIAN Reference fields are refused with `party.reference-field-not-supported` until the phase that records them (1.18–1.20, ADR 0029).
+  - The other BIAN Reference fields are refused with `party.reference-field-not-supported` until the phase that records them (1.19–1.20, ADR 0029). So are the parts of the objects above that RimBank does not record.
 - **Retrieve** (`GET …/Reference/{referenceid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`. Before the first Update, it answers `200` with the ids only.
-- **Headers and responses.** Update requires `Idempotency-Key` and `If-Match`, as in 1.8. Both answer `200` with the same body: `GovernmentIssuedIdentityReference`, `PartyLegalEntityReference` (each left out when it holds no identifier), and the entry and Reference ids. Update builds it from its acknowledgement.
+- **Headers and responses.** Update requires `Idempotency-Key` and `If-Match`, as in 1.8. Both answer `200` with the same body:
+  - `GovernmentIssuedIdentityReference` and `PartyLegalEntityReference`, each left out when it holds no identifier;
+  - from 1.18: the names, `DateofBirth` as `YYYY-MM-DD`, `Nationality` and `PartyCountryOfResidence` as `{ "Code": … }`, and `ResidencyStatus`, each left out when unknown;
+  - the entry and Reference ids.
+
+  Update builds it from its acknowledgement.
 
 **Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its semantics are decided in [ADR 0028](0028-demographics-exchange-as-verification.md) (1.9).
 
@@ -103,7 +113,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 | Entry | `PartyReferenceDataDirectoryEntryUpdated` | `UpdatePartyReferenceDataDirectoryEntry` (carries the resulting party type and the `RefreshDate`, 1.8) |
 | Entry | `DemographicsUpdated` | `UpdateDemographics` (carries the full resulting details and their verification status and date, 1.9) |
 | Entry | `DemographicsExchanged` | `ExchangeDemographics` (carries the verification status and date, 1.9, [ADR 0028](0028-demographics-exchange-as-verification.md)) |
-| Entry | `PartyReferenceUpdated` | `UpdatePartyReference` (carries the full resulting Reference: the party identifiers, 1.10, [ADR 0029](0029-reference-fields-in-stages.md)) |
+| Entry | `PartyReferenceUpdated` | `UpdatePartyReference` (carries the full resulting Reference: the party identifiers from 1.10, and the names, date of birth, nationality and residency from 1.18, [ADR 0029](0029-reference-fields-in-stages.md)) |
 | Entry | `BankRelationsUpdated` | `UpdateBankRelations` |
 | PartyAssociation | `PartyAssociationRegistered` | `RegisterPartyAssociation` |
 | PartyAssociation | `PartyAssociationUpdated` | `UpdatePartyAssociation` |
@@ -167,8 +177,8 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.exchange-action-type-required` | Validation (400) | A Demographics Exchange has no `ExchangeActionType`, or a blank one (1.9, ADR 0028) |
 | `party.exchange-action-type-invalid` | Validation (400) | An `ExchangeActionType` other than `Verify` or `Reject` (1.9, ADR 0028) |
 | `party.demographics-not-recorded` | BusinessRule (422) | A Demographics Exchange on details that were never recorded, or were all cleared (1.9, ADR 0028) |
-| `party.reference-invalid` | Validation (400) | A Reference Update identifier is not valid (length, or LEI format and check digits); `errors` names each BIAN field (1.10, ADR 0029) |
-| `party.reference-field-not-supported` | Validation (400) | A Reference Update sends a BIAN field RimBank does not record yet; `errors` names each field and its phase (1.10, ADR 0029) |
+| `party.reference-invalid` | Validation (400) | A Reference Update value is not valid: an identifier (length, or LEI format and check digits); from 1.18, a name too long, a date that is not ISO 8601 or a birth date after today, a country that is not ISO 3166-1 alpha-2, or a residency status other than `Resident`/`NonResident`. `errors` names each BIAN field (1.10, 1.18, ADR 0029) |
+| `party.reference-field-not-supported` | Validation (400) | A Reference Update sends a BIAN field or object part RimBank does not record yet; `errors` names each field and its phase, if one is planned (1.10, ADR 0029) |
 | `party.version-conflict` | Conflict (409) | `If-Match` is not the current stream version (1.8, [ADR 0027](0027-optimistic-concurrency-for-commands.md)) |
 | `shared.if-match-required` | PreconditionRequired (428) | A command on an existing entry or association has no `If-Match` (1.8, ADR 0027) |
 | `shared.if-match-invalid` | Validation (400) | `If-Match` is not exactly one strong version tag (1.8, ADR 0027) |

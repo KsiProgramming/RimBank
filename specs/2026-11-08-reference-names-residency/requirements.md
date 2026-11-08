@@ -42,7 +42,7 @@ Drivers:
 ## Scope
 ### In scope
 - **`CountryCode` (SharedKernel, next to `Currency`).** ISO 3166-1 alpha-2, officially assigned codes only, from an embedded table.
-  - Trimmed and upper-cased, then looked up in the table. An unknown code is invalid.
+  - Looked up in the table by the exact code, like `Currency`. The Party core trims and upper-cases client input first. An unknown code is invalid.
   - `All`, `TryParse`/`Create` returning `Result`, and a JSON converter that writes a plain string (as `Currency`, ADR 0009).
   - A checked-in snapshot CSV pins the table, as `Iso4217.snapshot.csv` does for currencies.
 - **Name value objects (core, `Reference/`):**
@@ -132,4 +132,4 @@ Drivers:
   - §7: `CountryCode` added to the list of shared value objects.
 
 ## Open questions
-- **Lower bound on `DateofBirth`.** The default is none, only "not in the future". A floor such as 1900-01-01 would catch typos, but it is a business rule the user has not chosen.
+- **Lower bound on `DateofBirth`.** Built without one: only "not in the future" is checked (recorded in ADR 0029). A floor such as 1900-01-01 would catch typos, but it is a business rule the user has not chosen, and adding it later is a small change.
