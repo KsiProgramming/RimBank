@@ -1,6 +1,7 @@
 using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
+using RimBank.SharedKernel;
 using EntryLaws = RimBank.SharedKernel.Testing.DeciderLaws<
     RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntry,
     RimBank.Party.PartyReferenceDataDirectory.PartyReferenceDataDirectoryEntryCommand,
@@ -61,15 +62,23 @@ public sealed class PartyReferenceDataDirectoryEntryLawsProperties
 
     private static readonly TaxIdentificationNumber _taxId = TaxIdentificationNumber.TryCreate("FR12345678901").Value;
 
-    // A foreign Reference id now and then covers party.behavior-qualifier-not-found (roadmap 1.10); each identifier is
-    // kept, cleared or set.
+    private static readonly CountryCode _france = CountryCode.From("FR");
+
+    private static readonly DateOnly _today = DateOnly.FromDateTime(_openDate.UtcDateTime);
+
+    // A foreign Reference id now and then covers party.behavior-qualifier-not-found (roadmap 1.10), and a date of birth
+    // after today party.reference-invalid (1.18); each value is kept, cleared or set.
     private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _referenceUpdates =
         from partyReferenceId in Pick(PartyReferenceId.From)
         from taxId in Gen.Elements(null, new PartyIdentifierChange<TaxIdentificationNumber>(null), new PartyIdentifierChange<TaxIdentificationNumber>(_taxId))
         from lei in Gen.Elements(null, new PartyIdentifierChange<LegalEntityIdentifier>(null), new PartyIdentifierChange<LegalEntityIdentifier>(_lei))
+        from nationality in Gen.Elements(null, new PartyReferenceChange<CountryCode?>(null), new PartyReferenceChange<CountryCode?>(_france))
+        from birthDays in Gen.Choose(-20000, 3)
+        from dateOfBirth in Gen.Elements(null, new PartyReferenceChange<DateOnly?>(null), new PartyReferenceChange<DateOnly?>(_today.AddDays(birthDays)))
         select (PartyReferenceDataDirectoryEntryCommand)new UpdatePartyReferenceDetails(
             partyReferenceId,
-            new PartyReferenceChanges(taxId, null, lei));
+            new PartyReferenceChanges(taxId, null, lei, DateOfBirth: dateOfBirth, Nationality: nationality),
+            _today);
 
     private static readonly Gen<PartyReferenceDataDirectoryEntryCommand> _commands =
         Gen.OneOf(_registers, _updates, _demographicsUpdates, _demographicsExchanges, _referenceUpdates);

@@ -79,7 +79,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ ideas.MD                    # original project brief
 │  └─ release14.0.0/              # BIAN v14 specs (ADR 0002)
 ├─ src/
-│  ├─ RimBank.SharedKernel/       # Money, Currency, Result, typed ids, decider abstractions (no infra)
+│  ├─ RimBank.SharedKernel/       # Money, Currency, CountryCode, Result, typed ids, decider abstractions (no infra)
 │  ├─ RimBank.Host/               # composition root: wires all contexts (Modules/, ADR 0014), ProblemDetails, the Wolverine bus (Messaging/, ADR 0017), authentication and the actor relay (Security/, ADR 0019), the /mcp endpoint (Mcp/, ADR 0021), OTel
 │  ├─ RimBank.AppHost/            # .NET Aspire orchestration: PostgreSQL, Keycloak with the dev-only realm (Realms/, ADR 0019), the host
 │  ├─ RimBank.ServiceDefaults/    # Aspire service defaults (OTel, health, resilience)
@@ -154,10 +154,16 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 ├─ Reference/                             # Behavior Qualifier: entity of the entry (its own commands and queries)
 │  ├─ PartyReferenceId.cs
 │  ├─ TaxIdentificationNumber.cs          # identifier value objects (ADR 0029): Max35Text numbers, the ISO 17442 LEI,
-│  ├─ NationalRegistrationNumber.cs       #   plain JSON strings through PartyIdentifierJsonConverter
+│  ├─ NationalRegistrationNumber.cs       #   plain JSON strings through PartyReferenceTextJsonConverter
 │  ├─ LegalEntityIdentifier.cs
+│  ├─ PartyFullLegalName.cs               # name value objects (1.18), the same text pattern
+│  ├─ PartyNameSalutation.cs
 │  ├─ PartyIdentifiers.cs                 # the identifiers, in PartyReferenceDetails (the entry state and its view)
-│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.18–1.20
+│  ├─ PartyNames.cs                       # the names (1.18)
+│  ├─ PartyResidency.cs                   # nationality and country of residence (CountryCode, ADR 0030), ResidencyStatus (1.18)
+│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth and residency
+│  ├─ PartyReferenceInput.cs              # the raw values an adapter sends
+│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.19–1.20
 │  ├─ Events.cs                           # PartyReferenceUpdated
 │  ├─ UpdatePartyReference.cs             # command, with its acknowledgement and handler
 │  └─ RetrievePartyReference.cs           # query over the entry's view, with its handler
@@ -175,7 +181,7 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 
 Commands and queries sit next to each other inside the business flow or Behavior Qualifier they belong to. They are told apart by name and by the port they use, not by technical `Commands/` or `Queries/` folders.
 
-Value objects that belong to one context (for example party identifiers, names, addresses) live in the folder of the aggregate or Behavior Qualifier that owns them, never in a technical `ValueObjects/` or `Models/` folder. Value objects every context shares (`Money`, `Currency`, the typed ID pattern, `Result`/`Error`) live in `RimBank.SharedKernel`.
+Value objects that belong to one context (for example party identifiers, names, addresses) live in the folder of the aggregate or Behavior Qualifier that owns them, never in a technical `ValueObjects/` or `Models/` folder. Value objects every context shares (`Money`, `Currency`, `CountryCode` ([ADR 0030](../docs/adr/0030-iso-3166-country-codes.md)), the typed ID pattern, `Result`/`Error`) live in `RimBank.SharedKernel`.
 
 ## 4. Dependency rules (enforced by architecture tests)
 

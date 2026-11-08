@@ -8,7 +8,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// BIAN <c>GovernmentIssuedIdentityReference.NationalRegistrationNumber</c> (ISO 20022 Max35Text). It is trimmed, and its
 /// country format is not checked (ADR 0029). Personal data (7.2).
 /// </summary>
-[JsonConverter(typeof(PartyIdentifierJsonConverter<NationalRegistrationNumber>))]
+[JsonConverter(typeof(PartyReferenceTextJsonConverter<NationalRegistrationNumber>))]
 public sealed record NationalRegistrationNumber : IPartyIdentifier<NationalRegistrationNumber>
 {
     /// <summary>ISO 20022 Max35Text.</summary>
@@ -21,7 +21,7 @@ public sealed record NationalRegistrationNumber : IPartyIdentifier<NationalRegis
 
     /// <inheritdoc />
     public static Result<NationalRegistrationNumber> TryCreate(string? text) =>
-        PartyIdentifierText.Read(text, MaxLength, "national registration number").Map(value => new NationalRegistrationNumber(value));
+        PartyReferenceText.Read(text, MaxLength, "national registration number").Map(value => new NationalRegistrationNumber(value));
 
     /// <inheritdoc />
     public override string ToString() => Value;

@@ -7,7 +7,7 @@ using static RimBank.Party.PartyReferenceDataDirectory.Api.Tests.ReferenceScenar
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-// Roadmap 1.10: BIAN Reference/Retrieve over HTTP. A query answered from the entry's view with its version as ETag;
+// Roadmap 1.10 and 1.18: BIAN Reference/Retrieve over HTTP. A query answered from the entry's view with its version as ETag;
 // every error is Problem Details (specs/tech-stack.md §5, ADR 0024).
 public sealed class RetrievePartyReferenceEndpointTests(PostgresqlServer server)
 {
@@ -26,6 +26,29 @@ public sealed class RetrievePartyReferenceEndpointTests(PostgresqlServer server)
         });
 
         (await result.ReadAsJsonAsync<PartyReferenceResponse>()).ShouldBe(updated);
+    }
+
+    [Fact]
+    public async Task Retrieve_shows_the_names_date_of_birth_and_residency()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        await PutReferenceOkAsync(host, UpdateUrl(registered), Identifiers, "\"1\"", "\"2\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), NamesAndResidency, "\"2\"", "\"3\"");
+
+        var result = await host.Alba.Scenario(_ =>
+        {
+            Get(_, RetrieveUrl(registered));
+            _.StatusCodeShouldBeOk();
+            _.Header(HeaderNames.ETag).SingleValueShouldEqual("\"3\"");
+        });
+
+        var body = await result.ReadAsJsonAsync<JsonElement>();
+        body.GetProperty("DateofBirth").GetString().ShouldBe("1990-05-17");
+        body.GetProperty("Nationality").GetProperty("Code").GetString().ShouldBe("FR");
+        body.GetProperty("ResidencyStatus").GetProperty("StatusDescription").GetString().ShouldBe("NonResident");
+        body.GetProperty("ResidencyStatus").GetProperty("StatusDateTime").GetString().ShouldBe("2024-01-01T00:00:00+00:00");
+        body.Deserialize<PartyReferenceResponse>(JsonSerializerOptions.Web).ShouldBe(ExpectedWithNamesAndResidency(registered));
     }
 
     [Fact]

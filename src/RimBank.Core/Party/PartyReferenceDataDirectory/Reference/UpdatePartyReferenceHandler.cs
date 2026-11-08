@@ -12,18 +12,21 @@ public static class UpdatePartyReferenceHandler
     /// </summary>
     /// <param name="command">The command.</param>
     /// <param name="directory">The context's write port.</param>
+    /// <param name="time">The clock for today's date, against which a date of birth is checked.</param>
     /// <param name="cancellationToken">Cancels the load.</param>
     /// <returns>
     /// The acknowledgement built from the decided state, <c>party.party-not-found</c>,
-    /// <c>party.behavior-qualifier-not-found</c> or <c>party.version-conflict</c>.
+    /// <c>party.behavior-qualifier-not-found</c>, <c>party.version-conflict</c> or the decision's error.
     /// </returns>
     public static async Task<Result<UpdatePartyReferenceAcknowledged>> HandleAsync(
         UpdatePartyReference command,
         IPartyDirectory directory,
+        TimeProvider time,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(directory);
+        ArgumentNullException.ThrowIfNull(time);
 
         var history = await directory.LoadEntryAsync(command.EntryId, cancellationToken);
         var state = history.Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
@@ -34,7 +37,12 @@ public static class UpdatePartyReferenceHandler
             (true, false, _) => PartyReferenceDataDirectoryEntryErrors.BehaviorQualifierNotFound,
             (true, true, false) => PartyReferenceDataDirectoryEntryErrors.VersionConflict,
             (true, true, true) => PartyReferenceDataDirectoryEntry
-                .Decide(new UpdatePartyReferenceDetails(command.PartyReferenceId, command.Changes), state)
+                .Decide(
+                    new UpdatePartyReferenceDetails(
+                        command.PartyReferenceId,
+                        command.Changes,
+                        DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)),
+                    state)
                 .Map(events =>
                 {
                     directory.AppendToEntry(command.EntryId, command.ExpectedVersion, events);

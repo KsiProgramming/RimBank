@@ -39,6 +39,46 @@ public sealed class UpdatePartyReferenceTests
             .Then(ReferenceUpdated());
 
     [Fact]
+    public void An_update_with_names_and_residency_records_them_with_the_identifiers() =>
+        EntrySpecification.Given(Registered())
+            .When(UpdateReference(ReferenceChangesTo(FullReferenceDetails)))
+            .Then(ReferenceUpdated(FullReferenceDetails));
+
+    [Fact]
+    public void A_partial_update_keeps_the_names_and_residency() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(FullReferenceDetails))
+            .When(UpdateReference(PartyReferenceChanges.None with
+            {
+                Nationality = new PartyReferenceChange<CountryCode?>(CountryCode.From("BE")),
+            }))
+            .Then(ReferenceUpdated(FullReferenceDetails with { Residency = Residency with { Nationality = CountryCode.From("BE") } }));
+
+    [Fact]
+    public void A_date_of_birth_after_today_is_refused()
+    {
+        var error = PartyReferenceDataDirectoryEntry.Decide(
+                UpdateReference(PartyReferenceChanges.None with { DateOfBirth = new PartyReferenceChange<DateOnly?>(Today.AddDays(1)) }),
+                new[] { Registered() }.Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve))
+            .Error;
+
+        error.ShouldBe(PartyReferenceErrors.DateOfBirthAfterToday);
+        error.Code.ShouldBe("party.reference-invalid");
+        error.FieldErrors.ShouldNotBeNull().Keys.ShouldBe(["DateofBirth"]);
+    }
+
+    [Fact]
+    public void A_date_of_birth_of_today_is_accepted() =>
+        EntrySpecification.Given(Registered())
+            .When(UpdateReference(PartyReferenceChanges.None with { DateOfBirth = new PartyReferenceChange<DateOnly?>(Today) }))
+            .Then(ReferenceUpdated(PartyReferenceDetails.Empty with { DateOfBirth = Today }));
+
+    [Fact]
+    public void A_recorded_date_of_birth_is_not_checked_again_when_it_is_kept() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(ReferenceDetails with { DateOfBirth = Today.AddDays(5) }))
+            .When(UpdateReference(PartyReferenceChanges.None))
+            .Then(ReferenceUpdated(ReferenceDetails with { DateOfBirth = Today.AddDays(5) }));
+
+    [Fact]
     public void An_entry_that_is_not_registered_has_no_reference_to_update() =>
         EntrySpecification.Given()
             .When(UpdateReference())

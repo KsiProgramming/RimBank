@@ -32,13 +32,16 @@ public static class UpdatePartyReferenceEndpoint
             .WithTags("Reference")
             .WithSummary("Update details about a reference entry for the customer")
             .WithDescription(
-                "Updates the party's identifiers as a partial update: GovernmentIssuedIdentityReference.TaxIdentificationNumber, "
-                + "GovernmentIssuedIdentityReference.NationalRegistrationNumber, and the LEI (ISO 17442, check digits verified) in "
-                + "PartyLegalEntityReference.Identification. An identifier left out keeps its value, and an empty one clears it. "
+                "Updates the party's Reference as a partial update: GovernmentIssuedIdentityReference.TaxIdentificationNumber, "
+                + "GovernmentIssuedIdentityReference.NationalRegistrationNumber, the LEI (ISO 17442, check digits verified) in "
+                + "PartyLegalEntityReference.Identification, PartyFullLegalName (at most 140 characters), PartyNameSalutation "
+                + "(at most 35), DateofBirth (an ISO 8601 date, from 1900-01-01 to today), Nationality.Code and "
+                + "PartyCountryOfResidence.Code (ISO 3166-1 alpha-2), and ResidencyStatus (StatusDescription Resident or "
+                + "NonResident, and an optional StatusDateTime). A value left out keeps its value, and an empty one clears it. "
                 + "The other BIAN Reference fields are refused with party.reference-field-not-supported until the roadmap phase "
-                + "that records them (1.18 names and residency, 1.19 addresses and contact points, 1.20 legal, political exposure "
-                + "and corporate details). Send the entry's ETag in If-Match: a missing one is 428, and one that is no longer "
-                + "current is 409. The ETag of the answer is the new version.")
+                + "that records them (1.19 addresses and contact points, 1.20 legal, political exposure and corporate details), "
+                + "as are the other parts of the objects above. Send the entry's ETag in If-Match: a missing one is 428, and one "
+                + "that is no longer current is 409. The ETag of the answer is the new version.")
             .Produces<PartyReferenceResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status401Unauthorized)

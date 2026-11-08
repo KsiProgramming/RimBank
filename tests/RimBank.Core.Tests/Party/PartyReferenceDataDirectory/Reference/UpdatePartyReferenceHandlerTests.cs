@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RimBank.SharedKernel;
+using RimBank.SharedKernel.Testing;
 using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
@@ -13,6 +14,8 @@ public sealed class UpdatePartyReferenceHandlerTests
     private static readonly PartyReferenceId _otherReference = PartyReferenceId.From(Guid.CreateVersion7(OpenDate.AddMinutes(5)));
 
     private readonly InMemoryPartyDirectory _directory = new();
+
+    private readonly FixedTimeProvider _time = new(RefreshDate);
 
     [Fact]
     public async Task Updating_the_reference_appends_the_update_and_acknowledges_the_next_version()
@@ -72,12 +75,39 @@ public sealed class UpdatePartyReferenceHandlerTests
     }
 
     [Fact]
+    public async Task Today_comes_from_the_clock_so_a_birth_date_after_it_is_refused_and_nothing_is_appended()
+    {
+        _directory.Seed(EntryId, Registered());
+        var bornTomorrow = PartyReferenceChanges.None with { DateOfBirth = new PartyReferenceChange<DateOnly?>(Today.AddDays(1)) };
+        var bornToday = PartyReferenceChanges.None with { DateOfBirth = new PartyReferenceChange<DateOnly?>(Today) };
+
+        (await Update(Reference, expectedVersion: 1, bornTomorrow)).Error.ShouldBe(PartyReferenceErrors.DateOfBirthAfterToday);
+        _directory.StreamOf(EntryId).ShouldBe([Registered()]);
+
+        (await Update(Reference, expectedVersion: 1, bornToday)).Value.Reference.DateOfBirth.ShouldBe(Today);
+    }
+
+    [Fact]
+    public async Task The_command_and_the_acknowledgement_survive_a_json_round_trip_with_every_value()
+    {
+        _directory.Seed(EntryId, Registered());
+        var command = Command(Reference, expectedVersion: 1, ReferenceChangesTo(FullReferenceDetails));
+
+        var acknowledged = (await UpdatePartyReferenceHandler.HandleAsync(command, _directory, _time, TestContext.Current.CancellationToken)).Value;
+
+        acknowledged.Reference.ShouldBe(FullReferenceDetails);
+        JsonSerializer.Deserialize<UpdatePartyReference>(JsonSerializer.Serialize(command, _json), _json).ShouldBe(command);
+        JsonSerializer.Deserialize<UpdatePartyReferenceAcknowledged>(JsonSerializer.Serialize(acknowledged, _json), _json)
+            .ShouldBe(acknowledged);
+    }
+
+    [Fact]
     public async Task The_command_and_the_acknowledgement_survive_a_json_round_trip()
     {
         _directory.Seed(EntryId, Registered());
         var command = Command(Reference, expectedVersion: 1, ReferenceChangesTo(Identifiers with { TaxIdentificationNumber = null }));
 
-        var acknowledged = (await UpdatePartyReferenceHandler.HandleAsync(command, _directory, TestContext.Current.CancellationToken)).Value;
+        var acknowledged = (await UpdatePartyReferenceHandler.HandleAsync(command, _directory, _time, TestContext.Current.CancellationToken)).Value;
 
         JsonSerializer.Deserialize<UpdatePartyReference>(JsonSerializer.Serialize(command, _json), _json).ShouldBe(command);
         JsonSerializer.Deserialize<UpdatePartyReferenceAcknowledged>(JsonSerializer.Serialize(acknowledged, _json), _json)
@@ -94,5 +124,6 @@ public sealed class UpdatePartyReferenceHandlerTests
         UpdatePartyReferenceHandler.HandleAsync(
             Command(referenceId, expectedVersion, changes),
             _directory,
+            _time,
             TestContext.Current.CancellationToken);
 }

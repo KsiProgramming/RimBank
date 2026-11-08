@@ -1,3 +1,4 @@
+using RimBank.SharedKernel;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
@@ -72,8 +73,36 @@ internal static class EntryExamples
             new PartyIdentifierChange<NationalRegistrationNumber>(identifiers.NationalRegistrationNumber),
             new PartyIdentifierChange<LegalEntityIdentifier>(identifiers.LegalEntityIdentifier));
 
+    // The date the Reference handler stamps on its decision (the refresh date's UTC date).
+    public static readonly DateOnly Today = DateOnly.FromDateTime(RefreshDate.UtcDateTime);
+
+    public static readonly PartyNames Names = new(
+        PartyFullLegalName.TryCreate("Jeanne Marie Dupont").Value,
+        PartyNameSalutation.TryCreate("Ms").Value);
+
+    public static readonly DateOnly DateOfBirth = new(1990, 5, 17);
+
+    public static readonly PartyResidency Residency = new(
+        CountryCode.From("FR"),
+        CountryCode.From("BE"),
+        new ResidencyStatus(ResidencyStatusCode.NonResident, new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+
+    // Every value roadmap 1.10 and 1.18 record.
+    public static readonly PartyReferenceDetails FullReferenceDetails = new(Identifiers, Names, DateOfBirth, Residency);
+
+    public static PartyReferenceChanges ReferenceChangesTo(PartyReferenceDetails details) =>
+        ReferenceChangesTo(details.Identifiers) with
+        {
+            PartyFullLegalName = new(details.CurrentNames.FullLegalName),
+            PartyNameSalutation = new(details.CurrentNames.Salutation),
+            DateOfBirth = new(details.DateOfBirth),
+            Nationality = new(details.CurrentResidency.Nationality),
+            PartyCountryOfResidence = new(details.CurrentResidency.CountryOfResidence),
+            ResidencyStatus = new(details.CurrentResidency.ResidencyStatus),
+        };
+
     public static UpdatePartyReferenceDetails UpdateReference(PartyReferenceChanges? changes = null) =>
-        new(Reference, changes ?? ReferenceChangesTo(Identifiers));
+        new(Reference, changes ?? ReferenceChangesTo(Identifiers), Today);
 
     public static PartyReferenceUpdated ReferenceUpdated(PartyReferenceDetails? details = null) =>
         new(EntryId, Reference, details ?? ReferenceDetails);

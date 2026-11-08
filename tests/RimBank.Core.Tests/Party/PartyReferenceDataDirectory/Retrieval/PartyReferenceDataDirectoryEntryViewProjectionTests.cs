@@ -95,6 +95,48 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 Reference: ReferenceDetails));
 
     [Fact]
+    public void Names_date_of_birth_and_residency_show_in_the_reference_section() =>
+        EntryViewSpecification.Given(Registered(), ReferenceUpdated(), ReferenceUpdated(FullReferenceDetails))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 3,
+                PartyType.Person,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Reference: FullReferenceDetails));
+
+    [Fact]
+    public void A_reference_event_stored_before_1_18_still_projects_with_no_names_or_residency()
+    {
+        // A PartyReferenceUpdated as roadmap 1.10 stored it: identifiers only.
+        var stored = $$"""
+            {
+              "EntryId": "{{EntryId.Value}}",
+              "PartyReferenceId": "{{Reference.Value}}",
+              "Details": {
+                "Identifiers": {
+                  "TaxIdentificationNumber": "FR12345678901",
+                  "NationalRegistrationNumber": "1 85 05 78 006 084 36",
+                  "LegalEntityIdentifier": "{{Lei}}"
+                }
+              }
+            }
+            """;
+        var updated = JsonSerializer.Deserialize<PartyReferenceUpdated>(stored, _json).ShouldNotBeNull();
+
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), updated }
+            .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
+            .ShouldNotBeNull();
+
+        view.CurrentReference.ShouldBe(ReferenceDetails);
+        view.CurrentReference.CurrentNames.ShouldBe(PartyNames.Empty);
+        view.CurrentReference.DateOfBirth.ShouldBeNull();
+        view.CurrentReference.CurrentResidency.ShouldBe(PartyResidency.Empty);
+    }
+
+    [Fact]
     public void A_registered_entry_has_no_reference_section_and_reads_as_empty()
     {
         var view = PartyReferenceDataDirectoryEntryViewProjection.Project(null, Registered()).ShouldNotBeNull();

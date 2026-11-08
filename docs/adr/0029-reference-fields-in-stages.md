@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-08
-- Roadmap phase: 1.10
+- Roadmap phase: 1.10 (amended in 1.18)
 
 ## Context
 
@@ -54,11 +54,39 @@ Option 4, chosen when 1.10 was planned.
 - **JSON.** Each identifier is stored and sent as a plain string, like `Currency` ([ADR 0009](0009-money-and-currency.md)).
 - **No verification status.** BIAN gives Reference no Exchange, so unlike Demographics ([ADR 0028](0028-demographics-exchange-as-verification.md)) it has no status.
 
+### Names and residency (recorded from 1.18)
+
+| BIAN field | Recorded as | Rule |
+|---|---|---|
+| `PartyFullLegalName` | `PartyFullLegalName` | Trimmed, not blank, at most 140 characters (Max140Text) |
+| `PartyNameSalutation` | `PartyNameSalutation` | Trimmed, not blank, at most 35 characters (Max35Text), free text |
+| `DateofBirth` | `DateOnly` | An ISO 8601 date, or the date as written in an ISO 8601 date-time (no time-zone conversion). From 1900-01-01 to today (UTC, from the handler's `TimeProvider`), both included. Answered as `YYYY-MM-DD` |
+| `Nationality.Code` | `CountryCode` ([ADR 0030](0030-iso-3166-country-codes.md)) | Trimmed and upper-cased, then an officially assigned ISO 3166-1 alpha-2 code |
+| `PartyCountryOfResidence.Code` | `CountryCode` | Same as `Nationality.Code` |
+| `ResidencyStatus.StatusDescription` | `ResidencyStatusCode` | `Resident` or `NonResident`, in any case, stored by name |
+| `ResidencyStatus.StatusDateTime` | `DateTimeOffset?` | An ISO 8601 date-time with its offset as written (UTC when none). Only allowed with a code |
+
+- **Date only.**
+  - BIAN types `DateofBirth` as `ISODateTime`, but a birth date is a calendar date: its time and offset carry no business meaning, and converting them to UTC could move the day.
+  - RimBank keeps the date as written and answers with an ISO date. This is the one place where the response differs from the BIAN format.
+- **The future check is the decision's.**
+  - Parsing has no clock, so the Reference handler stamps today's UTC date on the decision input, and `Decide` refuses a later birth date with `party.reference-invalid` naming `DateofBirth`.
+  - A birth date already recorded is not checked again when an Update keeps it.
+- **A lower bound of 1900-01-01.**
+  - An earlier date of birth is almost always a typo (for example `0990` for `1990`), and no living party was born before it.
+  - It is refused with `party.reference-invalid` naming `DateofBirth`.
+  - The bound is fixed and needs no clock, so `PartyReferenceChanges.Create` checks it (`EarliestDateOfBirth`), with the format.
+- **BIAN objects, partly recorded.**
+  - `Nationality` and `PartyCountryOfResidence` are BIAN `Country` objects, of which only `Code` is recorded. `ResidencyStatus` is an ISO 20022 `Status`, of which only `StatusDescription` and `StatusDateTime` are recorded.
+  - Their other parts (`Citizen`, `Tax`, `StatusReason`, …) are refused like `OtherIdentification`, with no phase named.
+  - A given object replaces the whole value. One whose recorded parts are all empty clears it.
+- **Current values only.** BIAN describes nationality and residency "and history as appropriate". RimBank records the current value. The history is in the entry's events.
+- **No party-type rule.** Every field is accepted for a person and for an organisation (for an organisation, the country of residence is where its affairs are directed).
+
 ### The other fields, in stages
 
 | Phase | BIAN fields |
 |---|---|
-| 1.18 Names and residency | `PartyFullLegalName`, `PartyNameSalutation`, `DateofBirth`, `Nationality`, `PartyCountryOfResidence`, `ResidencyStatus` |
 | 1.19 Addresses and contact points | `ResidentialAddress`, `PartyAddress`, `CorporateAddress`, `eMailAddress`, `CellPhoneNumber`, `SocialNetworkContacts` |
 | 1.20 Legal, political exposure and corporate details | `PartyLegalStructure`, `PoliticalExposureType`, `PoliticalExposureDescriptionRecord`, `CustomerSinceDate`, `CorporateCustomerReference`, `CorporateCustomerLegalEntityReference`, `CompanyOfficerReference`, `CompanyOfficerRole`, `GovernmentIssuedDocumentDetails`, `DocumentDirectoryEntryInstanceReference` |
 
@@ -71,7 +99,7 @@ Option 4, chosen when 1.10 was planned.
 ## Consequences
 
 - **Roadmap.** Rows 1.18, 1.19 and 1.20 are listed right after 1.10. Each one removes its fields from `PartyReferenceFields.Staged`, adds them to `PartyReferenceDetails`, and updates this ADR's table.
-- **Tests.** `PartyReferenceChangesTests` pins that 22 fields are staged across exactly those three phases, so a phase cannot add a field without updating the table.
+- **Tests.** `PartyReferenceChangesTests` pins the staged fields and their phases, so a phase cannot add a field without updating the table: 22 across three phases at 1.10, and 16 across 1.19 and 1.20 since 1.18.
 - **Clients.** A client that sends a staged field gets a 400 that says when the field will be supported, never a silent drop.
 - **Uniqueness.** Identifiers are not unique across entries. A uniqueness rule (for example one LEI per entry) needs a cross-stream check and its own ADR.
-- **PII.** The identifiers are personal data. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.
+- **PII.** The identifiers, and from 1.18 the names, birth date, nationality and residency, are personal data. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.
