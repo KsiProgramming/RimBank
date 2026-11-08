@@ -110,7 +110,10 @@ public sealed partial record PartyReferenceDataDirectoryEntry
     /// (<c>party.reference-invalid</c>). Corporate references need an organisation's entry, and each reference it sets must
     /// be another registered entry of the right party type (<c>party.corporate-references-need-organisation</c>,
     /// <c>party.self-reference</c>, <c>party.referenced-party-not-registered</c>,
-    /// <c>party.referenced-party-type-mismatch</c>). It always records the resulting Reference.
+    /// <c>party.referenced-party-type-mismatch</c>). It always records the resulting Reference. BankRelations Update needs a
+    /// registered entry and its own BankRelations id, refuses a resulting employee or unit without a type or a relationship
+    /// that ends before it starts (<c>party.bank-relations-invalid</c>), and an employee or unit it sets, or keeps under a new
+    /// type, that is the entry itself, not registered or of the wrong party type (ADR 0035). It always records the result.
     /// </remarks>
     public static Result<IReadOnlyList<PartyReferenceDataDirectoryEntryEvent>> Decide(
         PartyReferenceDataDirectoryEntryCommand command,

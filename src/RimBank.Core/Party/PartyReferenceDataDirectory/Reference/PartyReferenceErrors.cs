@@ -2,7 +2,10 @@ using RimBank.SharedKernel;
 
 namespace RimBank.Party.PartyReferenceDataDirectory;
 
-/// <summary>The Reference Behavior Qualifier's business errors; their codes are documented in ADR 0024, ADR 0029 and ADR 0034.</summary>
+/// <summary>
+/// The Reference Behavior Qualifier's business errors; their codes are documented in ADR 0024, ADR 0029 and ADR 0034. The
+/// reference errors are shared with BankRelations (ADR 0035).
+/// </summary>
 public static class PartyReferenceErrors
 {
     /// <summary>The code of <see cref="ReferenceInvalid"/> and <see cref="ValueInvalid"/>.</summary>
@@ -107,14 +110,14 @@ public static class PartyReferenceErrors
         "Corporate customer, legal entity and company officer references are recorded only on an organisation's entry; "
         + "clear them before the party type becomes Person.");
 
-    /// <summary>A reference names the entry it is recorded on (422, roadmap 1.21, ADR 0034).</summary>
+    /// <summary>A reference names the entry it is recorded on (422, roadmap 1.21, ADR 0034; BankRelations, 1.12, ADR 0035).</summary>
     /// <param name="field">The BIAN path of the reference, for example <c>CompanyOfficerReference.PartyReference</c>.</param>
     /// <returns>The <c>party.self-reference</c> error, whose message names the path.</returns>
     public static Error SelfReference(string field) => Error.BusinessRule(
         "party.self-reference",
         $"{field} names the party's own entry; a party cannot reference itself.");
 
-    /// <summary>A reference names no registered entry of this directory (422, roadmap 1.21, ADR 0034).</summary>
+    /// <summary>A reference names no registered entry of this directory (422, roadmap 1.21, ADR 0034; BankRelations, 1.12, ADR 0035).</summary>
     /// <param name="field">The BIAN path of the reference.</param>
     /// <returns>The <c>party.referenced-party-not-registered</c> error, whose message names the path.</returns>
     public static Error ReferencedPartyNotRegistered(string field) => Error.BusinessRule(
@@ -123,7 +126,8 @@ public static class PartyReferenceErrors
 
     /// <summary>
     /// A reference names an entry of the wrong party type: the corporate customer and the legal entity are organisations,
-    /// and the company officer is a person (422, roadmap 1.21, ADR 0034).
+    /// and the company officer is a person (422, roadmap 1.21, ADR 0034); the BankRelations employee is a person and the unit an
+    /// organisation (1.12, ADR 0035).
     /// </summary>
     /// <param name="field">The BIAN path of the reference.</param>
     /// <param name="expected">The party type the reference needs.</param>

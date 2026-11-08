@@ -123,6 +123,12 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 - **Retrieve** (`GET …/Associations/{associationsid}/Retrieve`) answers from `PartyAssociationView`, with the association's version as `ETag` and `304` on a matching `If-None-Match`. Only the owning entry finds it.
 - **Headers and responses.** Register requires `Idempotency-Key`, and Update also `If-Match`, as in 1.8. All three answer `200` with the same body: `AssociationsId`, `PartyReferenceDataDirectoryEntryId` (the owner), `AssociateReference` `{ "PartyReference": … }`, `AssociateType` in BIAN spelling and `AssociationValidFromToDate` (bounds in UTC, left out when unknown). Register and Update build it from their acknowledgement.
 
+**BankRelations requests (1.12).** The BankRelations record lives in the entry (an entity, as decided above), so both operations use the entry's stream, version and inline view. [ADR 0035](0035-party-bank-relations.md) decides which BIAN fields are recorded and the rules on them.
+- **Ids.** Both routes carry `{partyreferencedatadirectoryid}` and `{bankrelationsid}`. A malformed one is `400` `shared.invalid-identifier`, naming that parameter in `errors`.
+- **Update** (`PUT …/BankRelations/{bankrelationsid}/Update`) is a partial update of `BankRelationType`, `BusinessUnitEmployeeReference.PartyReference` and, in `BankRelationReference`, the start and end dates and the lifecycle status. The checks run in order: the ids, the request values (`400`), the entry (`404` `party.party-not-found`), the BankRelations id (`404` `party.behavior-qualifier-not-found`), the `If-Match` version (`409` `party.version-conflict`), and then the reference (`422` `party.self-reference`, `party.referenced-party-not-registered`, `party.referenced-party-type-mismatch`), loaded through `PartyDirectory` when the Update sets it or changes the type.
+- **Retrieve** (`GET …/BankRelations/{bankrelationsid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`.
+- **Headers and responses.** Update requires `Idempotency-Key` and `If-Match`, as in 1.8. Both answer `200` with `BankRelationsId`, `PartyReferenceDataDirectoryEntryId`, `BankRelationType`, `BusinessUnitEmployeeReference` `{ "PartyReference": … }` and `BankRelationReference` (dates as UTC date-times, the status in `StatusDescription`), each left out when unknown. Update builds it from its acknowledgement.
+
 **Deferred** means not in Stage 1 and not scheduled (no speculative coverage, mission non-goals). Control (terminate an entry) is the likeliest to come next. It needs its own decisions on what a terminated entry means for its associations and for consumers, and those are recorded when it is scheduled. Demographics/Exchange (accept, verify, reject) is a command on the entry. Its semantics are decided in [ADR 0028](0028-demographics-exchange-as-verification.md) (1.9).
 
 ### Domain events
@@ -134,7 +140,7 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
 | Entry | `DemographicsUpdated` | `UpdateDemographics` (carries the full resulting details and their verification status and date, 1.9) |
 | Entry | `DemographicsExchanged` | `ExchangeDemographics` (carries the verification status and date, 1.9, [ADR 0028](0028-demographics-exchange-as-verification.md)) |
 | Entry | `PartyReferenceUpdated` | `UpdatePartyReference` (carries the full resulting Reference: the party identifiers from 1.10, and the names, date of birth, nationality and residency from 1.18, [ADR 0029](0029-reference-fields-in-stages.md)) |
-| Entry | `BankRelationsUpdated` | `UpdateBankRelations` |
+| Entry | `BankRelationsUpdated` | `UpdateBankRelations` (carries the full resulting BankRelations: the type, the employee or unit, the dates and the lifecycle status, 1.12, [ADR 0035](0035-party-bank-relations.md)) |
 | PartyAssociation | `PartyAssociationRegistered` | `RegisterPartyAssociation` (carries the owner, the associate, the type and the validity period, 1.11, [ADR 0033](0033-party-associations.md)) |
 | PartyAssociation | `PartyAssociationUpdated` | `UpdatePartyAssociation` (carries the resulting type and validity period, 1.11) |
 
@@ -194,9 +200,11 @@ The `ETag` returned by a Retrieve, and the `If-Match` a command sends back, is t
 | `party.associate-not-registered` | BusinessRule (422) | `AssociateReference` is not an entry of this directory (1.11) |
 | `party.self-association` | BusinessRule (422) | The associate is the owning entry (1.11) |
 | `party.corporate-references-need-organisation` | BusinessRule (422) | Corporate or officer references on an entry that is not an organisation, or an entry Update to `Person` while they are recorded (1.21, [ADR 0034](0034-reference-corporate-and-officer-references.md)) |
-| `party.self-reference` | BusinessRule (422) | A Reference reference names the entry itself (1.21, ADR 0034) |
-| `party.referenced-party-not-registered` | BusinessRule (422) | A Reference reference is not an entry of this directory (1.21, ADR 0034) |
-| `party.referenced-party-type-mismatch` | BusinessRule (422) | The corporate customer or legal entity is not an organisation, or the officer is not a person (1.21, ADR 0034) |
+| `party.self-reference` | BusinessRule (422) | A Reference reference, or the BankRelations employee or unit, names the entry itself (1.21, ADR 0034; 1.12, [ADR 0035](0035-party-bank-relations.md)) |
+| `party.referenced-party-not-registered` | BusinessRule (422) | A Reference reference, or the BankRelations employee or unit, is not an entry of this directory (1.21, ADR 0034; 1.12, ADR 0035) |
+| `party.referenced-party-type-mismatch` | BusinessRule (422) | The corporate customer or legal entity is not an organisation, or the officer is not a person (1.21, ADR 0034); the BankRelations employee is not a person, or the unit not an organisation (1.12, ADR 0035) |
+| `party.bank-relations-invalid` | Validation (400) | A BankRelations value is not valid, an employee or unit has no type, or the relationship ends before it starts; `errors` names each BIAN path (1.12, ADR 0035) |
+| `party.bank-relations-field-not-supported` | Validation (400) | A BankRelations Update sends a BIAN field or part RimBank does not record; `errors` names each path (1.12, ADR 0035) |
 | `party.association-invalid` | Validation (400) | An Associations value is missing or not valid; `errors` names each BIAN path (1.11, [ADR 0033](0033-party-associations.md)) |
 | `party.association-field-not-supported` | Validation (400) | An Associations request sends a BIAN field or part RimBank does not record (1.11, ADR 0033) |
 | `party.associate-cannot-change` | BusinessRule (422) | An Associations Update names another associate than the registered one (1.11, ADR 0033) |

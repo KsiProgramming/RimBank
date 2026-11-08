@@ -6,6 +6,16 @@ Every group is written test first. After each group the solution builds and its 
 - Business rules, validation errors and value parsing live in `RimBank.Core`; the adapters only translate the transport.
 - Testcontainers and Alba tests need Docker; if it is not available locally, they run in CI.
 
+## As built (differences from the plan below)
+- **Commits.** One per group: domain (values, entity, decision); flows and view; PostgreSQL; HTTP and demo; docs.
+- **No `BankRelationPeriod` value object.** The dates are two fields of `BankRelationsDetails`, because a partial update can change one bound only; "start ≤ end" is checked on the resulting details by the decision (`BankRelationsErrors.EndDateBeforeStartDate`).
+- **Fewer files.** The raw input (`BankRelationsInput`, `BankRelationReferenceInput`) lives next to `BankRelationsChanges.Create`, and `BankRelationsFields` only names paths: no top-level BIAN field is refused, only parts of the three objects. The changes reuse `PartyReferenceChange<T>`.
+- **Shared reading of dates.** `PartyReferenceDates.TryReadUtcInstant` reads a date or date-time as UTC, and `AssociationValidityPeriod` now uses it too.
+- **The 422 errors stay in `PartyReferenceErrors`**, documented as shared with BankRelations, rather than moving to a new class.
+- **The handler decides what to load** with `BankRelationsDetails.ReferenceToCheck(changes)`, which the decision also uses, and passes the loaded party type (`UpdateBankRelationsDetails.ReferencedPartyType`). No port member was added.
+- **Tests.** `BankRelationTypesTests` also covers the lifecycle statuses; the projection cases are in `BankRelationsViewProjectionTests`; the HTTP helpers are in `BankRelationsScenarios`.
+- **ADR 0035** is the new ADR (0034 was taken by 1.21).
+
 ## 1. Domain: BankRelations values, entity and decision
 - [ ] `BankRelations/BankRelationType.cs` (enum, 4 values) and `BankRelationTypes.cs` (spelling, read in any case, and the required `PartyType` per value), after `PartyTypes` / `PartyRelationshipTypes`.
 - [ ] `BankRelations/BankRelationLifecycleStatus.cs` (enum) and `BankRelationLifecycleStatuses.cs`.

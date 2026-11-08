@@ -86,7 +86,7 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  ├─ RimBank.Problems/           # Error → RFC 9457 Problem Details mapping, shared by .Api, .Mcp and the host (ADR 0015)
 │  ├─ RimBank.Api/                # the HTTP API of every context, one folder per context (ADR 0025)
 │  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match, If-Match: ADR 0027)
-│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/, Demographics/, Reference/, Associations/
+│  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/, Demographics/, Reference/, Associations/, BankRelations/
 │  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
 │  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018); one retry on a lost concurrency race (ADR 0027)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
@@ -196,7 +196,15 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ RetrievePartyAssociation.cs         # query over the association's view, with its handler
 │  ├─ PartyAssociationView.cs
 │  └─ PartyAssociationViewProjection.cs
-├─ BankRelations/
+├─ BankRelations/                         # Behavior Qualifier: entity of the entry (1.12, ADR 0035)
+│  ├─ BankRelationsId.cs
+│  ├─ BankRelationType.cs                 # employee roles (a person) and unit roles (an organisation), names read in any
+│  ├─ BankRelationLifecycleStatus.cs      #   case by …s.cs; Active / Suspended / Ended
+│  ├─ BankRelationsDetails.cs             # type, checked employee or unit entry id, UTC start and end dates, status
+│  ├─ BankRelationsChanges.cs             # the raw input and the partial-update changes; refuses unrecorded BIAN parts
+│  ├─ Events.cs                           # BankRelationsUpdated (decided by the entry's Decide)
+│  ├─ UpdateBankRelations.cs              # command, with its acknowledgement and handler (which loads the referenced entry)
+│  └─ RetrieveBankRelations.cs            # query over the entry's view, with its handler
 ├─ IPartyDirectory.cs                     # write port: load and append the entry and association event streams
 └─ IPartyDirectoryEnquiry.cs              # read port: query the entry and association views
 ```
