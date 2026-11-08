@@ -26,6 +26,7 @@ public static class PartyReferenceDataDirectoryPostgresql
         options.Events.MapEventType<DemographicsUpdated>("demographics_updated");
         options.Events.MapEventType<DemographicsExchanged>("demographics_exchanged");
         options.Events.MapEventType<PartyReferenceUpdated>("party_reference_updated");
+        options.Events.MapEventType<BankRelationsUpdated>("party_bank_relations_updated");
         options.Events.MapEventType<PartyAssociationRegistered>("party_association_registered");
         options.Events.MapEventType<PartyAssociationUpdated>("party_association_updated");
         options.AddInlineView<PartyReferenceDataDirectoryEntryView, PartyReferenceDataDirectoryEntryViewProjection, PartyReferenceDataDirectoryEntryEvent>();
