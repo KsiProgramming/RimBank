@@ -25,6 +25,28 @@ internal static class PartyReferenceDates
             out value);
 
     /// <summary>
+    /// A point in time kept in UTC: an ISO 8601 date-time (one without an offset is UTC) or a date alone (00:00 UTC that
+    /// day). Used by the association periods (roadmap 1.11) and the bank relationship dates (roadmap 1.12).
+    /// </summary>
+    public static bool TryReadUtcInstant(string text, out DateTimeOffset value)
+    {
+        if (DateOnly.TryParseExact(text.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            value = new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            return true;
+        }
+
+        if (TryReadDateTime(text, out var dateTime))
+        {
+            value = dateTime.ToUniversalTime();
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    /// <summary>
     /// A calendar date: an ISO 8601 date such as <c>1990-05-17</c>, or the date as written in an ISO 8601 date-time, with
     /// no time-zone conversion, because a date of birth has no time of day.
     /// </summary>

@@ -1,4 +1,3 @@
-using System.Globalization;
 using RimBank.SharedKernel;
 
 namespace RimBank.Party.PartyReferenceDataDirectory;
@@ -53,14 +52,9 @@ public sealed record AssociationValidityPeriod(DateTimeOffset? From, DateTimeOff
             return null;
         }
 
-        if (DateOnly.TryParseExact(text.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        if (PartyReferenceDates.TryReadUtcInstant(text, out var instant))
         {
-            return new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
-        }
-
-        if (PartyReferenceDates.TryReadDateTime(text, out var dateTime))
-        {
-            return dateTime.ToUniversalTime();
+            return instant;
         }
 
         fieldErrors[field] = ["The value must be an ISO 8601 date-time, for example 2024-01-01T00:00:00Z, or date."];

@@ -16,6 +16,7 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="RefreshDate">The entry's <c>DirectoryEntryDate</c> of type <c>RefreshDate</c>: its last Update, if any.</param>
 /// <param name="Demographics">The entry's Demographics record, or <c>null</c> until its first Update (see <see cref="CurrentDemographics"/>).</param>
 /// <param name="Reference">The entry's Reference record, or <c>null</c> until its first Update (see <see cref="CurrentReference"/>).</param>
+/// <param name="BankRelations">The entry's BankRelations, or <c>null</c> until its first Update (see <see cref="CurrentBankRelations"/>).</param>
 public sealed partial record PartyReferenceDataDirectoryEntry(
     PartyReferenceDataDirectoryEntryId? Id,
     PartyType? PartyType,
@@ -25,7 +26,8 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
     BankRelationsId? BankRelationsId,
     DateTimeOffset? RefreshDate = null,
     DemographicsRecord? Demographics = null,
-    PartyReferenceDetails? Reference = null)
+    PartyReferenceDetails? Reference = null,
+    BankRelationsDetails? BankRelations = null)
     : IDecider<PartyReferenceDataDirectoryEntry, PartyReferenceDataDirectoryEntryCommand, PartyReferenceDataDirectoryEntryEvent>
 {
     /// <summary>An entry that is not registered yet.</summary>
@@ -39,6 +41,9 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
 
     /// <summary>The entry's Reference record: empty until its first Update.</summary>
     public PartyReferenceDetails CurrentReference => Reference ?? PartyReferenceDetails.Empty;
+
+    /// <summary>The entry's BankRelations: empty until its first Update.</summary>
+    public BankRelationsDetails CurrentBankRelations => BankRelations ?? BankRelationsDetails.Empty;
 
     /// <inheritdoc />
     public static PartyReferenceDataDirectoryEntry Evolve(
@@ -71,6 +76,7 @@ public sealed partial record PartyReferenceDataDirectoryEntry(
                 },
             },
             PartyReferenceUpdated updated => state with { Reference = updated.Details },
+            BankRelationsUpdated updated => state with { BankRelations = updated.Details },
             _ => throw new UnreachableException($"The entry does not know {domainEvent}."),
         };
 }
