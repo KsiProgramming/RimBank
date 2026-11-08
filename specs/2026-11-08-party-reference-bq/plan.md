@@ -59,10 +59,10 @@ Every group is written test first. After each group, the solution builds and its
   - a stale version → `party.version-conflict`;
   - a foreign `referenceid` → `party.behavior-qualifier-not-found`;
   - the stored event has the name `party_reference_updated`.
-- [ ] Run the Party `.Postgresql.Tests` and `RimBank.Host.Tests`.
+- [x] Run the Party `.Postgresql.Tests` and `RimBank.Host.Tests`.
 
 ## 3. HTTP Reference endpoints
-- [ ] Tests first in `RimBank.Api.Tests/Party/PartyReferenceDataDirectory/Reference/`:
+- [x] Tests first in `RimBank.Api.Tests/Party/PartyReferenceDataDirectory/Reference/`:
   - `UpdatePartyReferenceRequestTests`:
     - BIAN JSON names (`GovernmentIssuedIdentityReference.TaxIdentificationNumber`, `PartyLegalEntityReference.Identification`, …);
     - every unsupported BIAN property, at the top level or inside the two supported objects, is detected when present and not `null`;
@@ -83,19 +83,19 @@ Every group is written test first. After each group, the solution builds and its
       - 428 for no `If-Match`.
     - An idempotent replay returns the same 200 and `ETag`.
     - Every error is `application/problem+json` with `type`, `errorCode` and `traceId`.
-- [ ] `src/RimBank.Api/Party/PartyReferenceDataDirectory/Reference/`:
+- [x] `src/RimBank.Api/Party/PartyReferenceDataDirectory/Reference/`:
   - `UpdatePartyReferenceRequest.cs`:
-    - the supported fields are typed;
-    - the unsupported ones are `JsonElement?` properties with their BIAN names;
-    - `PresentUnsupportedFields()` reports them, and `ToCommand` passes them to `PartyReferenceChanges.Create`.
+    - the supported fields are typed, in `GovernmentIssuedIdentityModel` and `PartyLegalEntityModel`;
+    - every other property lands in `[JsonExtensionData]`, at the top level and in both objects;
+    - `UnsupportedFields()` reports the staged top-level fields (matched without regard to case) and every other part of the two objects, and `ToCommand` passes them to `PartyReferenceChanges.Create`. Properties that are not BIAN's are ignored.
   - `PartyReferenceResponse.cs`: one shape, with `From(acknowledged)` and `From(view)`.
-  - `PartyReferenceRouteValues.cs`.
+  - `ReferenceRouteValues.cs`.
   - `UpdatePartyReferenceEndpoint.cs` and `RetrievePartyReferenceEndpoint.cs`:
     - the BIAN route and `OperationId` (`Reference/Update`, `Reference/Retrieve`), the tag `Reference` and the BIAN summary;
     - a description (`If-Match`, where the LEI goes, the unsupported fields and their phases), and `Produces…` for every status;
     - the flow: parse the ids, then `ReadIfMatch` (Update), then `ToCommand`, then `InvokeAsync`, then `ETag` and 200, or `error.ToHttpResult()`.
-- [ ] `PartyReferenceDataDirectoryApi` maps both endpoints. Add the operations to `PartyReferenceDataDirectoryConformanceTests._implemented`. Check `OpenApiDocumentTests`.
-- [ ] Run `RimBank.Api.Tests`, `RimBank.Conformance.Tests`, `RimBank.Architecture.Tests` and `RimBank.Host.Tests`.
+- [x] `PartyReferenceDataDirectoryApi` maps both endpoints. Add the operations to `PartyReferenceDataDirectoryConformanceTests._implemented`. Check `OpenApiDocumentTests`.
+- [x] Run `RimBank.Api.Tests`, `RimBank.Conformance.Tests`, `RimBank.Architecture.Tests` and `RimBank.Host.Tests`.
 
 ## 4. Docs and roadmap
 - [ ] New `docs/adr/0029-reference-fields-in-stages.md` (from `docs/adr/template.md`).
