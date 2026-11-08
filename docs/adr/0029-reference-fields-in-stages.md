@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-08
-- Roadmap phase: 1.10 (amended in 1.18)
+- Roadmap phase: 1.10 (amended in 1.18 and 1.19)
 
 ## Context
 
@@ -83,11 +83,23 @@ Option 4, chosen when 1.10 was planned.
 - **Current values only.** BIAN describes nationality and residency "and history as appropriate". RimBank records the current value. The history is in the entry's events.
 - **No party-type rule.** Every field is accepted for a person and for an organisation (for an organisation, the country of residence is where its affairs are directed).
 
+### Addresses and contact points (recorded from 1.19)
+
+[ADR 0031](0031-reference-contact-points-and-addresses.md) gives the full rules.
+
+| BIAN field | Recorded as | Rule |
+|---|---|---|
+| `ResidentialAddress`, `PartyAddress`, `CorporateAddress` | `PostalAddress` | `Department`, `SubDepartment` (Max70Text), `StreetName`, `StreetBuildingIdentification`, `BuildingName` (Max35Text), `Floor`, `PostOfficeBox`, `PostCodeIdentification` (Max16Text), `TownName` (Max35Text, required) and `Country.Code` (`CountryCode`, required) |
+| `eMailAddress.EmailAddress` | `EmailAddress` | Trimmed, at most 256 characters, `local@domain.tld` syntax, kept as written |
+| `CellPhoneNumber.MobileNumber` | `MobileNumber` | E.164 after removing spaces, hyphens and dots, 7 to 15 digits, stored normalised |
+| `SocialNetworkContacts.URLAddress` | `SocialNetworkAddress` | An absolute `https` URL, at most 2048 characters |
+
+- **BIAN objects, partly recorded.** As in 1.18, the other `PostalAddress` parts (`AddressType`, `Location`, `ValidityPeriod`, …) and the other `ContactPoint` parts are refused, with no phase named. A given address replaces the whole address, and an object whose recorded parts are all blank clears it.
+
 ### The other fields, in stages
 
 | Phase | BIAN fields |
 |---|---|
-| 1.19 Addresses and contact points | `ResidentialAddress`, `PartyAddress`, `CorporateAddress`, `eMailAddress`, `CellPhoneNumber`, `SocialNetworkContacts` |
 | 1.20 Legal, political exposure and corporate details | `PartyLegalStructure`, `PoliticalExposureType`, `PoliticalExposureDescriptionRecord`, `CustomerSinceDate`, `CorporateCustomerReference`, `CorporateCustomerLegalEntityReference`, `CompanyOfficerReference`, `CompanyOfficerRole`, `GovernmentIssuedDocumentDetails`, `DocumentDirectoryEntryInstanceReference` |
 
 - **Refused until their phase lands.** A request that sends any of these fields with a value (not `null`) is `party.reference-field-not-supported` (400). `errors` names each field and the phase that will add it, and nothing is stored. The same applies to any other part of `GovernmentIssuedIdentityReference` or `PartyLegalEntityReference`, such as `OtherIdentification`. No phase is planned for those parts, so their message names none.
@@ -99,7 +111,7 @@ Option 4, chosen when 1.10 was planned.
 ## Consequences
 
 - **Roadmap.** Rows 1.18, 1.19 and 1.20 are listed right after 1.10. Each one removes its fields from `PartyReferenceFields.Staged`, adds them to `PartyReferenceDetails`, and updates this ADR's table.
-- **Tests.** `PartyReferenceChangesTests` pins the staged fields and their phases, so a phase cannot add a field without updating the table: 22 across three phases at 1.10, and 16 across 1.19 and 1.20 since 1.18.
+- **Tests.** `PartyReferenceChangesTests` pins the staged fields and their phases, so a phase cannot add a field without updating the table: 22 across three phases at 1.10, 16 across 1.19 and 1.20 after 1.18, and 10, all for 1.20, since 1.19.
 - **Clients.** A client that sends a staged field gets a 400 that says when the field will be supported, never a silent drop.
 - **Uniqueness.** Identifiers are not unique across entries. A uniqueness rule (for example one LEI per entry) needs a cross-stream check and its own ADR.
-- **PII.** The identifiers, and from 1.18 the names, birth date, nationality and residency, are personal data. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.
+- **PII.** The identifiers, from 1.18 the names, birth date, nationality and residency, and from 1.19 the addresses and contact points, are personal data. They live only in this context's stream and view, and are listed for 7.2. No new code logs them.

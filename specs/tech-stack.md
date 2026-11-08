@@ -161,9 +161,15 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ PartyIdentifiers.cs                 # the identifiers, in PartyReferenceDetails (the entry state and its view)
 │  ├─ PartyNames.cs                       # the names (1.18)
 │  ├─ PartyResidency.cs                   # nationality and country of residence (CountryCode, ADR 0030), ResidencyStatus (1.18)
-│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth and residency
+│  ├─ PostalAddress.cs                    # structured ISO 20022 postal address, town and country required (1.19, ADR 0031)
+│  ├─ PartyAddresses.cs                   # the residential, party and corporate addresses (1.19)
+│  ├─ EmailAddress.cs                     # contact point value objects (1.19, ADR 0031): email syntax, E.164 mobile number,
+│  ├─ MobileNumber.cs                     #   https profile URL, plain JSON strings through PartyReferenceTextJsonConverter
+│  ├─ SocialNetworkAddress.cs
+│  ├─ PartyContactPoints.cs               # the email, mobile and social network contacts (1.19)
+│  ├─ PartyReferenceDetails.cs            # identifiers, names, date of birth, residency, addresses and contact points
 │  ├─ PartyReferenceInput.cs              # the raw values an adapter sends
-│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.19–1.20
+│  ├─ PartyReferenceChanges.cs            # the partial-update changes; refuses the BIAN fields staged for 1.20
 │  ├─ Events.cs                           # PartyReferenceUpdated
 │  ├─ UpdatePartyReference.cs             # command, with its acknowledgement and handler
 │  └─ RetrievePartyReference.cs           # query over the entry's view, with its handler
