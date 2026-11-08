@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-// Roadmap 1.10: the Reference response, built from the Update's acknowledgement or from the entry's view, in BIAN's
+// Roadmap 1.10, 1.18 and 1.19: the Reference response, built from the Update's acknowledgement or from the entry's view, in BIAN's
 // property names, leaving out what is not known (ADR 0029).
 public sealed class PartyReferenceResponseTests
 {
@@ -53,6 +53,34 @@ public sealed class PartyReferenceResponseTests
         json.ContainsKey("PartyCountryOfResidence").ShouldBeFalse();
         json["ResidencyStatus"]!["StatusDescription"]!.GetValue<string>().ShouldBe("Resident");
         json["ResidencyStatus"]!["StatusDateTime"]!.GetValue<string>().ShouldBe("2024-03-01T09:30:00+01:00");
+    }
+
+    [Fact]
+    public void Addresses_and_contact_points_become_the_bian_shape_without_unknown_parts()
+    {
+        var details = _details with
+        {
+            Addresses = new PartyAddresses(
+                new PostalAddress(null, null, "Rue de Rivoli", "12", null, null, null, "75001", "Paris", SharedKernel.CountryCode.From("FR")),
+                null,
+                null),
+            ContactPoints = new PartyContactPoints(
+                EmailAddress.TryCreate("jeanne@example.fr").Value,
+                MobileNumber.TryCreate("+33612345678").Value,
+                null),
+        };
+
+        var json = JsonNode.Parse(JsonSerializer.Serialize(
+                PartyReferenceResponse.From(new UpdatePartyReferenceAcknowledged(_entryId, _referenceId, 2, details))))
+            .ShouldNotBeNull().AsObject();
+
+        json["ResidentialAddress"]!.ToJsonString().ShouldBe(
+            """{"StreetName":"Rue de Rivoli","StreetBuildingIdentification":"12","PostCodeIdentification":"75001","TownName":"Paris","Country":{"Code":"FR"}}""");
+        json.ContainsKey("PartyAddress").ShouldBeFalse();
+        json.ContainsKey("CorporateAddress").ShouldBeFalse();
+        json["eMailAddress"]!.ToJsonString().ShouldBe("""{"EmailAddress":"jeanne@example.fr"}""");
+        json["CellPhoneNumber"]!["MobileNumber"]!.GetValue<string>().ShouldBe("+33612345678");
+        json.ContainsKey("SocialNetworkContacts").ShouldBeFalse();
     }
 
     [Fact]

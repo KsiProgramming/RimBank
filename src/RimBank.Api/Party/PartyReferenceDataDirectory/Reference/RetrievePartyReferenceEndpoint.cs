@@ -33,7 +33,8 @@ public static class RetrievePartyReferenceEndpoint
                 "Returns the party's Reference: the tax identification and national registration numbers in "
                 + "GovernmentIssuedIdentityReference, the LEI in PartyLegalEntityReference.Identification, PartyFullLegalName, "
                 + "PartyNameSalutation, DateofBirth (YYYY-MM-DD), Nationality and PartyCountryOfResidence (ISO 3166 Code), "
-                + "and ResidencyStatus. Unknown values are left out. The ETag header is the entry's version; send it in "
+                + "ResidencyStatus, the ResidentialAddress, PartyAddress and CorporateAddress postal addresses, and the "
+                + "eMailAddress, CellPhoneNumber and SocialNetworkContacts contact points. Unknown values are left out. The ETag header is the entry's version; send it in "
                 + "If-None-Match to get 304 Not Modified while it is current.")
             .Produces<PartyReferenceResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status304NotModified)

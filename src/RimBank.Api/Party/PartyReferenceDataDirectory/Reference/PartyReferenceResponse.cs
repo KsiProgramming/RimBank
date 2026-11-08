@@ -19,6 +19,12 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// <param name="Nationality">BIAN <c>Nationality</c>.</param>
 /// <param name="PartyCountryOfResidence">BIAN <c>PartyCountryOfResidence</c>.</param>
 /// <param name="ResidencyStatus">BIAN <c>ResidencyStatus</c>.</param>
+/// <param name="ResidentialAddress">BIAN <c>ResidentialAddress</c>.</param>
+/// <param name="PartyAddress">BIAN <c>PartyAddress</c>.</param>
+/// <param name="CorporateAddress">BIAN <c>CorporateAddress</c>.</param>
+/// <param name="EMailAddress">BIAN <c>eMailAddress</c>.</param>
+/// <param name="CellPhoneNumber">BIAN <c>CellPhoneNumber</c>.</param>
+/// <param name="SocialNetworkContacts">BIAN <c>SocialNetworkContacts</c>.</param>
 public sealed record PartyReferenceResponse(
     [property: JsonPropertyName("PartyReferenceDataDirectoryEntryId")] Guid PartyReferenceDataDirectoryEntryId,
     [property: JsonPropertyName("ReferenceId")] Guid ReferenceId,
@@ -29,7 +35,13 @@ public sealed record PartyReferenceResponse(
     [property: JsonPropertyName("DateofBirth"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? DateofBirth = null,
     [property: JsonPropertyName("Nationality"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CountryModel? Nationality = null,
     [property: JsonPropertyName("PartyCountryOfResidence"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CountryModel? PartyCountryOfResidence = null,
-    [property: JsonPropertyName("ResidencyStatus"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ResidencyStatusModel? ResidencyStatus = null)
+    [property: JsonPropertyName("ResidencyStatus"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ResidencyStatusModel? ResidencyStatus = null,
+    [property: JsonPropertyName("ResidentialAddress"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PostalAddressModel? ResidentialAddress = null,
+    [property: JsonPropertyName("PartyAddress"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PostalAddressModel? PartyAddress = null,
+    [property: JsonPropertyName("CorporateAddress"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PostalAddressModel? CorporateAddress = null,
+    [property: JsonPropertyName("eMailAddress"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] EmailAddressModel? EMailAddress = null,
+    [property: JsonPropertyName("CellPhoneNumber"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] MobileNumberModel? CellPhoneNumber = null,
+    [property: JsonPropertyName("SocialNetworkContacts"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SocialNetworkContactModel? SocialNetworkContacts = null)
 {
     /// <summary>The response for an Update's acknowledgement.</summary>
     /// <param name="acknowledged">The outcome of <see cref="UpdatePartyReference"/>.</param>
@@ -57,6 +69,8 @@ public sealed record PartyReferenceResponse(
         var identifiers = reference.Identifiers;
         var names = reference.CurrentNames;
         var residency = reference.CurrentResidency;
+        var addresses = reference.CurrentAddresses;
+        var contactPoints = reference.CurrentContactPoints;
         return new PartyReferenceResponse(
             entryId.Value,
             referenceId.Value,
@@ -87,7 +101,13 @@ public sealed record PartyReferenceResponse(
                     StatusDescription = status.Code.ToString(),
                     StatusDateTime = status.StatusDateTime?.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz", CultureInfo.InvariantCulture),
                 },
-            });
+            },
+            PostalAddressModel.From(addresses.ResidentialAddress),
+            PostalAddressModel.From(addresses.PartyAddress),
+            PostalAddressModel.From(addresses.CorporateAddress),
+            contactPoints.EmailAddress is { } email ? new EmailAddressModel { EmailAddress = email.Value } : null,
+            contactPoints.MobileNumber is { } mobile ? new MobileNumberModel { MobileNumber = mobile.Value } : null,
+            contactPoints.SocialNetwork is { } social ? new SocialNetworkContactModel { URLAddress = social.Value } : null);
     }
 
     private static CountryModel? CountryOf(SharedKernel.CountryCode? country) =>

@@ -54,6 +54,24 @@ public sealed class UpdatePartyReferenceTests
             .Then(ReferenceUpdated(FullReferenceDetails with { Residency = Residency with { Nationality = CountryCode.From("BE") } }));
 
     [Fact]
+    public void An_update_with_addresses_and_contact_points_records_them_with_the_other_values() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(FullReferenceDetails))
+            .When(UpdateReference(ReferenceChangesTo(CompleteReferenceDetails)))
+            .Then(ReferenceUpdated(CompleteReferenceDetails));
+
+    [Fact]
+    public void A_partial_update_keeps_the_addresses_and_contact_points() =>
+        EntrySpecification.Given(Registered(), ReferenceUpdated(CompleteReferenceDetails))
+            .When(UpdateReference(PartyReferenceChanges.None with
+            {
+                EmailAddress = new PartyReferenceChange<EmailAddress?>(EmailAddress.TryCreate("j.dupont@example.be").Value),
+            }))
+            .Then(ReferenceUpdated(CompleteReferenceDetails with
+            {
+                ContactPoints = ContactPoints with { EmailAddress = EmailAddress.TryCreate("j.dupont@example.be").Value },
+            }));
+
+    [Fact]
     public void A_date_of_birth_after_today_is_refused()
     {
         var error = PartyReferenceDataDirectoryEntry.Decide(

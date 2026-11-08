@@ -92,13 +92,17 @@ Every `Retrieve` is a query, and every other operation is a command (mission pri
     - `DateofBirth` (a calendar date, from 1900-01-01 to today);
     - `Nationality.Code` and `PartyCountryOfResidence.Code` (ISO 3166-1 alpha-2, [ADR 0030](0030-iso-3166-country-codes.md));
     - `ResidencyStatus` (`StatusDescription` `Resident` or `NonResident`, and an optional `StatusDateTime`).
+  - From 1.19, it also updates ([ADR 0031](0031-reference-contact-points-and-addresses.md)):
+    - `ResidentialAddress`, `PartyAddress` and `CorporateAddress`: structured ISO 20022 postal addresses with a required `TownName` and `Country.Code`;
+    - `eMailAddress.EmailAddress`, `CellPhoneNumber.MobileNumber` (E.164) and `SocialNetworkContacts.URLAddress` (`https`).
   - A value left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. An invalid one is `party.reference-invalid` with the BIAN field names in `errors`.
   - Every accepted Update appends `PartyReferenceUpdated`, even when nothing changes.
-  - The other BIAN Reference fields are refused with `party.reference-field-not-supported` until the phase that records them (1.19–1.20, ADR 0029). So are the parts of the objects above that RimBank does not record.
+  - The other BIAN Reference fields are refused with `party.reference-field-not-supported` until the phase that records them (1.20, ADR 0029). So are the parts of the objects above that RimBank does not record.
 - **Retrieve** (`GET …/Reference/{referenceid}/Retrieve`) answers from the entry's view, with the entry's version as `ETag` and `304` on a matching `If-None-Match`. Before the first Update, it answers `200` with the ids only.
 - **Headers and responses.** Update requires `Idempotency-Key` and `If-Match`, as in 1.8. Both answer `200` with the same body:
   - `GovernmentIssuedIdentityReference` and `PartyLegalEntityReference`, each left out when it holds no identifier;
   - from 1.18: the names, `DateofBirth` as `YYYY-MM-DD`, `Nationality` and `PartyCountryOfResidence` as `{ "Code": … }`, and `ResidencyStatus`, each left out when unknown;
+  - from 1.19: the three addresses, each part left out when unknown, and the contact points as `{ "EmailAddress": … }`, `{ "MobileNumber": … }` and `{ "URLAddress": … }`, each left out when unknown;
   - the entry and Reference ids.
 
   Update builds it from its acknowledgement.

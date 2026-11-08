@@ -8,7 +8,7 @@ using static RimBank.Party.PartyReferenceDataDirectory.Api.Tests.ReferenceScenar
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-// Roadmap 1.10 and 1.18: BIAN Reference/Update over HTTP. A partial update of the Reference with an Idempotency-Key and
+// Roadmap 1.10, 1.18 and 1.19: BIAN Reference/Update over HTTP. A partial update of the Reference with an Idempotency-Key and
 // the entry's version in If-Match, answered from its acknowledgement with the new version as ETag; the Reference fields
 // RimBank does not record yet are refused; every error is Problem Details (specs/tech-stack.md §5, ADR 0024, ADR 0029).
 public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
@@ -85,6 +85,77 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
 
         updated.ShouldBe(ExpectedWithNamesAndResidency(registered));
         kept.ShouldBe(ExpectedWithNamesAndResidency(registered) with { PartyLegalEntityReference = null });
+    }
+
+    [Fact]
+    public async Task Addresses_and_contact_points_are_recorded_normalised_and_kept_by_a_later_update()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        await PutReferenceOkAsync(host, UpdateUrl(registered), Identifiers, "\"1\"", "\"2\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), NamesAndResidency, "\"2\"", "\"3\"");
+
+        var updated = await PutReferenceOkAsync(host, UpdateUrl(registered), AddressesAndContactPoints, "\"3\"", "\"4\"");
+        var kept = await PutReferenceOkAsync(
+            host,
+            UpdateUrl(registered),
+            """{ "CorporateAddress": {}, "SocialNetworkContacts": { "URLAddress": "" } }""",
+            "\"4\"",
+            "\"5\"");
+
+        updated.ShouldBe(ExpectedWithAddressesAndContactPoints(registered));
+        kept.ShouldBe(ExpectedWithAddressesAndContactPoints(registered) with { CorporateAddress = null, SocialNetworkContacts = null });
+    }
+
+    [Fact]
+    public async Task Invalid_addresses_and_contact_points_are_a_validation_problem_naming_each_bian_path()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        var body = $$"""
+            {
+              "ResidentialAddress": { "StreetName": "{{new string('S', 36)}}", "Country": { "Code": "FR" } },
+              "PartyAddress": { "TownName": "Bruxelles", "Country": { "Code": "ZZ" } },
+              "eMailAddress": { "EmailAddress": "jeanne.example.fr" },
+              "CellPhoneNumber": { "MobileNumber": "0612345678" },
+              "SocialNetworkContacts": { "URLAddress": "http://www.linkedin.com/in/jdupont" }
+            }
+            """;
+
+        var problem = await PutProblemAsync(host, UpdateUrl(registered), body, "\"1\"", 400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-invalid");
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).ShouldBe(
+            [
+                "ResidentialAddress.StreetName",
+                "ResidentialAddress.TownName",
+                "PartyAddress.Country.Code",
+                "eMailAddress.EmailAddress",
+                "CellPhoneNumber.MobileNumber",
+                "SocialNetworkContacts.URLAddress",
+            ],
+            ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task An_unrecorded_address_part_is_refused_without_a_phase_and_nothing_is_stored()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+
+        var problem = await PutProblemAsync(
+            host,
+            UpdateUrl(registered),
+            """{ "ResidentialAddress": { "AddressType": "HOME", "TownName": "Paris", "Country": { "Code": "FR" } } }""",
+            "\"1\"",
+            400);
+
+        problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-field-not-supported");
+        problem.GetProperty("errors").GetProperty("ResidentialAddress.AddressType")[0].GetString()
+            .ShouldBe("RimBank does not record this field.");
+        (await host.ScalarAsync<long>(
+            $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
+            .ShouldBe(1);
     }
 
     [Fact]
@@ -167,7 +238,7 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
             {
               "GovernmentIssuedIdentityReference": { "TaxIdentificationNumber": "FR12345678901", "OtherIdentification": "X1" },
               "Nationality": { "Code": "FR", "Citizen": "Jane" },
-              "eMailAddress": { "Identification": "jane@example.com" },
+              "PartyLegalStructure": "SAS",
               "PartyAddress": null,
               "NotABianField": "ignored"
             }
@@ -178,10 +249,10 @@ public sealed class UpdatePartyReferenceEndpointTests(PostgresqlServer server)
         problem.GetProperty("errorCode").GetString().ShouldBe("party.reference-field-not-supported");
         var errors = problem.GetProperty("errors");
         errors.EnumerateObject().Select(field => field.Name).ShouldBe(
-            ["Nationality.Citizen", "eMailAddress", "GovernmentIssuedIdentityReference.OtherIdentification"],
+            ["Nationality.Citizen", "PartyLegalStructure", "GovernmentIssuedIdentityReference.OtherIdentification"],
             ignoreOrder: true);
         errors.GetProperty("Nationality.Citizen")[0].GetString().ShouldBe("RimBank does not record this field.");
-        errors.GetProperty("eMailAddress")[0].GetString().ShouldNotBeNull().ShouldContain("1.19");
+        errors.GetProperty("PartyLegalStructure")[0].GetString().ShouldNotBeNull().ShouldContain("1.20");
         (await host.ScalarAsync<long>(
             $"SELECT count(*) FROM party_reference_data_directory.mt_events WHERE stream_id = '{registered.PartyReferenceDataDirectoryEntryId}'"))
             .ShouldBe(1);

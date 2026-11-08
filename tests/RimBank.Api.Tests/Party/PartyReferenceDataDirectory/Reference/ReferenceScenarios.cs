@@ -3,7 +3,7 @@ using Microsoft.Net.Http.Headers;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Api.Tests;
 
-// The requests the Reference endpoint tests share (roadmap 1.10). Register, Put and the Problem Details checks are the
+// The requests the Reference endpoint tests share (roadmap 1.10, 1.18 and 1.19). Register, Put and the Problem Details checks are the
 // Demographics ones.
 internal static class ReferenceScenarios
 {
@@ -26,6 +26,30 @@ internal static class ReferenceScenarios
           "Nationality": { "Code": "fr" },
           "PartyCountryOfResidence": { "Code": "BE" },
           "ResidencyStatus": { "StatusDescription": "nonresident", "StatusDateTime": "2024-01-01T00:00:00Z" }
+        }
+        """;
+
+    public const string AddressesAndContactPoints =
+        """
+        {
+          "ResidentialAddress": {
+            "StreetName": " Rue de Rivoli ",
+            "StreetBuildingIdentification": "12",
+            "PostCodeIdentification": "75001",
+            "TownName": "Paris",
+            "Country": { "Code": "fr" }
+          },
+          "CorporateAddress": {
+            "Department": "Finance",
+            "StreetName": "Avenue Louise",
+            "StreetBuildingIdentification": "54",
+            "PostCodeIdentification": "1050",
+            "TownName": "Ixelles",
+            "Country": { "Code": "BE" }
+          },
+          "eMailAddress": { "EmailAddress": " jeanne@example.fr " },
+          "CellPhoneNumber": { "MobileNumber": "+33 6 12 34 56 78" },
+          "SocialNetworkContacts": { "URLAddress": "https://www.linkedin.com/in/jdupont" }
         }
         """;
 
@@ -70,5 +94,30 @@ internal static class ReferenceScenarios
             Nationality = new CountryModel { Code = "FR" },
             PartyCountryOfResidence = new CountryModel { Code = "BE" },
             ResidencyStatus = new ResidencyStatusModel { StatusDescription = "NonResident", StatusDateTime = "2024-01-01T00:00:00+00:00" },
+        };
+
+    public static PartyReferenceResponse ExpectedWithAddressesAndContactPoints(RegisterPartyResponse registered) =>
+        ExpectedWithNamesAndResidency(registered) with
+        {
+            ResidentialAddress = new PostalAddressModel
+            {
+                StreetName = "Rue de Rivoli",
+                StreetBuildingIdentification = "12",
+                PostCodeIdentification = "75001",
+                TownName = "Paris",
+                Country = new CountryModel { Code = "FR" },
+            },
+            CorporateAddress = new PostalAddressModel
+            {
+                Department = "Finance",
+                StreetName = "Avenue Louise",
+                StreetBuildingIdentification = "54",
+                PostCodeIdentification = "1050",
+                TownName = "Ixelles",
+                Country = new CountryModel { Code = "BE" },
+            },
+            EMailAddress = new EmailAddressModel { EmailAddress = "jeanne@example.fr" },
+            CellPhoneNumber = new MobileNumberModel { MobileNumber = "+33612345678" },
+            SocialNetworkContacts = new SocialNetworkContactModel { URLAddress = "https://www.linkedin.com/in/jdupont" },
         };
 }

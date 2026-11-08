@@ -108,6 +108,54 @@ public sealed class PartyReferenceDataDirectoryEntryViewProjectionTests
                 Reference: FullReferenceDetails));
 
     [Fact]
+    public void Addresses_and_contact_points_show_in_the_reference_section() =>
+        EntryViewSpecification.Given(Registered(), ReferenceUpdated(FullReferenceDetails), ReferenceUpdated(CompleteReferenceDetails))
+            .Then(new PartyReferenceDataDirectoryEntryView(
+                EntryId.Value,
+                Version: 3,
+                PartyType.Person,
+                OpenDate,
+                Demographics,
+                Reference,
+                BankRelations,
+                Reference: CompleteReferenceDetails));
+
+    [Fact]
+    public void A_reference_event_stored_before_1_19_still_projects_with_no_addresses_or_contact_points()
+    {
+        // A PartyReferenceUpdated as roadmap 1.18 stored it: identifiers, names, date of birth and residency.
+        var stored = $$"""
+            {
+              "EntryId": "{{EntryId.Value}}",
+              "PartyReferenceId": "{{Reference.Value}}",
+              "Details": {
+                "Identifiers": {
+                  "TaxIdentificationNumber": "FR12345678901",
+                  "NationalRegistrationNumber": "1 85 05 78 006 084 36",
+                  "LegalEntityIdentifier": "{{Lei}}"
+                },
+                "Names": { "FullLegalName": "Jeanne Marie Dupont", "Salutation": "Ms" },
+                "DateOfBirth": "1990-05-17",
+                "Residency": {
+                  "Nationality": "FR",
+                  "CountryOfResidence": "BE",
+                  "ResidencyStatus": { "Code": 2, "StatusDateTime": "2024-01-01T00:00:00+00:00" }
+                }
+              }
+            }
+            """;
+        var updated = JsonSerializer.Deserialize<PartyReferenceUpdated>(stored, _json).ShouldNotBeNull();
+
+        var view = new PartyReferenceDataDirectoryEntryEvent[] { Registered(), updated }
+            .Aggregate((PartyReferenceDataDirectoryEntryView?)null, PartyReferenceDataDirectoryEntryViewProjection.Project)
+            .ShouldNotBeNull();
+
+        view.CurrentReference.ShouldBe(FullReferenceDetails);
+        view.CurrentReference.CurrentAddresses.ShouldBe(PartyAddresses.Empty);
+        view.CurrentReference.CurrentContactPoints.ShouldBe(PartyContactPoints.Empty);
+    }
+
+    [Fact]
     public void A_reference_event_stored_before_1_18_still_projects_with_no_names_or_residency()
     {
         // A PartyReferenceUpdated as roadmap 1.10 stored it: identifiers only.

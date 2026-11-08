@@ -16,6 +16,12 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// <param name="Nationality">The change of the nationality (1.18).</param>
 /// <param name="PartyCountryOfResidence">The change of the country of residence (1.18).</param>
 /// <param name="ResidencyStatus">The change of the residency status (1.18).</param>
+/// <param name="ResidentialAddress">The change of the residential address (1.19).</param>
+/// <param name="PartyAddress">The change of the party's postal address (1.19).</param>
+/// <param name="CorporateAddress">The change of the company's registered address (1.19).</param>
+/// <param name="EmailAddress">The change of the email address (1.19).</param>
+/// <param name="MobileNumber">The change of the mobile number (1.19).</param>
+/// <param name="SocialNetworkAddress">The change of the social network profile (1.19).</param>
 public sealed record PartyReferenceChanges(
     PartyIdentifierChange<TaxIdentificationNumber>? TaxIdentificationNumber,
     PartyIdentifierChange<NationalRegistrationNumber>? NationalRegistrationNumber,
@@ -25,10 +31,14 @@ public sealed record PartyReferenceChanges(
     PartyReferenceChange<DateOnly?>? DateOfBirth = null,
     PartyReferenceChange<CountryCode?>? Nationality = null,
     PartyReferenceChange<CountryCode?>? PartyCountryOfResidence = null,
-    PartyReferenceChange<ResidencyStatus?>? ResidencyStatus = null)
+    PartyReferenceChange<ResidencyStatus?>? ResidencyStatus = null,
+    PartyReferenceChange<PostalAddress?>? ResidentialAddress = null,
+    PartyReferenceChange<PostalAddress?>? PartyAddress = null,
+    PartyReferenceChange<PostalAddress?>? CorporateAddress = null,
+    PartyReferenceChange<EmailAddress?>? EmailAddress = null,
+    PartyReferenceChange<MobileNumber?>? MobileNumber = null,
+    PartyReferenceChange<SocialNetworkAddress?>? SocialNetworkAddress = null)
 {
-    private const string CountryMessage = "The country must be an ISO 3166-1 alpha-2 code, for example FR.";
-
     /// <summary>
     /// The earliest date of birth accepted (inclusive, ADR 0029): an earlier one is almost always a typo. The latest is
     /// today, checked by the decision because it needs the handler's clock.
@@ -74,7 +84,13 @@ public sealed record PartyReferenceChanges(
             ReadDateOfBirth(input.DateofBirth, fieldErrors),
             ReadCountry(input.Nationality, PartyReferenceFields.NationalityCode, fieldErrors),
             ReadCountry(input.PartyCountryOfResidence, PartyReferenceFields.PartyCountryOfResidenceCode, fieldErrors),
-            ReadResidencyStatus(input.ResidencyStatus, fieldErrors));
+            ReadResidencyStatus(input.ResidencyStatus, fieldErrors),
+            ReadAddress(input.ResidentialAddress, PartyReferenceFields.ResidentialAddress, fieldErrors),
+            ReadAddress(input.PartyAddress, PartyReferenceFields.PartyAddress, fieldErrors),
+            ReadAddress(input.CorporateAddress, PartyReferenceFields.CorporateAddress, fieldErrors),
+            ReadText<EmailAddress>(input.EmailAddress, PartyReferenceFields.EMailAddressEmailAddress, fieldErrors),
+            ReadText<MobileNumber>(input.MobileNumber, PartyReferenceFields.CellPhoneNumberMobileNumber, fieldErrors),
+            ReadText<SocialNetworkAddress>(input.SocialNetworkUrl, PartyReferenceFields.SocialNetworkContactsUrlAddress, fieldErrors));
 
         return fieldErrors.Count switch
         {
@@ -168,10 +184,10 @@ public sealed record PartyReferenceChanges(
             return new PartyReferenceChange<CountryCode?>(null);
         }
 
-        var code = CountryCode.TryCreate(country.Code.Trim().ToUpperInvariant());
+        var code = PartyReferenceCountry.Read(country.Code);
         if (code.IsFailure)
         {
-            fieldErrors[field] = [CountryMessage];
+            fieldErrors[field] = [code.Error.Message];
             return null;
         }
 
@@ -225,5 +241,34 @@ public sealed record PartyReferenceChanges(
         }
 
         return code is { } known ? new PartyReferenceChange<ResidencyStatus?>(new ResidencyStatus(known, assigned)) : null;
+    }
+
+    private static PartyReferenceChange<PostalAddress?>? ReadAddress(
+        PostalAddressInput? address,
+        string field,
+        Dictionary<string, IReadOnlyList<string>> fieldErrors)
+    {
+        if (address is null)
+        {
+            return null;
+        }
+
+        if (address.IsBlank)
+        {
+            return new PartyReferenceChange<PostalAddress?>(null);
+        }
+
+        var read = PostalAddress.TryCreate(address);
+        if (read.IsFailure)
+        {
+            foreach (var (part, messages) in read.Error.FieldErrors)
+            {
+                fieldErrors[$"{field}.{part}"] = messages;
+            }
+
+            return null;
+        }
+
+        return new PartyReferenceChange<PostalAddress?>(read.Value);
     }
 }

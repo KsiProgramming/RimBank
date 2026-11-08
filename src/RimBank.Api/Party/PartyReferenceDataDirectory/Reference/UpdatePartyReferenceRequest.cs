@@ -8,8 +8,8 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Api;
 /// The body of <c>PUT …/{partyreferencedatadirectoryid}/Reference/{referenceid}/Update</c>: BIAN's
 /// <c>UpdateReference</c> with its property names (ADR 0024, ADR 0029), as a partial update of the Reference. A value
 /// left out keeps its value, and an empty one (or an object whose parts are all empty) clears it. The other BIAN
-/// Reference fields are refused until the roadmap phase that records them (1.19–1.20); properties that are not BIAN's
-/// are ignored.
+/// Reference fields are refused until the roadmap phase that records them (1.20); properties that are not BIAN's are
+/// ignored.
 /// </summary>
 public sealed record UpdatePartyReferenceRequest
 {
@@ -45,6 +45,30 @@ public sealed record UpdatePartyReferenceRequest
     [JsonPropertyName("ResidencyStatus")]
     public ResidencyStatusModel? ResidencyStatus { get; init; }
 
+    /// <summary>BIAN <c>ResidentialAddress</c> (1.19): an ISO 20022 postal address.</summary>
+    [JsonPropertyName("ResidentialAddress")]
+    public PostalAddressModel? ResidentialAddress { get; init; }
+
+    /// <summary>BIAN <c>PartyAddress</c> (1.19): an ISO 20022 postal address.</summary>
+    [JsonPropertyName("PartyAddress")]
+    public PostalAddressModel? PartyAddress { get; init; }
+
+    /// <summary>BIAN <c>CorporateAddress</c> (1.19): an ISO 20022 postal address.</summary>
+    [JsonPropertyName("CorporateAddress")]
+    public PostalAddressModel? CorporateAddress { get; init; }
+
+    /// <summary>BIAN <c>eMailAddress</c> (1.19): the address in its <c>EmailAddress</c> (ADR 0031).</summary>
+    [JsonPropertyName("eMailAddress")]
+    public EmailAddressModel? EMailAddress { get; init; }
+
+    /// <summary>BIAN <c>CellPhoneNumber</c> (1.19): the E.164 number in its <c>MobileNumber</c> (ADR 0031).</summary>
+    [JsonPropertyName("CellPhoneNumber")]
+    public MobileNumberModel? CellPhoneNumber { get; init; }
+
+    /// <summary>BIAN <c>SocialNetworkContacts</c> (1.19): the https profile URL in its <c>URLAddress</c> (ADR 0031).</summary>
+    [JsonPropertyName("SocialNetworkContacts")]
+    public SocialNetworkContactModel? SocialNetworkContacts { get; init; }
+
     /// <summary>Every other property sent: the BIAN Reference fields RimBank does not record yet are found here.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Other { get; init; }
@@ -65,6 +89,12 @@ public sealed record UpdatePartyReferenceRequest
         .. PartsOf(PartyReferenceFields.Nationality, Nationality?.Other),
         .. PartsOf(PartyReferenceFields.PartyCountryOfResidence, PartyCountryOfResidence?.Other),
         .. PartsOf(PartyReferenceFields.ResidencyStatus, ResidencyStatus?.Other),
+        .. AddressPartsOf(PartyReferenceFields.ResidentialAddress, ResidentialAddress),
+        .. AddressPartsOf(PartyReferenceFields.PartyAddress, PartyAddress),
+        .. AddressPartsOf(PartyReferenceFields.CorporateAddress, CorporateAddress),
+        .. PartsOf(PartyReferenceFields.EMailAddress, EMailAddress?.Other),
+        .. PartsOf(PartyReferenceFields.CellPhoneNumber, CellPhoneNumber?.Other),
+        .. PartsOf(PartyReferenceFields.SocialNetworkContacts, SocialNetworkContacts?.Other),
     ];
 
     /// <summary>
@@ -92,9 +122,18 @@ public sealed record UpdatePartyReferenceRequest
                     DateofBirth,
                     Nationality is { } nationality ? new PartyCountryInput(nationality.Code) : null,
                     PartyCountryOfResidence is { } residence ? new PartyCountryInput(residence.Code) : null,
-                    ResidencyStatus is { } status ? new ResidencyStatusInput(status.StatusDescription, status.StatusDateTime) : null),
+                    ResidencyStatus is { } status ? new ResidencyStatusInput(status.StatusDescription, status.StatusDateTime) : null,
+                    ResidentialAddress?.ToInput(),
+                    PartyAddress?.ToInput(),
+                    CorporateAddress?.ToInput(),
+                    EMailAddress is { } email ? email.EmailAddress ?? string.Empty : null,
+                    CellPhoneNumber is { } phone ? phone.MobileNumber ?? string.Empty : null,
+                    SocialNetworkContacts is { } social ? social.URLAddress ?? string.Empty : null),
                 UnsupportedFields())
             .Map(changes => new UpdatePartyReference(entryId, referenceId, expectedVersion, changes, idempotencyKey));
+
+    private static IEnumerable<string> AddressPartsOf(string field, PostalAddressModel? address) =>
+        PartsOf(field, address?.Other).Concat(PartsOf($"{field}.{PostalAddress.CountryPart}", address?.Country?.Other));
 
     private static IEnumerable<string> PartsOf(string field, Dictionary<string, JsonElement>? parts) =>
         Present(parts).Select(name => $"{field}.{name}");

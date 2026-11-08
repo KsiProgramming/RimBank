@@ -52,6 +52,29 @@ public sealed class RetrievePartyReferenceEndpointTests(PostgresqlServer server)
     }
 
     [Fact]
+    public async Task Retrieve_shows_the_addresses_and_contact_points()
+    {
+        await using var host = await server.StartHostAsync();
+        var registered = await RegisterAsync(host);
+        await PutReferenceOkAsync(host, UpdateUrl(registered), Identifiers, "\"1\"", "\"2\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), NamesAndResidency, "\"2\"", "\"3\"");
+        await PutReferenceOkAsync(host, UpdateUrl(registered), AddressesAndContactPoints, "\"3\"", "\"4\"");
+
+        var result = await host.Alba.Scenario(_ =>
+        {
+            Get(_, RetrieveUrl(registered));
+            _.StatusCodeShouldBeOk();
+            _.Header(HeaderNames.ETag).SingleValueShouldEqual("\"4\"");
+        });
+
+        var body = await result.ReadAsJsonAsync<JsonElement>();
+        body.GetProperty("ResidentialAddress").GetProperty("Country").GetProperty("Code").GetString().ShouldBe("FR");
+        body.GetProperty("CellPhoneNumber").GetProperty("MobileNumber").GetString().ShouldBe("+33612345678");
+        body.TryGetProperty("PartyAddress", out _).ShouldBeFalse();
+        body.Deserialize<PartyReferenceResponse>(JsonSerializerOptions.Web).ShouldBe(ExpectedWithAddressesAndContactPoints(registered));
+    }
+
+    [Fact]
     public async Task A_reference_never_updated_answers_the_ids_only()
     {
         await using var host = await server.StartHostAsync();

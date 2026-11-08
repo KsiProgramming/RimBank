@@ -56,6 +56,42 @@ public static class PartyReferenceFields
     /// <summary>BIAN <c>ResidencyStatus.StatusDateTime</c>: when the status was assigned.</summary>
     public const string ResidencyStatusDateTime = ResidencyStatus + "." + StatusDateTimePart;
 
+    /// <summary>BIAN <c>ResidentialAddress</c> (1.19), a <c>PostalAddress</c> object.</summary>
+    public const string ResidentialAddress = "ResidentialAddress";
+
+    /// <summary>BIAN <c>PartyAddress</c> (1.19), a <c>PostalAddress</c> object.</summary>
+    public const string PartyAddress = "PartyAddress";
+
+    /// <summary>BIAN <c>CorporateAddress</c> (1.19), a <c>PostalAddress</c> object.</summary>
+    public const string CorporateAddress = "CorporateAddress";
+
+    /// <summary>BIAN <c>eMailAddress</c> (1.19), a <c>ContactPoint</c> object.</summary>
+    public const string EMailAddress = "eMailAddress";
+
+    /// <summary>The ISO 20022 <c>ElectronicAddress</c> part that holds an email address (ADR 0031).</summary>
+    public const string EmailAddressPart = "EmailAddress";
+
+    /// <summary>BIAN <c>eMailAddress.EmailAddress</c>.</summary>
+    public const string EMailAddressEmailAddress = EMailAddress + "." + EmailAddressPart;
+
+    /// <summary>BIAN <c>CellPhoneNumber</c> (1.19), a <c>ContactPoint</c> object.</summary>
+    public const string CellPhoneNumber = "CellPhoneNumber";
+
+    /// <summary>The ISO 20022 <c>PhoneAddress</c> part that holds a mobile number (ADR 0031).</summary>
+    public const string MobileNumberPart = "MobileNumber";
+
+    /// <summary>BIAN <c>CellPhoneNumber.MobileNumber</c>.</summary>
+    public const string CellPhoneNumberMobileNumber = CellPhoneNumber + "." + MobileNumberPart;
+
+    /// <summary>BIAN <c>SocialNetworkContacts</c> (1.19), a <c>ContactPoint</c> object.</summary>
+    public const string SocialNetworkContacts = "SocialNetworkContacts";
+
+    /// <summary>The ISO 20022 <c>ElectronicAddress</c> part that holds a URL (ADR 0031).</summary>
+    public const string UrlAddressPart = "URLAddress";
+
+    /// <summary>BIAN <c>SocialNetworkContacts.URLAddress</c>.</summary>
+    public const string SocialNetworkContactsUrlAddress = SocialNetworkContacts + "." + UrlAddressPart;
+
     /// <summary>The only part of a BIAN <c>Country</c> object RimBank records.</summary>
     public const string CountryCodePart = "Code";
 
@@ -71,12 +107,6 @@ public static class PartyReferenceFields
     /// </summary>
     public static FrozenDictionary<string, string> Staged { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["ResidentialAddress"] = "1.19",
-        ["PartyAddress"] = "1.19",
-        ["CorporateAddress"] = "1.19",
-        ["eMailAddress"] = "1.19",
-        ["CellPhoneNumber"] = "1.19",
-        ["SocialNetworkContacts"] = "1.19",
         ["PartyLegalStructure"] = "1.20",
         ["PoliticalExposureType"] = "1.20",
         ["PoliticalExposureDescriptionRecord"] = "1.20",
