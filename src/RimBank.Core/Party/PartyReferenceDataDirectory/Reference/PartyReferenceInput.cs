@@ -22,6 +22,15 @@ namespace RimBank.Party.PartyReferenceDataDirectory;
 /// </param>
 /// <param name="MobileNumber">BIAN <c>CellPhoneNumber.MobileNumber</c> (1.19, ADR 0031).</param>
 /// <param name="SocialNetworkUrl">BIAN <c>SocialNetworkContacts.URLAddress</c> (1.19, ADR 0031).</param>
+/// <param name="PartyLegalStructure">BIAN <c>PartyLegalStructure</c> (1.20, ADR 0032), for example <c>Co-Operative</c>.</param>
+/// <param name="PoliticalExposureType">BIAN <c>PoliticalExposureType</c> (1.20).</param>
+/// <param name="PoliticalExposureDescription">BIAN <c>PoliticalExposureDescriptionRecord</c> (1.20).</param>
+/// <param name="CustomerSinceDate">BIAN <c>CustomerSinceDate</c> (1.20): an ISO 8601 date or date-time.</param>
+/// <param name="GovernmentIssuedDocument">BIAN <c>GovernmentIssuedDocumentDetails</c> (1.20).</param>
+/// <param name="DocumentDirectoryEntryIdentification">
+/// BIAN <c>DocumentDirectoryEntryInstanceReference.DocumentDirectoryEntryIdentification</c> (1.20). An object with no
+/// value is sent as blank.
+/// </param>
 public sealed record PartyReferenceInput(
     string? TaxIdentificationNumber = null,
     string? NationalRegistrationNumber = null,
@@ -37,7 +46,13 @@ public sealed record PartyReferenceInput(
     PostalAddressInput? CorporateAddress = null,
     string? EmailAddress = null,
     string? MobileNumber = null,
-    string? SocialNetworkUrl = null)
+    string? SocialNetworkUrl = null,
+    string? PartyLegalStructure = null,
+    string? PoliticalExposureType = null,
+    string? PoliticalExposureDescription = null,
+    string? CustomerSinceDate = null,
+    PartyDocumentInput? GovernmentIssuedDocument = null,
+    string? DocumentDirectoryEntryIdentification = null)
 {
     /// <summary>Nothing sent: every value is kept.</summary>
     public static PartyReferenceInput None { get; } = new();
@@ -98,4 +113,30 @@ public sealed record PostalAddressInput(
         && string.IsNullOrWhiteSpace(PostCodeIdentification)
         && string.IsNullOrWhiteSpace(TownName)
         && string.IsNullOrWhiteSpace(Country?.Code);
+}
+
+/// <summary>
+/// A BIAN <c>GovernmentIssuedDocumentDetails</c> (<c>PartyDocument</c>) object as a caller sent it (roadmap 1.20,
+/// ADR 0032): the parts RimBank records, as text. Adapters report its other parts, at any depth, as unsupported fields. A
+/// document whose parts are all blank or missing (<see cref="IsBlank"/>) clears the document.
+/// </summary>
+/// <param name="PartyDocumentType">BIAN <c>PartyDocumentType</c>.</param>
+/// <param name="DocumentNumber">BIAN <c>DocumentReference.DocumentIdentification.IdentifierValue</c>.</param>
+/// <param name="DocumentName">BIAN <c>DocumentReference.DocumentName</c>.</param>
+/// <param name="ValidFrom">BIAN <c>DocumentReference.DocumentValidityPeriod.FromDateTime.DateTimeContent</c>.</param>
+/// <param name="ValidTo">BIAN <c>DocumentReference.DocumentValidityPeriod.ToDateTime.DateTimeContent</c>.</param>
+public sealed record PartyDocumentInput(
+    string? PartyDocumentType = null,
+    string? DocumentNumber = null,
+    string? DocumentName = null,
+    string? ValidFrom = null,
+    string? ValidTo = null)
+{
+    /// <summary>Whether every part is blank or missing, so the document is cleared.</summary>
+    public bool IsBlank =>
+        string.IsNullOrWhiteSpace(PartyDocumentType)
+        && string.IsNullOrWhiteSpace(DocumentNumber)
+        && string.IsNullOrWhiteSpace(DocumentName)
+        && string.IsNullOrWhiteSpace(ValidFrom)
+        && string.IsNullOrWhiteSpace(ValidTo);
 }
