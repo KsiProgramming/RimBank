@@ -55,6 +55,21 @@ public sealed partial class PartyReferenceDataDirectoryCatalogueTests
             .ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Each_published_channel_has_its_event_and_each_deferred_channel_has_none()
+    {
+        var specification = await BianSpecifications.LoadAsync(PartyReferenceDataDirectoryCatalogue.ServiceDomain);
+        var published = PartyReferenceDataDirectoryCatalogue.Channels.Where(row => row.PublishedEvent is not null).ToList();
+
+        PartyReferenceDataDirectoryCatalogue.Channels
+            .Where(row => (row.Phase == PartyReferenceDataDirectoryCatalogue.Deferred) == (row.PublishedEvent is not null))
+            .Select(row => row.Address)
+            .ShouldBeEmpty("a channel has an event exactly when it is not deferred");
+        published.Select(row => $"{row.Address} <- {row.PublishedEvent!.GetField("Channel")?.GetRawConstantValue()}")
+            .ShouldBe(published.Select(row => $"{row.Address} <- {row.Address}"), "each event declares the channel it is catalogued on");
+        published.Select(row => row.Address).ShouldBeChannelsOf(specification);
+    }
+
     private static List<string> Duplicates(IEnumerable<string> values) =>
         values.GroupBy(value => value, StringComparer.Ordinal).Where(group => group.Count() > 1).Select(group => group.Key).ToList();
 

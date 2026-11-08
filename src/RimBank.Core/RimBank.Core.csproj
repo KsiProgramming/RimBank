@@ -11,5 +11,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
+    <ProjectReference Include="..\Party\RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage\RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage.csproj" />
   </ItemGroup>
 </Project>

@@ -35,6 +35,9 @@ GET {{host}}/PartyReferenceDataDirectory/does-not-exist/Retrieve
 Authorization: Bearer {{token.response.body.$.access_token}}
 
 ### Party Reference Data Directory (ADR 0024): register a party. The ETag of the answer is the entry's version, "1".
+# It also publishes party-reference-data-directory-entry.created.v1 (roadmap 1.13, ADR 0036), and each accepted Update
+# below publishes …updated.v1; a refused one publishes nothing. See them in the party schema:
+#   SELECT message_type, received_at FROM party_reference_data_directory.wolverine_incoming_envelopes;
 # @name register
 POST {{host}}/PartyReferenceDataDirectory/Register
 Authorization: Bearer {{token.response.body.$.access_token}}

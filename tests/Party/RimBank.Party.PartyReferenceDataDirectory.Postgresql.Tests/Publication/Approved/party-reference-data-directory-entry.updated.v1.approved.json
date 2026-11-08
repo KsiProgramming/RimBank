@@ -1,0 +1,43 @@
+{
+  "channel": "PartyReferenceDataDirectoryEntry/Updated",
+  "messageIdentity": "party-reference-data-directory-entry.updated.v1",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "eventId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "occurredAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "partyReferenceDataDirectoryEntryId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "version": {
+        "type": "integer"
+      },
+      "partyType": {
+        "type": "string"
+      },
+      "directoryEntryDateType": {
+        "type": "string"
+      },
+      "directoryEntryDate": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "eventId",
+      "occurredAt",
+      "partyReferenceDataDirectoryEntryId",
+      "version",
+      "partyType",
+      "directoryEntryDateType",
+      "directoryEntryDate"
+    ]
+  }
+}

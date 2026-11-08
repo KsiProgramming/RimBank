@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RimBank.Conformance.Testing\RimBank.Conformance.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Party\RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage\RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage.csproj" />
   </ItemGroup>
 
   <ItemGroup>

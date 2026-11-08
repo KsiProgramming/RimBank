@@ -2,6 +2,7 @@ using System.Text.Json;
 using RimBank.SharedKernel;
 using RimBank.SharedKernel.Testing;
 using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
+using Published = RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
@@ -87,12 +88,13 @@ public sealed class RegisterPartyHandlerTests
     {
         var directory = new EveryEntryRegisteredDirectory();
 
-        var result = await RegisterPartyHandler.HandleAsync(
+        var (result, created) = await RegisterPartyHandler.HandleAsync(
             new RegisterParty(PartyType.Person, IdempotencyKey.From("register-1")),
             directory,
             _time,
             TestContext.Current.CancellationToken);
 
+        created.ShouldBeNull();
         result.IsFailure.ShouldBeTrue();
         result.Error.Kind.ShouldBe(ErrorKind.Conflict);
         result.Error.Code.ShouldBe("party.party-already-registered");
@@ -124,7 +126,42 @@ public sealed class RegisterPartyHandlerTests
         JsonSerializer.Deserialize<RegisterPartyAcknowledged>(json, _json).ShouldBe(acknowledged);
     }
 
-    private Task<Result<RegisterPartyAcknowledged>> Register(PartyType partyType = PartyType.Person, string key = "register-1") =>
+    [Theory]
+    [InlineData(PartyType.Person, Published.PartyTypes.Person)]
+    [InlineData(PartyType.Organisation, Published.PartyTypes.Organisation)]
+    public async Task An_accepted_registration_publishes_the_entry_created_at_version_1(PartyType partyType, string publishedPartyType)
+    {
+        var (result, created) = await Handle(partyType);
+
+        var acknowledged = result.Value;
+        var published = created.ShouldNotBeNull();
+        published.ShouldBe(new Published.PartyReferenceDataDirectoryEntryCreated(
+            published.EventId,
+            OpenDate,
+            acknowledged.EntryId.Value,
+            1,
+            publishedPartyType,
+            Published.DirectoryEntryDateTypes.OpenDate,
+            OpenDate));
+        published.EventId.Version.ShouldBe(7);
+        published.EventId.ShouldNotBe(acknowledged.EntryId.Value);
+    }
+
+    [Fact]
+    public async Task A_refused_registration_publishes_nothing()
+    {
+        var (result, created) = await Handle((PartyType)99);
+
+        result.IsFailure.ShouldBeTrue();
+        created.ShouldBeNull();
+    }
+
+    private async Task<Result<RegisterPartyAcknowledged>> Register(PartyType partyType = PartyType.Person, string key = "register-1") =>
+        (await Handle(partyType, key)).Outcome;
+
+    private Task<(Result<RegisterPartyAcknowledged> Outcome, Published.PartyReferenceDataDirectoryEntryCreated? Created)> Handle(
+        PartyType partyType = PartyType.Person,
+        string key = "register-1") =>
         RegisterPartyHandler.HandleAsync(
             new RegisterParty(partyType, IdempotencyKey.From(key)),
             _directory,

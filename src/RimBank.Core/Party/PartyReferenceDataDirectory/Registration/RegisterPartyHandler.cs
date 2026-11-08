@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using RimBank.SharedKernel;
+using Published = RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage;
 
 namespace RimBank.Party.PartyReferenceDataDirectory;
 
@@ -9,13 +10,18 @@ public static class RegisterPartyHandler
     /// <summary>
     /// Creates the entry id, the ids of its Demographics, Reference and BankRelations, and the open date; decides
     /// Register against the entry's stored history; and starts the entry's stream only when the decision accepts.
+    /// An accepted registration also publishes <c>PartyReferenceDataDirectoryEntry/Created</c>, mapped from the decided
+    /// event and cascaded into the outbox in the same transaction (ADR 0036).
     /// </summary>
     /// <param name="command">The command.</param>
     /// <param name="directory">The context's write port.</param>
     /// <param name="time">The clock for the new ids and the open date.</param>
     /// <param name="cancellationToken">Cancels the load.</param>
-    /// <returns>The acknowledgement built from the decided state, or the decision's <see cref="Error"/>.</returns>
-    public static async Task<Result<RegisterPartyAcknowledged>> HandleAsync(
+    /// <returns>
+    /// The acknowledgement built from the decided state with the integration event to publish, or the decision's
+    /// <see cref="Error"/> with nothing to publish.
+    /// </returns>
+    public static async Task<(Result<RegisterPartyAcknowledged> Outcome, Published.PartyReferenceDataDirectoryEntryCreated? Created)> HandleAsync(
         RegisterParty command,
         IPartyDirectory directory,
         TimeProvider time,
@@ -36,12 +42,26 @@ public static class RegisterPartyHandler
         var history = await directory.LoadEntryAsync(register.EntryId, cancellationToken);
         var state = history.Aggregate(PartyReferenceDataDirectoryEntry.Initial, PartyReferenceDataDirectoryEntry.Evolve);
 
-        return PartyReferenceDataDirectoryEntry.Decide(register, state).Map(events =>
-        {
-            directory.StartEntry(register.EntryId, events);
-            return Acknowledge(events.Aggregate(state, PartyReferenceDataDirectoryEntry.Evolve), history.Count + events.Count);
-        });
+        return PartyReferenceDataDirectoryEntry.Decide(register, state).Match<(Result<RegisterPartyAcknowledged>, Published.PartyReferenceDataDirectoryEntryCreated?)>(
+            events =>
+            {
+                directory.StartEntry(register.EntryId, events);
+                return (
+                    Acknowledge(events.Aggregate(state, PartyReferenceDataDirectoryEntry.Evolve), history.Count + events.Count),
+                    Publish(events, history.Count, time));
+            },
+            error => (error, null));
     }
+
+    private static Published.PartyReferenceDataDirectoryEntryCreated? Publish(
+        IReadOnlyList<PartyReferenceDataDirectoryEntryEvent> events,
+        long versionBefore,
+        TimeProvider time) =>
+        events
+            .Select((domainEvent, index) => domainEvent is PartyRegistered registered
+                ? PartyReferenceDataDirectoryPublication.Created(registered, versionBefore + index + 1, Guid.CreateVersion7(time.GetUtcNow()))
+                : null)
+            .SingleOrDefault(published => published is not null);
 
     private static RegisterPartyAcknowledged Acknowledge(PartyReferenceDataDirectoryEntry registered, long version) =>
         registered switch

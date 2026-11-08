@@ -1077,6 +1077,7 @@
       "rimbank.core": {
         "type": "Project",
         "dependencies": {
+          "RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage": "[0.1.0-alpha, )",
           "RimBank.SharedKernel": "[0.1.0-alpha, )"
         }
       },
@@ -1114,6 +1115,9 @@
           "RimBank.Core": "[0.1.0-alpha, )",
           "RimBank.Postgresql": "[0.1.0-alpha, )"
         }
+      },
+      "rimbank.party.partyreferencedatadirectory.publishedlanguage": {
+        "type": "Project"
       },
       "rimbank.postgresql": {
         "type": "Project",

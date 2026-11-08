@@ -88,12 +88,12 @@ Before a service domain is created, its mapping must be checked against the BIAN
 │  │  ├─ (root)                                 # namespace RimBank.Api: the Idempotency-Key header (ADR 0018), stream-version entity tags (ETag, If-None-Match, If-Match: ADR 0027)
 │  │  └─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory.Api for every folder: Registration/, Retrieval/, Update/, Demographics/, Reference/, Associations/, BankRelations/
 │  ├─ RimBank.Mcp/                # MCP conventions at its root: Error → isError Problem Details, the tool error filter (ADR 0022); each context's tools as a folder from 1.16 (ADR 0025)
-│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018); one retry on a lost concurrency race (ADR 0027)
+│  ├─ RimBank.Postgresql/         # Marten conventions every .Postgresql uses: per-context store, role, views, rebuild (ADR 0016); Wolverine wiring with write and read ports (ADR 0017); command idempotency (ADR 0018); one retry on a lost concurrency race (ADR 0027); published-language message identities (ADR 0036)
 │  ├─ RimBank.Core/               # the core of every context: domain + application logic, one folder per context (ADR 0023)
 │  │  ├─ Party/PartyReferenceDataDirectory/     # namespace RimBank.Party.PartyReferenceDataDirectory for every folder (§3.4, ADR 0026)
 │  │  └─ LoansAndDeposits/CurrentAccount/       # namespace RimBank.LoansAndDeposits.CurrentAccount
 │  └─ Party/                      # a context's own adapter projects, each referencing RimBank.Core
-│     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/
+│     ├─ RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/   # BCL only: the integration events, each declaring its Channel and MessageIdentity (ADR 0036)
 │     ├─ RimBank.Party.PartyReferenceDataDirectory.Postgresql/
 │     └─ RimBank.Party.PartyReferenceDataDirectory.Subscriptions/   # only when it consumes other contexts' events
 └─ tests/
@@ -205,6 +205,8 @@ RimBank.Core/Party/PartyReferenceDataDirectory/      # namespace RimBank.Party.P
 │  ├─ Events.cs                           # BankRelationsUpdated (decided by the entry's Decide)
 │  ├─ UpdateBankRelations.cs              # command, with its acknowledgement and handler (which loads the referenced entry)
 │  └─ RetrieveBankRelations.cs            # query over the entry's view, with its handler
+├─ Publication/                           # published language (1.13, ADR 0036)
+│  └─ PartyReferenceDataDirectoryPublication.cs  # pure mapper: decided entry events → .PublishedLanguage events, cascaded by the handlers
 ├─ IPartyDirectory.cs                     # write port: load and append the entry and association event streams
 └─ IPartyDirectoryEnquiry.cs              # read port: query the entry and association views
 ```
@@ -319,7 +321,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 ### 8.4 Read models across contexts (loose coupling)
 
 - **Ownership:** a view belongs to exactly one context and is reachable only through that context's read port, `.Api` and `.Mcp`. Views are never shared, never put in `.PublishedLanguage`, and never read by another context.
-- **Producer side:** integration events are mapped from domain events (through the outbox), never from read models. They carry the state consumers need (event-carried state transfer), are versioned, and only change in backwards-compatible ways. A contract test pins each published event's schema.
+- **Producer side:** integration events are mapped from domain events (through the outbox), never from read models. They carry the state consumers need (event-carried state transfer), are versioned, and only change in backwards-compatible ways. A contract test pins each published event's schema. Each event declares its BIAN `Channel` and a versioned `MessageIdentity` (for example `party-reference-data-directory-entry.created.v1`); the command handler maps it from the decided events with a pure mapper in core and returns it as a cascaded message, so it commits with the events ([ADR 0036](../docs/adr/0036-party-published-language.md)).
 - **Consumer side:** the `.Subscriptions` adapter receives the integration event (idempotently, through Wolverine's durable inbox), translates it into the consumer's own types, and records it as a local reference event in the consumer's own store. The local reference read model is projected from those local events, so it can be rebuilt **without the producer**.
 - **Cross-context requests are events, not commands.** A context never sends another context's command, because commands are internal to the context that owns them and are never in `.PublishedLanguage`. When context A needs context B to act, A publishes a request event in A's `.PublishedLanguage` (for example `PaymentOrderExecutionRequested`). B's `.Subscriptions` adapter turns it into one of B's own commands, decided by B's rules. B then publishes the outcome (for example `CurrentAccountPaymentExecuted` or `CurrentAccountPaymentRejected`), and A's `.Subscriptions` adapter reacts to it. The requesting record's identifier (for example the payment order ID) is the correlation ID and the idempotency key of the translated command, so a redelivered request never moves money twice.
 - **Minimal copies:** a local reference read model keeps only the fields its context needs (for example "party is known and active", not the party's demographics). This also limits the spread of PII.
@@ -334,7 +336,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 | Property-based | FsCheck | Money arithmetic, balance invariants, evolve/decide laws, projection/aggregate agreement |
 | Integration | Testcontainers (PostgreSQL), Alba | Marten persistence and projections (inline and async daemon), Wolverine outbox, HTTP endpoints end to end |
 | Architecture | ArchUnitNET | Dependency rules and CQRS rules in §4, naming rules in §3, cross-context isolation in §8.4 |
-| Contract | OpenAPI/AsyncAPI conformance tests (`RimBank.Conformance.Testing`: Microsoft.OpenApi, YamlDotNet, [ADR 0020](../docs/adr/0020-bian-conformance-harness.md)); published-event schema snapshots | Implemented routes and channels exist in the BIAN v14 ext-DDD YAML with the spec's method, `Retrieve` is `GET` and nothing else is; published integration events stay backwards compatible |
+| Contract | OpenAPI/AsyncAPI conformance tests (`RimBank.Conformance.Testing`: Microsoft.OpenApi, YamlDotNet, [ADR 0020](../docs/adr/0020-bian-conformance-harness.md)); published-event schema snapshots (`JsonSchemaExporter` against committed approved files, [ADR 0036](../docs/adr/0036-party-published-language.md)) | Implemented routes and channels exist in the BIAN v14 ext-DDD YAML with the spec's method, `Retrieve` is `GET` and nothing else is; published integration events stay backwards compatible |
 | MCP | MCP C# SDK client in-process against the test host | Tool list, input schemas, results, Problem Details errors, and parity with the HTTP endpoint for the same operation |
 | Mutation (later) | Stryker.NET | The `RimBank.Core` folders of money-moving domains (`--mutate "<BusinessDomain>/<ServiceDomain>/**"`) |
 

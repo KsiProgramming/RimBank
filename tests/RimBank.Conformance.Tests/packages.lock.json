@@ -192,6 +192,9 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
+      "rimbank.party.partyreferencedatadirectory.publishedlanguage": {
+        "type": "Project"
+      },
       "Microsoft.OpenApi": {
         "type": "CentralTransitive",
         "requested": "[2.13.0, )",
