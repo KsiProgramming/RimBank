@@ -55,7 +55,7 @@ Drivers:
   | BIAN field | Part read | Value object | Rule |
   |---|---|---|---|
   | `eMailAddress` | `EmailAddress` | `EmailAddress` | Trimmed, at most 256 characters. Exactly one `@`, a non-empty local part, a domain with at least one dot, no whitespace and no display name. Stored as written |
-  | `CellPhoneNumber` | `MobileNumber` | `MobileNumber` | Trimmed, with spaces, hyphens and dots removed, then E.164 (`+`, a non-zero digit, 2 to 15 digits in all). Stored normalised, for example `+33612345678`. This also accepts ISO 20022's `+33-612345678` |
+  | `CellPhoneNumber` | `MobileNumber` | `MobileNumber` | Trimmed, with spaces, hyphens and dots removed, then E.164 (`+`, a non-zero digit, 7 to 15 digits in all; the shortest numbers in use, such as Niue +683 xxxx, have 7). Stored normalised, for example `+33612345678`. This also accepts ISO 20022's `+33-612345678` |
   | `SocialNetworkContacts` | `URLAddress` | `SocialNetworkAddress` | Trimmed, at most 2048 characters, an absolute `https` URL. Stored as written |
 
   - Any other part of a contact object (`Identification`, `BICAddress`, `TemporaryIndicator`, and so on, or another subtype's property such as `PhoneNumber` or `EmailAddress` inside `CellPhoneNumber`) is refused with `party.reference-field-not-supported`, and no phase is named.

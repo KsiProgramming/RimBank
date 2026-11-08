@@ -23,7 +23,7 @@ Every group is written test first. After each group, the solution builds and its
     - invalid: no `@`, two `@`, an empty local part, a domain without a dot, inner whitespace, a display name (`Jeanne <j@x.fr>`), and 257 characters.
   - `MobileNumberTests`:
     - `+33 6 12 34 56 78`, `+33-612345678` and `+33.6.12.34.56.78` → `+33612345678`;
-    - invalid: no `+` (`0612345678`), `+0…`, letters, parentheses (`+33 (0)6 12 34 56 78`, because stripping them would keep the trunk `0` and give a wrong number), more than 15 digits, fewer than 3 digits.
+    - invalid: no `+` (`0612345678`), `+0…`, letters, parentheses (`+33 (0)6 12 34 56 78`, because stripping them would keep the trunk `0` and give a wrong number), more than 15 digits, fewer than 7 digits.
   - `SocialNetworkAddressTests`:
     - an `https` URL is accepted;
     - invalid: `http`, a relative URL, `javascript:`, and 2049 characters.

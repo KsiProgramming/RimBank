@@ -44,3 +44,44 @@ public sealed record PartyCountryInput(string? Code);
 /// <param name="StatusDescription">The code sent: <c>Resident</c> or <c>NonResident</c>, in any case.</param>
 /// <param name="StatusDateTime">When the status was assigned: an ISO 8601 date-time, or <c>null</c>.</param>
 public sealed record ResidencyStatusInput(string? StatusDescription, string? StatusDateTime);
+
+/// <summary>
+/// A BIAN <c>PostalAddress</c> object as a caller sent it (roadmap 1.19, ADR 0031): the parts RimBank records, as text.
+/// Adapters report its other parts (<c>AddressType</c>, <c>Location</c>, …) and the other parts of its <c>Country</c> as
+/// unsupported fields. An address whose parts are all blank or missing (<see cref="IsBlank"/>) clears the address.
+/// </summary>
+/// <param name="Department">BIAN <c>Department</c>.</param>
+/// <param name="SubDepartment">BIAN <c>SubDepartment</c>.</param>
+/// <param name="StreetName">BIAN <c>StreetName</c>.</param>
+/// <param name="StreetBuildingIdentification">BIAN <c>StreetBuildingIdentification</c>.</param>
+/// <param name="BuildingName">BIAN <c>BuildingName</c>.</param>
+/// <param name="Floor">BIAN <c>Floor</c>.</param>
+/// <param name="PostOfficeBox">BIAN <c>PostOfficeBox</c>.</param>
+/// <param name="PostCodeIdentification">BIAN <c>PostCodeIdentification</c>.</param>
+/// <param name="TownName">BIAN <c>TownName</c>.</param>
+/// <param name="Country">BIAN <c>Country</c>, whose <c>Code</c> is read.</param>
+public sealed record PostalAddressInput(
+    string? Department = null,
+    string? SubDepartment = null,
+    string? StreetName = null,
+    string? StreetBuildingIdentification = null,
+    string? BuildingName = null,
+    string? Floor = null,
+    string? PostOfficeBox = null,
+    string? PostCodeIdentification = null,
+    string? TownName = null,
+    PartyCountryInput? Country = null)
+{
+    /// <summary>Whether every part is blank or missing, so the address is cleared.</summary>
+    public bool IsBlank =>
+        string.IsNullOrWhiteSpace(Department)
+        && string.IsNullOrWhiteSpace(SubDepartment)
+        && string.IsNullOrWhiteSpace(StreetName)
+        && string.IsNullOrWhiteSpace(StreetBuildingIdentification)
+        && string.IsNullOrWhiteSpace(BuildingName)
+        && string.IsNullOrWhiteSpace(Floor)
+        && string.IsNullOrWhiteSpace(PostOfficeBox)
+        && string.IsNullOrWhiteSpace(PostCodeIdentification)
+        && string.IsNullOrWhiteSpace(TownName)
+        && string.IsNullOrWhiteSpace(Country?.Code);
+}
