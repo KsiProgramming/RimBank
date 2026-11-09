@@ -1,4 +1,5 @@
 using RimBank.Conformance.Testing;
+using RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage;
 
 namespace RimBank.Conformance.Tests;
 
@@ -11,7 +12,8 @@ public sealed record CataloguedOperation(string OperationId, BianOperationKind K
 /// <summary>One BIAN AsyncAPI channel of a service domain, as an ADR maps it.</summary>
 /// <param name="Address">The channel address, for example <c>PartyReferenceDataDirectoryEntry/Created</c>.</param>
 /// <param name="Phase">The roadmap phase that publishes it, or <see cref="PartyReferenceDataDirectoryCatalogue.Deferred"/>.</param>
-public sealed record CataloguedChannel(string Address, string Phase);
+/// <param name="PublishedEvent">The integration event published on it (ADR 0036), or <see langword="null"/> while it is deferred.</param>
+public sealed record CataloguedChannel(string Address, string Phase, Type? PublishedEvent = null);
 
 // Roadmap 1.1: the operation and channel tables of ADR 0024 (docs/adr/0024-party-reference-data-directory-mapping.md)
 // as data, pinned to the real BIAN v14 specifications by PartyReferenceDataDirectoryCatalogueTests.
@@ -49,8 +51,8 @@ public static class PartyReferenceDataDirectoryCatalogue
     /// <summary>Every channel of the AsyncAPI specification.</summary>
     public static IReadOnlyList<CataloguedChannel> Channels { get; } =
     [
-        new("PartyReferenceDataDirectoryEntry/Created", "1.13"),
-        new("PartyReferenceDataDirectoryEntry/Updated", "1.13"),
+        new("PartyReferenceDataDirectoryEntry/Created", "1.13", typeof(PartyReferenceDataDirectoryEntryCreated)),
+        new("PartyReferenceDataDirectoryEntry/Updated", "1.13", typeof(PartyReferenceDataDirectoryEntryUpdated)),
         new("Demographics/Created", Deferred),
         new("Demographics/Updated", Deferred),
         new("Reference/Created", Deferred),

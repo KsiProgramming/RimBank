@@ -35,6 +35,7 @@ public sealed class SolutionRulesTests
                 "RimBank.Mcp.Tests",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql",
                 "RimBank.Party.PartyReferenceDataDirectory.Postgresql.Tests",
+                "RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage",
                 "RimBank.Problems",
                 "RimBank.Problems.Tests",
                 "RimBank.Postgresql",

@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Party/RimBank.Party.PartyReferenceDataDirectory.Postgresql/RimBank.Party.PartyReferenceDataDirectory.Postgresql.csproj" />
+    <Project Path="src/Party/RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage/RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage.csproj" />
     <Project Path="src/RimBank.Api/RimBank.Api.csproj" />
     <Project Path="src/RimBank.AppHost/RimBank.AppHost.csproj" />
     <Project Path="src/RimBank.Core/RimBank.Core.csproj" />

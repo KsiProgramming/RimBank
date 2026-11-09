@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Party Reference Data Directory's published language (specs/tech-stack.md §3, §8.4, ADR 0036): the integration
+    events other contexts may consume, and nothing else. BCL only: no PackageReference or ProjectReference
+    (specs/tech-stack.md §4), so a consumer takes no dependency but this contract.
+  -->
+  <PropertyGroup>
+    <RootNamespace>RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage</RootNamespace>
+  </PropertyGroup>
+</Project>

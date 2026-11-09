@@ -2,6 +2,7 @@ using System.Text.Json;
 using RimBank.SharedKernel;
 using RimBank.SharedKernel.Testing;
 using static RimBank.Party.PartyReferenceDataDirectory.Tests.EntryExamples;
+using Published = RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Tests;
 
@@ -104,7 +105,59 @@ public sealed class UpdatePartyReferenceDataDirectoryEntryHandlerTests
         JsonSerializer.Deserialize<UpdatePartyReferenceDataDirectoryEntryAcknowledged>(json, _json).ShouldBe(acknowledged);
     }
 
-    private Task<Result<UpdatePartyReferenceDataDirectoryEntryAcknowledged>> Update(long expectedVersion, PartyType? partyType) =>
+    [Fact]
+    public async Task An_accepted_update_publishes_the_entry_updated_at_its_new_version()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Person), Updated(PartyType.Organisation));
+
+        var (result, updated) = await Handle(expectedVersion: 2, PartyType.Person);
+
+        result.IsSuccess.ShouldBeTrue();
+        var published = updated.ShouldNotBeNull();
+        published.ShouldBe(new Published.PartyReferenceDataDirectoryEntryUpdated(
+            published.EventId,
+            RefreshDate,
+            EntryId.Value,
+            3,
+            Published.PartyTypes.Person,
+            Published.DirectoryEntryDateTypes.RefreshDate,
+            RefreshDate));
+        published.EventId.Version.ShouldBe(7);
+    }
+
+    [Fact]
+    public async Task An_update_that_keeps_the_party_type_still_publishes_the_full_state()
+    {
+        _directory.Seed(EntryId, Registered(PartyType.Organisation));
+
+        var (_, updated) = await Handle(expectedVersion: 1, partyType: null);
+
+        updated.ShouldNotBeNull().PartyType.ShouldBe(Published.PartyTypes.Organisation);
+    }
+
+    [Theory]
+    [InlineData(true, 1, 1)]
+    [InlineData(false, 0, 1)]
+    [InlineData(false, 1, 99)]
+    public async Task A_refused_update_publishes_nothing(bool unknownEntry, long expectedVersion, int partyType)
+    {
+        if (!unknownEntry)
+        {
+            _directory.Seed(EntryId, Registered());
+        }
+
+        var (result, updated) = await Handle(expectedVersion, (PartyType)partyType);
+
+        result.IsFailure.ShouldBeTrue();
+        updated.ShouldBeNull();
+    }
+
+    private async Task<Result<UpdatePartyReferenceDataDirectoryEntryAcknowledged>> Update(long expectedVersion, PartyType? partyType) =>
+        (await Handle(expectedVersion, partyType)).Outcome;
+
+    private Task<(Result<UpdatePartyReferenceDataDirectoryEntryAcknowledged> Outcome, Published.PartyReferenceDataDirectoryEntryUpdated? Updated)> Handle(
+        long expectedVersion,
+        PartyType? partyType) =>
         UpdatePartyReferenceDataDirectoryEntryHandler.HandleAsync(
             new UpdatePartyReferenceDataDirectoryEntry(EntryId, expectedVersion, partyType, IdempotencyKey.From("update-1")),
             _directory,

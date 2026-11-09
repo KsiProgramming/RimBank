@@ -148,12 +148,12 @@ The exact names are fixed by the phase that adds each event, within this list. E
 
 ### Integration channels
 
-Integration events are mapped from domain events, never from views (tech-stack §8.4). Each one carries the state its consumers need.
+Integration events are mapped from domain events, never from views (tech-stack §8.4). Each one carries the state its consumers need. [ADR 0036](0036-party-published-language.md) fixes their shape, identity, versioning and contract test.
 
 | AsyncAPI channel | From | Phase |
 |---|---|---|
-| `PartyReferenceDataDirectoryEntry/Created` | `PartyRegistered` | 1.13 |
-| `PartyReferenceDataDirectoryEntry/Updated` | `PartyReferenceDataDirectoryEntryUpdated` | 1.13 |
+| `PartyReferenceDataDirectoryEntry/Created` | `PartyRegistered`, published as `PartyReferenceDataDirectoryEntryCreated` (`party-reference-data-directory-entry.created.v1`) | 1.13 |
+| `PartyReferenceDataDirectoryEntry/Updated` | `PartyReferenceDataDirectoryEntryUpdated`, published as `PartyReferenceDataDirectoryEntryUpdated` (`party-reference-data-directory-entry.updated.v1`) | 1.13 |
 | `Demographics/Created`, `Demographics/Updated` | The first / a later `DemographicsUpdated` or `DemographicsExchanged` of an entry | deferred |
 | `Reference/Created`, `Reference/Updated` | The first / a later `PartyReferenceUpdated` of an entry | deferred |
 | `Associations/Created`, `Associations/Updated` | `PartyAssociationRegistered` / `PartyAssociationUpdated` | deferred |

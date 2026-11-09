@@ -17,6 +17,9 @@ public sealed class PartyHost(IHost host, NpgsqlDataSource administrator) : IAsy
     /// <summary>The host's message bus, as an <c>.Api</c> or <c>.Mcp</c> adapter uses it.</summary>
     public IMessageBus Bus => host.Services.GetRequiredService<IMessageBus>();
 
+    /// <summary>The running host itself, for Wolverine's message tracking.</summary>
+    public IHost Application => host;
+
     /// <summary>Runs a single-value query as the administrator, to look at what was stored.</summary>
     public async Task<T> ScalarAsync<T>(string sql)
     {

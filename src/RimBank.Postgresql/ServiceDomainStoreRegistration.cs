@@ -64,6 +64,9 @@ public static class ServiceDomainStoreRegistration
         var production = builder.Environment.IsProduction();
         AddDatabaseAccess(services, name);
 
+        // The context's integration events go on the wire under their declared, versioned identity (ADR 0036).
+        PublishedLanguageMessageNaming.Register();
+
         var store = services
             .AddMartenStore<TStore>(provider =>
             {
