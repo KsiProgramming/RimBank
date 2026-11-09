@@ -17,9 +17,6 @@ public sealed class PartyToolCatalogTests(PostgresqlServer server)
     /// <summary>The implemented operations whose tools roadmap 1.17 adds. 1.17 empties this list.</summary>
     private static readonly string[] _toolsIn117 =
     [
-        "Demographics/Update",
-        "Demographics/Exchange",
-        "Demographics/Retrieve",
         "Reference/Update",
         "Reference/Retrieve",
         "Associations/Register",

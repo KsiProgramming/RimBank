@@ -1,5 +1,21 @@
 namespace RimBank.Party.PartyReferenceDataDirectory.Mcp.Tests;
 
+/// <summary>A registered directory entry: its id, version and the ids of its Behavior Qualifiers.</summary>
+public sealed record Entry(Guid Id, long Version, Guid DemographicsId, Guid ReferenceId, Guid BankRelationsId)
+{
+    /// <summary>Registers a party through its tool, with a fresh idempotency key.</summary>
+    public static async Task<Entry> RegisterAsync(PartyMcpHost host, string partyType = "Person")
+    {
+        var entry = (await RegisterPartyToolTests.RegisterAsync(host, partyType, PartyTools.Key("register"))).Success();
+        return new Entry(
+            entry.GetProperty("PartyReferenceDataDirectoryEntryId").GetGuid(),
+            entry.GetProperty("version").GetInt64(),
+            entry.GetProperty(nameof(DemographicsId)).GetGuid(),
+            entry.GetProperty(nameof(ReferenceId)).GetGuid(),
+            entry.GetProperty(nameof(BankRelationsId)).GetGuid());
+    }
+}
+
 /// <summary>Shared steps of the Party tool tests (roadmap 1.17).</summary>
 public static class PartyTools
 {
@@ -12,10 +28,6 @@ public static class PartyTools
         var entry = (await RegisterPartyToolTests.RegisterAsync(host, partyType, Key("register"))).Success();
         return (entry.GetProperty("PartyReferenceDataDirectoryEntryId").GetGuid(), entry.GetProperty("version").GetInt64());
     }
-
-    /// <summary>Registers a party and answers the whole Register result, for the ids of its Behavior Qualifiers.</summary>
-    public static async Task<System.Text.Json.JsonElement> RegisterEntryAsync(PartyMcpHost host, string partyType) =>
-        (await RegisterPartyToolTests.RegisterAsync(host, partyType, Key("register"))).Success();
 
     /// <summary>A fresh idempotency key starting with <paramref name="prefix"/>.</summary>
     public static string Key(string prefix) => $"{prefix}-{Interlocked.Increment(ref _keys)}";
