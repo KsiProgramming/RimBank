@@ -50,4 +50,8 @@ Depends on 0.13 (authentication, `TestTokens`), 0.16 (MCP authorization), and 1.
 - **0038 Per-operation authorisation policies.** Covers the scope naming (`<service-domain-kebab>:read|write`), one policy per BIAN operation named by its id, the module registration convention (amends ADR 0014), the scope requirement and claim format, the order of 403 before the idempotency, concurrency and 404 checks, `scopes_supported` (amends ADR 0022), the dev realm client scopes (amends ADR 0019), and the follow-ups (1.16 tool `[Authorize]`, 4.14 money-moving scope, resource-level authorisation later).
 
 ## Open questions
-- Should the policy registration helper also expose the scope per operation to the OpenAPI document (a `security` requirement)? The proposed default is no for now; the BIAN document has none. Confirm during implementation whether Scalar needs it to send tokens.
+Answered during implementation (ADR 0038):
+- **OpenAPI `security` per operation:** not added. The BIAN document has none, and the OpenAPI document only gains the declared 403 response.
+- **Module member:** it takes a dedicated `OperationPolicies` registration (`AddOperationPolicies`), not the raw `AuthorizationBuilder`, so that the host can build the catalog and refuse duplicates.
+- **Additional finding:** Wolverine takes any `…Handler` type of the host assembly for a message handler, so the scope check is named `OperationScopeAuthorization`.
+- **Additional finding:** a Keycloak realm import that lists its own client scopes loses the built-in ones, and with them `sub` in user tokens. The realm declares `basic` (`sub` only) and claim-less `profile` and `email`. Verified against Keycloak 26.6.

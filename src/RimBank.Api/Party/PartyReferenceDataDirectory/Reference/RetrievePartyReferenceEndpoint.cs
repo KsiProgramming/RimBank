@@ -26,7 +26,7 @@ public static class RetrievePartyReferenceEndpoint
     /// <returns>The endpoint's builder.</returns>
     public static RouteHandlerBuilder MapRetrievePartyReference(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapGet(Route, HandleAsync)
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Reference")
             .WithSummary("Retrieve details about reference entries in the directory")
             .WithDescription(

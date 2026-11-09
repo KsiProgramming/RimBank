@@ -28,7 +28,7 @@ public static class UpdatePartyReferenceEndpoint
     public static RouteHandlerBuilder MapUpdatePartyReference(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPut(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Reference")
             .WithSummary("Update details about a reference entry for the customer")
             .WithDescription(

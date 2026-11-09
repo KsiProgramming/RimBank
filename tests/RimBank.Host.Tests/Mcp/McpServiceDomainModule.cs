@@ -18,6 +18,10 @@ internal sealed class McpServiceDomainModule(string serviceDomain = "FakeService
     {
     }
 
+    public void AddOperationPolicies(OperationPolicies policies)
+    {
+    }
+
     public void AddMcpTools(IMcpServerBuilder tools) => tools.WithTools<FakeServiceDomainTools>();
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

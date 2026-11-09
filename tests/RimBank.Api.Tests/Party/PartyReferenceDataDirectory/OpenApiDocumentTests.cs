@@ -24,7 +24,7 @@ public sealed class OpenApiDocumentTests(PostgresqlServer server)
         var operation = (await result.ReadAsJsonAsync<JsonElement>()).GetProperty("paths").GetProperty(Register).GetProperty("post");
         operation.GetProperty("operationId").GetString().ShouldBe("PartyReferenceDataDirectoryEntry/Register");
         operation.GetProperty("responses").EnumerateObject().Select(response => response.Name)
-            .ShouldBe(["200", "400", "401", "409", "500"], ignoreOrder: true);
+            .ShouldBe(["200", "400", "401", "403", "409", "500"], ignoreOrder: true);
         var header = operation.GetProperty("parameters").EnumerateArray()
             .Where(parameter => parameter.GetProperty("name").GetString() == "Idempotency-Key")
             .ShouldHaveSingleItem();

@@ -28,7 +28,7 @@ public static class UpdatePartyReferenceDataDirectoryEntryEndpoint
     public static RouteHandlerBuilder MapUpdatePartyReferenceDataDirectoryEntry(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPut(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("PartyReferenceDataDirectoryEntry")
             .WithSummary("Update details about the customer's directory entry")
             .WithDescription(

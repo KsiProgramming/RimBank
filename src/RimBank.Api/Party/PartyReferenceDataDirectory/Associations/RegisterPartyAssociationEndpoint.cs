@@ -27,7 +27,7 @@ public static class RegisterPartyAssociationEndpoint
     public static RouteHandlerBuilder MapRegisterPartyAssociation(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPost(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Associations")
             .WithSummary("Capture Association Details")
             .WithDescription(

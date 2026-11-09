@@ -23,6 +23,10 @@ internal sealed class McpErrorServiceDomainModule : IServiceDomainModule
     {
     }
 
+    public void AddOperationPolicies(OperationPolicies policies)
+    {
+    }
+
     public void AddMcpTools(IMcpServerBuilder tools) => tools.WithTools<FakeErrorServiceDomainTools>();
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

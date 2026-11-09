@@ -26,7 +26,7 @@ public static class RetrieveBankRelationsEndpoint
     /// <returns>The endpoint's builder.</returns>
     public static RouteHandlerBuilder MapRetrieveBankRelations(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapGet(Route, HandleAsync)
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("BankRelations")
             .WithSummary("Retrieve details about customer bank relations entries in the directory")
             .WithDescription(

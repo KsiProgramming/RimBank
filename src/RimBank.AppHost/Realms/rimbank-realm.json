@@ -5,6 +5,65 @@
   "sslRequired": "external",
   "registrationAllowed": false,
   "accessTokenLifespan": 300,
+  "clientScopes": [
+    {
+      "name": "basic",
+      "description": "The caller's subject (sub), which RimBank needs to identify the actor (ADR 0019). Declared here because a realm that lists its own client scopes gets none of Keycloak's built-in ones (ADR 0038).",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "description": "Accepted so that OpenID clients may request it, but adds no claim: RimBank's tokens carry no name, email or other personal data (ADR 0038).",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "email",
+      "description": "Accepted so that OpenID clients may request it, but adds no claim: RimBank's tokens carry no name, email or other personal data (ADR 0038).",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "party-reference-data-directory:read",
+      "description": "Party Reference Data Directory queries: the Retrieve operations (ADR 0038).",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "party-reference-data-directory:write",
+      "description": "Party Reference Data Directory commands: Register, Update, Exchange and the Behavior Qualifier Register and Update operations (ADR 0038).",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ],
   "clients": [
     {
       "clientId": "rimbank-api",
@@ -45,6 +104,12 @@
             "introspection.token.claim": "true"
           }
         }
+      ],
+      "optionalClientScopes": [],
+      "defaultClientScopes": [
+        "basic",
+        "party-reference-data-directory:read",
+        "party-reference-data-directory:write"
       ]
     },
     {
@@ -82,6 +147,15 @@
             "introspection.token.claim": "true"
           }
         }
+      ],
+      "optionalClientScopes": [
+        "profile",
+        "email"
+      ],
+      "defaultClientScopes": [
+        "basic",
+        "party-reference-data-directory:read",
+        "party-reference-data-directory:write"
       ]
     }
   ],

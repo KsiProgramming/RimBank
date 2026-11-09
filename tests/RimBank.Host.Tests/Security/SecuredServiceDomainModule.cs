@@ -21,6 +21,10 @@ public sealed class SecuredServiceDomainModule : IServiceDomainModule
         builder.Services.ConfigureWolverine(options => options.Discovery.IncludeType(typeof(WhoSentThisHandler)));
     }
 
+    public void AddOperationPolicies(OperationPolicies policies)
+    {
+    }
+
     public void AddMcpTools(IMcpServerBuilder tools)
     {
     }

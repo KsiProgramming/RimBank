@@ -56,15 +56,31 @@ public static class TestTokens
         return services;
     }
 
-    /// <summary>A token the host accepts, unless one of the arguments says otherwise.</summary>
+    /// <summary>
+    /// Every scope the host's modules require (ADR 0038), granted by default so that a test which is not about
+    /// authorisation is allowed every operation.
+    /// </summary>
+    public static IReadOnlyList<string> AllScopes { get; } = AllModuleScopes();
+
+    /// <summary>
+    /// A token the host accepts, unless one of the arguments says otherwise. It grants <paramref name="scopes"/>, or
+    /// <see cref="AllScopes"/> when they are not given; <c>[]</c> grants none.
+    /// </summary>
     public static string Issue(
         string? subject = Subject,
         string? clientId = ClientId,
         string audience = AuthenticationComposition.Audience,
         DateTime? expires = null,
-        bool trusted = true)
+        bool trusted = true,
+        IEnumerable<string>? scopes = null)
     {
         var claims = new List<Claim>();
+        var granted = string.Join(' ', scopes ?? AllScopes);
+        if (granted.Length > 0)
+        {
+            claims.Add(new Claim(OperationScopeAuthorization.ScopeClaim, granted));
+        }
+
         if (subject is not null)
         {
             claims.Add(new Claim(JwtRegisteredClaimNames.Sub, subject));
@@ -88,11 +104,11 @@ public static class TestTokens
         });
     }
 
-    /// <summary>A client that sends a valid token with every request.</summary>
-    public static HttpClient Authenticated(HttpClient client)
+    /// <summary>A client that sends a valid token with every request, granting <paramref name="scopes"/> (default: all).</summary>
+    public static HttpClient Authenticated(HttpClient client, IEnumerable<string>? scopes = null)
     {
         ArgumentNullException.ThrowIfNull(client);
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Issue());
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Issue(scopes: scopes));
         return client;
     }
 
@@ -107,6 +123,8 @@ public static class TestTokens
 
         return request;
     }
+
+    private static List<string> AllModuleScopes() => [.. OperationPolicyCatalog.Of(ServiceDomainModules.All).Scopes];
 
     private static RsaSecurityKey NewKey(string keyId) => new(RSA.Create(2048)) { KeyId = keyId };
 }

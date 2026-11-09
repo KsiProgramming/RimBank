@@ -6,8 +6,8 @@ using ModelContextProtocol.Authentication;
 namespace RimBank.Host;
 
 /// <summary>
-/// Authentication of every request to the host: JWT bearer tokens issued by Keycloak, and deny by default
-/// (specs/tech-stack.md §1, §10, ADR 0019).
+/// Authentication of every request to the host: JWT bearer tokens issued by Keycloak, deny by default, and the scope
+/// check of the per-operation policies the modules register (specs/tech-stack.md §1, §10, ADR 0019, ADR 0038).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -115,6 +115,17 @@ public static class AuthenticationComposition
                 BearerMethodsSupported = ["header"],
             });
 
+        // Lists the scopes of every operation policy the modules register (ADR 0038). The catalog exists once the
+        // modules are added, after this method, so the metadata reads it when the options are first built.
+        builder.Services.AddOptions<McpAuthenticationOptions>(McpAuthenticationDefaults.AuthenticationScheme)
+            .Configure<IServiceProvider>((options, services) =>
+            {
+                var scopes = services.GetService<OperationPolicyCatalog>()?.Scopes ?? [];
+                options.ResourceMetadata ??= new ProtectedResourceMetadata();
+                options.ResourceMetadata.ScopesSupported = [.. scopes];
+            });
+
+        builder.Services.AddSingleton<IAuthorizationHandler, OperationScopeAuthorization>();
         builder.Services.AddAuthorizationBuilder()
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
             .AddPolicy(McpPolicy, policy => policy

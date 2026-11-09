@@ -28,6 +28,15 @@ public interface IServiceDomainModule
     /// <param name="tools">The host's MCP server builder.</param>
     void AddMcpTools(IMcpServerBuilder tools);
 
+    /// <summary>
+    /// Registers the authorisation policy of each BIAN operation the context exposes (ADR 0038): commands with
+    /// <see cref="OperationPolicies.AddCommand"/> and the context's write scope, queries with
+    /// <see cref="OperationPolicies.AddQuery"/> and its read scope. Its endpoints refer to them by operation id; a
+    /// context without operations yet leaves the body empty.
+    /// </summary>
+    /// <param name="policies">The host's operation policy registration.</param>
+    void AddOperationPolicies(OperationPolicies policies);
+
     /// <summary>Maps the context's HTTP endpoints on the built application.</summary>
     /// <param name="endpoints">The application's endpoint route builder.</param>
     void MapEndpoints(IEndpointRouteBuilder endpoints);

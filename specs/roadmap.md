@@ -61,7 +61,7 @@
 - [x] **1.12 BankRelations BQ:** the party's relationships with the bank; Update command and Retrieve query. It records a closed relation type, the bank employee (a person) or unit (an organisation) as a registered entry checked on the write side, and the relationship's dates and lifecycle status ([ADR 0035](../docs/adr/0035-party-bank-relations.md)).
 - [x] **1.13 Published language:** `PartyReferenceDataDirectoryEntryCreated/Updated` integration events, mapped from domain events (not from read models), carrying the state consumers need, versioned, published through the outbox, and pinned by a schema contract test.
 - [x] **1.14 Conformance:** OpenAPI and AsyncAPI conformance tests green for the implemented subset.
-- [ ] **1.15 Authorisation policies:** per-operation policies (separate scopes for command and query operations), with tests.
+- [x] **1.15 Authorisation policies:** per-operation policies (separate scopes for command and query operations), with tests.
 - [ ] **1.16 MCP adapter: Register & Retrieve:** `RimBank.Party.PartyReferenceDataDirectory.Mcp` tools for Register (command) and Retrieve (query, `readOnly`), with a parity test against the HTTP endpoints.
 - [ ] **1.17 MCP adapter: remaining operations:** Update and BQ tools; a test that the tool list matches the implemented BIAN operations.
 

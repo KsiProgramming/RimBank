@@ -25,7 +25,7 @@ public sealed class ServiceDomainModuleCompositionTests
     }
 
     [Fact]
-    public async Task Modules_are_registered_then_given_their_tools_then_mapped_in_list_order()
+    public async Task Modules_are_registered_then_given_their_policies_and_tools_then_mapped_in_list_order()
     {
         await using var app = await StartAsync(
             new FakeServiceDomainModule("SampleStatement", "sample-statement", _calls),
@@ -35,6 +35,8 @@ public sealed class ServiceDomainModuleCompositionTests
         [
             "SampleStatement.AddServices",
             "SampleLedger.AddServices",
+            "SampleStatement.AddOperationPolicies",
+            "SampleLedger.AddOperationPolicies",
             "SampleStatement.AddMcpTools",
             "SampleLedger.AddMcpTools",
             "SampleStatement.MapEndpoints",

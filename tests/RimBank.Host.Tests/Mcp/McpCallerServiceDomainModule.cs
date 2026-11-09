@@ -18,6 +18,10 @@ internal sealed class McpCallerServiceDomainModule : IServiceDomainModule
     public void AddServices(IHostApplicationBuilder builder) =>
         builder.Services.ConfigureWolverine(options => options.Discovery.IncludeType(typeof(WhoSentThisHandler)));
 
+    public void AddOperationPolicies(OperationPolicies policies)
+    {
+    }
+
     public void AddMcpTools(IMcpServerBuilder tools) => tools.WithTools<FakeCallerServiceDomainTools>();
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

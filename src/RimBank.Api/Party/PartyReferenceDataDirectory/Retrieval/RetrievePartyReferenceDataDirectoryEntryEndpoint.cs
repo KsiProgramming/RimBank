@@ -26,7 +26,7 @@ public static class RetrievePartyReferenceDataDirectoryEntryEndpoint
     /// <returns>The endpoint's builder.</returns>
     public static RouteHandlerBuilder MapRetrievePartyReferenceDataDirectoryEntry(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapGet(Route, HandleAsync)
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("PartyReferenceDataDirectoryEntry")
             .WithSummary("Retrieve details about a customer directory entry")
             .WithDescription(

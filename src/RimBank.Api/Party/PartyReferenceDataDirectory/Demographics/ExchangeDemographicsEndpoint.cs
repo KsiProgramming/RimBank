@@ -28,7 +28,7 @@ public static class ExchangeDemographicsEndpoint
     public static RouteHandlerBuilder MapExchangeDemographics(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPut(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Demographics")
             .WithSummary("Accept, verify, reject etc. details of a customer directory entry")
             .WithDescription(
