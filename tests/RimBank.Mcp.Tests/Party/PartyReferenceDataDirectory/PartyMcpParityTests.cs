@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Alba;
 using Microsoft.Net.Http.Headers;
-using ModelContextProtocol.Protocol;
 using RimBank.Host;
 using RimBank.Host.Testing;
 
@@ -12,9 +11,6 @@ namespace RimBank.Party.PartyReferenceDataDirectory.Mcp.Tests;
 public sealed class PartyMcpParityTests(PostgresqlServer server)
 {
     private const string Register = "/PartyReferenceDataDirectory/Register";
-
-    /// <summary>The Problem Details members that do not depend on the request.</summary>
-    private static readonly string[] _problemMembers = ["type", "title", "status", "detail", "errorCode", "errors"];
 
     [Fact]
     public async Task Register_gives_the_http_body_and_the_etag_as_version()
@@ -31,7 +27,7 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
             JsonElement.DeepEquals(tool.GetProperty(member), body.GetProperty(member)).ShouldBeTrue(member);
         }
 
-        ETagOf(http).ShouldBe(tool.GetProperty("version").GetInt64());
+        Parity.ETagOf(http).ShouldBe(tool.GetProperty("version").GetInt64());
     }
 
     [Fact]
@@ -45,8 +41,8 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
         var tool = (await RetrievePartyReferenceDataDirectoryEntryToolTests.RetrieveAsync(host, id.ToString())).Success();
 
         var body = await http.ReadAsJsonAsync<JsonElement>();
-        JsonElement.DeepEquals(Without(tool, "version"), body).ShouldBeTrue($"{tool} vs {body}");
-        ETagOf(http).ShouldBe(tool.GetProperty("version").GetInt64());
+        JsonElement.DeepEquals(Parity.Without(tool, "version"), body).ShouldBeTrue($"{tool} vs {body}");
+        Parity.ETagOf(http).ShouldBe(tool.GetProperty("version").GetInt64());
     }
 
     [Theory]
@@ -63,7 +59,7 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
         });
         var tool = await RegisterPartyToolTests.RegisterAsync(host, partyType, "parity-invalid-mcp");
 
-        await ShouldBeSameProblemAsync(http, tool);
+        await Parity.ShouldBeSameProblemAsync(http, tool);
     }
 
     [Fact]
@@ -80,7 +76,7 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
         });
         var tool = await RegisterPartyToolTests.RegisterAsync(host, "Organisation", "parity-reused-mcp");
 
-        await ShouldBeSameProblemAsync(http, tool);
+        await Parity.ShouldBeSameProblemAsync(http, tool);
     }
 
     [Theory]
@@ -93,7 +89,7 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
         var http = await host.Alba.Scenario(_ => GetRetrieve(_, id, status));
         var tool = await RetrievePartyReferenceDataDirectoryEntryToolTests.RetrieveAsync(host, id);
 
-        await ShouldBeSameProblemAsync(http, tool);
+        await Parity.ShouldBeSameProblemAsync(http, tool);
     }
 
     [Fact]
@@ -115,22 +111,7 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
             new() { ["partyType"] = "Person", ["idempotencyKey"] = "parity-forbidden" },
             [PartyReferenceDataDirectoryModule.ReadScope]);
 
-        await ShouldBeSameProblemAsync(http, tool);
-    }
-
-    private static async Task ShouldBeSameProblemAsync(IScenarioResult http, CallToolResult tool)
-    {
-        var expected = await http.ReadAsJsonAsync<JsonElement>();
-        http.Context.Response.ContentType.ShouldBe("application/problem+json");
-        var actual = tool.Problem(expected.GetProperty("status").GetInt32(), expected.GetProperty("errorCode").GetString()!);
-        foreach (var member in _problemMembers)
-        {
-            expected.TryGetProperty(member, out var wanted).ShouldBe(actual.TryGetProperty(member, out var got), member);
-            if (wanted.ValueKind != JsonValueKind.Undefined)
-            {
-                JsonElement.DeepEquals(got, wanted).ShouldBeTrue($"{member}: {got} vs {wanted}");
-            }
-        }
+        await Parity.ShouldBeSameProblemAsync(http, tool);
     }
 
     private static void PostRegister(Scenario scenario, string body, string key)
@@ -148,12 +129,5 @@ public sealed class PartyMcpParityTests(PostgresqlServer server)
         scenario.StatusCodeShouldBe(status);
     }
 
-    private static long ETagOf(IScenarioResult http) =>
-        long.Parse(http.Context.Response.Headers.ETag.ToString().Trim('"'), System.Globalization.CultureInfo.InvariantCulture);
-
     private static string[] Members(JsonElement element) => [.. element.EnumerateObject().Select(property => property.Name)];
-
-    private static JsonElement Without(JsonElement element, string member) =>
-        JsonSerializer.SerializeToElement(
-            element.EnumerateObject().Where(property => property.Name != member).ToDictionary(property => property.Name, property => property.Value));
 }

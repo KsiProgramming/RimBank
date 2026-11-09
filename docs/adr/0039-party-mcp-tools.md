@@ -63,7 +63,7 @@ Mission principle 6 says an AI agent reaches every service domain through MCP to
 - If a later SDK lets a filter see its authorization denial, or answers it as a tool error, this decision can be revisited. The attribute would then become `[Authorize]`, and the tests stay.
 - RimBank's tool list filter replaces the SDK's for these tools. Resources and prompts are not used.
 - Follow-ups:
-  - **1.17:** Update and BQ tools with `expectedVersion`, and an empty catalog list.
+  - **1.17:** Update and BQ tools with `expectedVersion`, and an empty catalog list. Done: a command's body is one `request` argument, and Update and Exchange tools require `expectedVersion` ([ADR 0040](0040-party-mcp-command-tools.md)).
   - **4.14:** money-moving tools behind their own scope, off by default.
   - **7.9:** rate limiting and the tool-call audit query.
 - Proven by:

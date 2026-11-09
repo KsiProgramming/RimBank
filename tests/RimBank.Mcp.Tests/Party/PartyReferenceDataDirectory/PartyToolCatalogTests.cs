@@ -6,32 +6,23 @@ using RimBank.Mcp;
 
 namespace RimBank.Party.PartyReferenceDataDirectory.Mcp.Tests;
 
-// Roadmap 1.16, pulled forward from 1.17: the tool list matches the implemented BIAN operations, each tool is named after
-// its operation, carries its operation's policy and the annotations of its kind (ADR 0021, ADR 0038, ADR 0039).
+// Roadmap 1.16 and 1.17: the tool list is exactly the implemented BIAN operations, each tool is named after its
+// operation, carries its operation's policy, the annotations of its kind and the arguments of its kind (ADR 0021,
+// ADR 0038, ADR 0039, ADR 0040).
 public sealed class PartyToolCatalogTests(PostgresqlServer server)
 {
     private const string ServiceDomainTool = "party_reference_data_directory";
 
     private const string ControlRecord = "PartyReferenceDataDirectoryEntry";
 
-    /// <summary>The implemented operations whose tools roadmap 1.17 adds. 1.17 empties this list.</summary>
-    private static readonly string[] _toolsIn117 =
-    [
-        "PartyReferenceDataDirectoryEntry/Update",
-        "Demographics/Update",
-        "Demographics/Exchange",
-        "Demographics/Retrieve",
-        "Reference/Update",
-        "Reference/Retrieve",
-        "Associations/Register",
-        "Associations/Update",
-        "Associations/Retrieve",
-        "BankRelations/Update",
-        "BankRelations/Retrieve",
-    ];
+    /// <summary>The Control Record Register's one body field, a flat argument since 1.16 (ADR 0039, ADR 0040).</summary>
+    private const string RegisterPartyFlatBody = "partyType";
+
+    /// <summary>The arguments a command tool takes in addition to its ids (ADR 0018, ADR 0027, ADR 0040).</summary>
+    private static readonly string[] _commandArguments = ["request", "expectedVersion", "idempotencyKey"];
 
     [Fact]
-    public async Task The_tool_list_is_the_implemented_operations_that_have_their_tool_yet()
+    public async Task The_tool_list_is_the_implemented_operations()
     {
         await using var host = await server.StartHostAsync();
         var catalog = host.Alba.Services.GetRequiredService<OperationPolicyCatalog>();
@@ -39,13 +30,9 @@ public sealed class PartyToolCatalogTests(PostgresqlServer server)
 
         var tools = await client.ListToolsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
-        _toolsIn117.ShouldBeSubsetOf(catalog.Policies.Select(policy => policy.OperationId));
+        tools.Count.ShouldBe(13);
         tools.Select(tool => tool.Name).Order(StringComparer.Ordinal).ShouldBe(
-            catalog.Policies
-                .Select(policy => policy.OperationId)
-                .Except(_toolsIn117, StringComparer.Ordinal)
-                .Select(ToolName)
-                .Order(StringComparer.Ordinal));
+            catalog.Policies.Select(policy => ToolName(policy.OperationId)).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -58,9 +45,8 @@ public sealed class PartyToolCatalogTests(PostgresqlServer server)
         tools.ShouldNotBeEmpty();
         foreach (var tool in tools)
         {
-            var operationId = tool.Metadata.OfType<ToolOperationAttribute>().ShouldHaveSingleItem().OperationId;
-            var policy = catalog.Find(operationId).ShouldNotBeNull($"{tool.ProtocolTool.Name} names an operation no policy protects");
-            tool.ProtocolTool.Name.ShouldBe(ToolName(operationId));
+            var policy = PolicyOf(tool, catalog);
+            tool.ProtocolTool.Name.ShouldBe(ToolName(policy.OperationId));
             tool.ProtocolTool.Description.ShouldNotBeNullOrWhiteSpace();
             tool.ProtocolTool.InputSchema.GetProperty("properties").EnumerateObject().ShouldNotBeEmpty();
             var annotations = tool.ProtocolTool.Annotations.ShouldNotBeNull();
@@ -72,27 +58,95 @@ public sealed class PartyToolCatalogTests(PostgresqlServer server)
     }
 
     [Fact]
-    public async Task A_command_tool_requires_its_idempotency_key()
+    public async Task Each_tool_requires_the_ids_and_the_arguments_of_its_kind()
     {
         await using var host = await server.StartHostAsync();
+        var catalog = host.Alba.Services.GetRequiredService<OperationPolicyCatalog>();
 
-        var register = host.Alba.Services.GetServices<McpServerTool>().Single(tool => tool.ProtocolTool.Name == RegisterPartyTool.Name);
+        foreach (var tool in host.Alba.Services.GetServices<McpServerTool>())
+        {
+            var policy = PolicyOf(tool, catalog);
+            var schema = tool.ProtocolTool.InputSchema;
+            var properties = schema.GetProperty("properties").EnumerateObject().Select(property => property.Name).ToList();
+            var required = schema.GetProperty("required").EnumerateArray().Select(name => name.GetString()!).ToList();
 
-        register.ProtocolTool.InputSchema.GetProperty("required").EnumerateArray().Select(name => name.GetString())
-            .ShouldBe(["partyType", "idempotencyKey"], ignoreOrder: true);
+            required.ShouldBe(properties, ignoreOrder: true, tool.ProtocolTool.Name);
+            properties.Except([.. _commandArguments, RegisterPartyFlatBody])
+                .ShouldAllBe(name => name.EndsWith("Id", StringComparison.Ordinal), tool.ProtocolTool.Name);
+            properties.Intersect(_commandArguments).Order(StringComparer.Ordinal).ShouldBe(
+                ArgumentsOf(policy).Order(StringComparer.Ordinal),
+                tool.ProtocolTool.Name);
+        }
     }
 
     [Fact]
-    public async Task A_query_tool_takes_no_idempotency_key()
+    public async Task A_command_tools_request_is_the_bian_body_with_its_property_names()
     {
         await using var host = await server.StartHostAsync();
+        var reference = host.Alba.Services.GetServices<McpServerTool>().Single(tool => tool.ProtocolTool.Name == UpdatePartyReferenceTool.Name);
 
-        var retrieve = host.Alba.Services.GetServices<McpServerTool>()
-            .Single(tool => tool.ProtocolTool.Name == RetrievePartyReferenceDataDirectoryEntryTool.Name);
+        var request = reference.ProtocolTool.InputSchema.GetProperty("properties").GetProperty("request");
 
-        retrieve.ProtocolTool.InputSchema.GetProperty("properties").EnumerateObject().Select(property => property.Name)
-            .ShouldBe(["partyReferenceDataDirectoryEntryId"]);
-        retrieve.ProtocolTool.InputSchema.GetProperty("required").ValueKind.ShouldBe(JsonValueKind.Array);
+        request.GetProperty("properties").EnumerateObject().Select(property => property.Name)
+            .ShouldContain("ResidentialAddress");
+        request.GetProperty("properties").GetProperty("ResidentialAddress").ToString().ShouldContain("TownName");
+        request.GetProperty("properties").EnumerateObject().Select(property => property.Name).ShouldContain("eMailAddress");
+    }
+
+    [Fact]
+    public async Task A_caller_with_only_the_read_scope_sees_only_the_retrieve_tools_and_cannot_call_a_command()
+    {
+        await using var host = await server.StartHostAsync();
+        var entry = await Entry.RegisterAsync(host);
+        var client = await host.ConnectAsync([PartyReferenceDataDirectoryModule.ReadScope]);
+
+        var tools = await client.ListToolsAsync(cancellationToken: TestContext.Current.CancellationToken);
+        var update = await host.CallAsync(
+            UpdatePartyReferenceTool.Name,
+            new()
+            {
+                ["partyReferenceDataDirectoryEntryId"] = entry.Id.ToString(),
+                ["referenceId"] = entry.ReferenceId.ToString(),
+                ["request"] = JsonElement.Parse("""{ "PartyFullLegalName": "Jeanne Dupont" }"""),
+                ["expectedVersion"] = entry.Version,
+                ["idempotencyKey"] = PartyTools.Key("denied"),
+            },
+            [PartyReferenceDataDirectoryModule.ReadScope]);
+
+        tools.Select(tool => tool.Name).ShouldAllBe(name => name.StartsWith($"{ServiceDomainTool}_retrieve", StringComparison.Ordinal));
+        tools.Count.ShouldBe(5);
+        update.Problem(403, "shared.forbidden");
+        (await host.ScalarAsync<long>(PartyTools.EventsOf(entry.Id))).ShouldBe(1);
+    }
+
+    /// <summary>
+    /// The arguments a tool takes besides its ids: none for a query; for a command, a required <c>idempotencyKey</c>
+    /// (ADR 0018), an <c>expectedVersion</c> when it changes a record (ADR 0027), and a <c>request</c> body unless it is
+    /// the Control Record's Register, whose only field is a flat <c>partyType</c> (ADR 0039, ADR 0040).
+    /// </summary>
+    private static IEnumerable<string> ArgumentsOf(OperationPolicy policy)
+    {
+        if (policy.Kind == OperationKind.Query)
+        {
+            yield break;
+        }
+
+        yield return "idempotencyKey";
+        if (!policy.OperationId.EndsWith("/Register", StringComparison.Ordinal))
+        {
+            yield return "expectedVersion";
+        }
+
+        if (policy.OperationId != RegisterPartyTool.OperationId)
+        {
+            yield return "request";
+        }
+    }
+
+    private static OperationPolicy PolicyOf(McpServerTool tool, OperationPolicyCatalog catalog)
+    {
+        var operationId = tool.Metadata.OfType<ToolOperationAttribute>().ShouldHaveSingleItem().OperationId;
+        return catalog.Find(operationId).ShouldNotBeNull($"{tool.ProtocolTool.Name} names an operation no policy protects");
     }
 
     /// <summary>
