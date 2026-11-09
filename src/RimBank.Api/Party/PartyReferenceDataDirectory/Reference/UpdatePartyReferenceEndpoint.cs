@@ -49,10 +49,11 @@ public static class UpdatePartyReferenceEndpoint
                 + "GovernmentIssuedDocumentDetails records PartyDocumentType and, in DocumentReference, "
                 + "DocumentIdentification.IdentifierValue (both required), DocumentName and DocumentValidityPeriod "
                 + "(FromDateTime and ToDateTime DateTimeContent dates); DocumentDirectoryEntryInstanceReference records "
-                + "DocumentDirectoryEntryIdentification. A value left out keeps its value, an empty one clears it, and a given "
-                + "address or document replaces the whole of it. CorporateCustomerReference, "
-                + "CorporateCustomerLegalEntityReference, CompanyOfficerReference and CompanyOfficerRole are refused with "
-                + "party.reference-field-not-supported until roadmap phase 1.21, as are the other parts of the objects above. "
+                + "DocumentDirectoryEntryIdentification. On an organisation only, CorporateCustomerReference and "
+                + "CorporateCustomerLegalEntityReference name registered organisations and CompanyOfficerReference a "
+                + "registered person, each in its PartyReference, with CompanyOfficerRole as text. A value left out keeps its "
+                + "value, an empty one clears it, and a given address or document replaces the whole of it. Other parts of "
+                + "the objects above are refused with party.reference-field-not-supported. "
                 + "Send the entry's ETag in If-Match: a missing one is 428, and one that is no longer current is 409. The ETag "
                 + "of the answer is the new version.")
             .Produces<PartyReferenceResponse>(StatusCodes.Status200OK)
