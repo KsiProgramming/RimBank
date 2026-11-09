@@ -65,6 +65,9 @@
         "dependencies": {
           "System.CodeDom": "6.0.0"
         }
+      },
+      "rimbank.party.partyreferencedatadirectory.publishedlanguage": {
+        "type": "Project"
       }
     }
   }

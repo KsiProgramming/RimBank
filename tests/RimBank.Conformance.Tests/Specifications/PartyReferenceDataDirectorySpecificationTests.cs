@@ -92,6 +92,53 @@ public sealed class PartyReferenceDataDirectorySpecificationTests
     }
 
     [Fact]
+    public async Task Register_reads_its_request_body_with_the_JSON_media_type_BIAN_writes_with_a_colon()
+    {
+        var specification = await BianSpecifications.LoadAsync(ServiceDomain);
+
+        var body = specification.Operation("PartyReferenceDataDirectoryEntry/Register").ShouldNotBeNull().RequestBody.ShouldNotBeNull();
+        body.Name.ShouldBe("RegisterPartyReferenceDataDirectoryEntry");
+        body.Type.ShouldBe("object");
+        body.PropertyNames.ShouldBe(["PartyReference", "DirectoryEntryDateType", "DirectoryEntryDate", "PartyType"]);
+        body.Property("PartyType", StringComparison.Ordinal).ShouldNotBeNull().IsEnumWrapper.ShouldBeTrue();
+        body.Property("DirectoryEntryDate", StringComparison.Ordinal).ShouldNotBeNull().Type.ShouldBe("string");
+        body.Property("PartyReference", StringComparison.Ordinal).ShouldNotBeNull().Name.ShouldBe("Party");
+    }
+
+    [Theory]
+    [InlineData("PartyReferenceDataDirectoryEntry/Register", "RegisterPartyReferenceDataDirectoryEntry")]
+    [InlineData("PartyReferenceDataDirectoryEntry/Update", "UpdatePartyReferenceDataDirectoryEntry")]
+    public async Task A_200_that_BIAN_wires_to_BadRequest_uses_the_operations_own_response(string operationId, string schema)
+    {
+        var specification = await BianSpecifications.LoadAsync(ServiceDomain);
+
+        var success = specification.Operation(operationId).ShouldNotBeNull().SuccessResponses;
+        success.Keys.ShouldBe([200]);
+        success[200].ShouldNotBeNull().Name.ShouldBe(schema);
+    }
+
+    [Fact]
+    public async Task A_query_reads_its_200_response_and_has_no_request_body()
+    {
+        var specification = await BianSpecifications.LoadAsync(ServiceDomain);
+
+        var retrieve = specification.Operation("Reference/Retrieve").ShouldNotBeNull();
+        retrieve.RequestBody.ShouldBeNull();
+        retrieve.SuccessResponses[200].ShouldNotBeNull().PropertyNames.ShouldContain("PartyFullLegalName");
+    }
+
+    [Fact]
+    public async Task A_channel_reads_its_message_payload()
+    {
+        var specification = await BianSpecifications.LoadAsync(ServiceDomain);
+
+        var payload = specification.Channels.Single(channel => channel.Address == "PartyReferenceDataDirectoryEntry/Created").Payload.ShouldNotBeNull();
+        payload.Name.ShouldBe("PartyReferenceDataDirectoryEntry");
+        payload.Property("partyType", StringComparison.OrdinalIgnoreCase).ShouldNotBeNull().Type.ShouldBe("string");
+        specification.Channels.ShouldAllBe(channel => channel.Payload != null);
+    }
+
+    [Fact]
     public async Task A_service_domain_is_read_once()
     {
         var first = await BianSpecifications.LoadAsync(ServiceDomain);

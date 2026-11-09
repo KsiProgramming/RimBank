@@ -21,4 +21,34 @@ internal static class FakeContext
 
         return ImplementedRoute.From(app);
     }
+
+    /// <summary>
+    /// Maps endpoints with no-op handlers that declare the given request and success response types, as a context's
+    /// <c>.Produces&lt;T&gt;()</c> and inferred body parameter would, and reads them back with their metadata.
+    /// </summary>
+    public static async Task<IReadOnlyList<ImplementedEndpoint>> MapEndpointsAsync(params FakeEndpoint[] endpoints)
+    {
+        var builder = WebApplication.CreateSlimBuilder();
+        await using var app = builder.Build();
+        foreach (var endpoint in endpoints)
+        {
+            var mapped = app.MapMethods(endpoint.Route, [endpoint.Method], () => Results.NoContent());
+            if (endpoint.Request is { } request)
+            {
+                mapped.Accepts(request, "application/json");
+            }
+
+            if (endpoint.Status is { } status)
+            {
+                mapped.Produces(status, endpoint.Response);
+            }
+
+            mapped.ProducesProblem(StatusCodes.Status400BadRequest);
+        }
+
+        return ImplementedEndpoint.From(app);
+    }
 }
+
+/// <summary>One endpoint of a fake context: its route, request body type and one declared response.</summary>
+internal sealed record FakeEndpoint(string Method, string Route, Type? Request = null, int? Status = StatusCodes.Status200OK, Type? Response = null);

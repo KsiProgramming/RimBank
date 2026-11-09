@@ -52,3 +52,4 @@ Where the implemented routes come from:
 - Choosing `POST` or `PUT` for a command is not a free choice: the spec decides.
 - A new BIAN release (a new `doc-0/release…/` folder, with its own ADR) changes `BianSpecifications.RelativePath`.
 - Moving Microsoft.OpenApi to 3.x waits until Microsoft.AspNetCore.OpenApi supports it.
+- Roadmap 1.14 adds request, response, success status and event payload checks, and moves the declarations to each context's catalogue ([ADR 0037](0037-bian-body-and-payload-conformance.md)).
