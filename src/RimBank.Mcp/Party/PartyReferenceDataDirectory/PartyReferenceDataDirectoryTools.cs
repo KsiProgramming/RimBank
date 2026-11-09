@@ -20,6 +20,9 @@ public static class PartyReferenceDataDirectoryTools
             .WithTools<ExchangeDemographicsTool>()
             .WithTools<RetrieveDemographicsTool>()
             .WithTools<UpdateBankRelationsTool>()
-            .WithTools<RetrieveBankRelationsTool>();
+            .WithTools<RetrieveBankRelationsTool>()
+            .WithTools<RegisterPartyAssociationTool>()
+            .WithTools<UpdatePartyAssociationTool>()
+            .WithTools<RetrievePartyAssociationTool>();
     }
 }
