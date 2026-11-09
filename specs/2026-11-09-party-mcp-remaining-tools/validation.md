@@ -24,7 +24,7 @@ The phase adds no read model and changes none, so the projection-test and rebuil
   - a missing `expectedVersion` is `shared.tool-arguments-invalid`;
   - the same `idempotencyKey` and `request` return the first answer without a second event.
 - [ ] **Authorisation:**
-  - a read-scope-only token lists only the 6 Retrieve tools;
+  - a read-scope-only token lists only the 5 Retrieve tools;
   - its call to a command tool is `isError` with `shared.forbidden` (403), and nothing is appended;
   - a call without a token is rejected, as tested in 0.16.
 - [ ] **Tool tests per BQ** (`RimBank.Mcp.Tests/Party/PartyReferenceDataDirectory/{Update,Demographics,BankRelations,Associations,Reference}/`), with the cases listed in plan.md groups 1–5, against a Testcontainers PostgreSQL through `PartyMcpHost`.
