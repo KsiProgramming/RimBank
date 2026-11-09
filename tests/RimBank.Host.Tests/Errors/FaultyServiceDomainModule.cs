@@ -30,6 +30,10 @@ internal sealed class FaultyServiceDomainModule : IServiceDomainModule
     {
     }
 
+    public void AddOperationPolicies(OperationPolicies policies)
+    {
+    }
+
     public void AddMcpTools(IMcpServerBuilder tools)
     {
     }

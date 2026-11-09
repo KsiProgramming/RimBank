@@ -82,9 +82,20 @@ Every request needs a JWT bearer token for the audience `rimbank-api`, except th
 
 - **Locally**, the AppHost runs Keycloak with the dev-only realm `rimbank` from `src/RimBank.AppHost/Realms`. Get a token with the client-credentials grant of `rimbank-dev-client`, as `src/RimBank.Host/RimBank.Host.http` and the realm's README show. Its secret is published and only for local use.
 - **Outside Development**, the host needs `Authentication:Authority`, the HTTPS address of the realm (for example `https://login.example.com/realms/rimbank`). Without it, the host refuses to start. MCP clients are sent to the same address unless `Mcp:AuthorizationServer` (also HTTPS) says otherwise ([ADR 0022](docs/adr/0022-mcp-authorization-and-tool-errors.md)).
-- **Deny by default:** never call `AllowAnonymous()` or use `[AllowAnonymous]`. New endpoints are protected without opting in, and the architecture rule `allow-anonymous-only-in-service-defaults` fails otherwise. Narrow access with `RequireAuthorization(...)` (per-operation policies come in roadmap 1.15).
+- **Deny by default:** never call `AllowAnonymous()` or use `[AllowAnonymous]`. New endpoints are protected without opting in, and the architecture rule `allow-anonymous-only-in-service-defaults` fails otherwise. Do not add your own `RequireAuthorization(...)` to a BIAN endpoint. Use the operation policies below.
+- **Scopes and operation policies** ([ADR 0038](docs/adr/0038-per-operation-authorisation-policies.md)):
+  - Each context has two scopes: `<service-domain-kebab>:read` for its `Retrieve` queries and `<service-domain-kebab>:write` for its commands, for example `party-reference-data-directory:read`.
+  - A new BIAN endpoint calls `.RequireOperation(OperationId)` in place of `.WithName(OperationId)`.
+  - The context's host module registers the operation in `AddOperationPolicies`, with `AddCommand(OperationId, WriteScope)` or `AddQuery(OperationId, ReadScope)`.
+  - `OperationAuthorizationCoverageTests` fails when either step is missing, or when the kind does not match the verb (`GET` is a query).
+  - A token without the scope gets a 403 `shared.forbidden`, before the `Idempotency-Key`, `If-Match` and 404 checks.
+- **Dev realm scopes:**
+  - Both dev clients get both Party scopes by default.
+  - To try a denied call, edit the client's default scopes in the Keycloak admin console.
+  - The realm declares its own client scopes, so it carries only `basic` (`sub`), `profile` and `email` (no claims) and the operation scopes.
+  - Keycloak imports the realm only on its first start. After a realm change, remove the volume `rimbank-keycloak-data` (`docker volume rm rimbank-keycloak-data`) and restart the AppHost.
 - **Caller:** the host turns the token's `sub` and `azp` into an `Actor` (SharedKernel) and hands the subject to the message bus. Adapters and cores never read the token.
-- **Tests** sign tokens with an in-memory key: call `builder.UseTestTokens()` and send `TestTokens.Issue()` (in `tests/RimBank.Host.Tests/Security`).
+- **Tests** sign tokens with an in-memory key: call `builder.UseTestTokens()` and send `TestTokens.Issue()` (in `tests/RimBank.Host.Testing`). It grants every operation scope unless you pass `scopes:` (`[]` grants none).
 
 ### MCP
 

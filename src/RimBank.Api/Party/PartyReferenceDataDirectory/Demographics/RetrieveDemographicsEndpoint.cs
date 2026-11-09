@@ -26,7 +26,7 @@ public static class RetrieveDemographicsEndpoint
     /// <returns>The endpoint's builder.</returns>
     public static RouteHandlerBuilder MapRetrieveDemographics(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapGet(Route, HandleAsync)
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Demographics")
             .WithSummary("Retrieve details about customer demographics entries in the directory")
             .WithDescription(

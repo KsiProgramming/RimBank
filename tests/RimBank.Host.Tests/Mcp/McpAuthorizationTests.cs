@@ -85,6 +85,21 @@ public sealed class McpAuthorizationTests
         metadata.RootElement.GetProperty("bearer_methods_supported").EnumerateArray().Select(method => method.GetString())
             .ShouldBe(["header"]);
         metadata.RootElement.GetProperty("resource_name").GetString().ShouldBe(McpComposition.ServerName);
+        (metadata.RootElement.TryGetProperty("scopes_supported", out var scopes) ? scopes.GetArrayLength() : 0)
+            .ShouldBe(0, "no module registers an operation policy");
+    }
+
+    // Roadmap 1.15: an MCP client learns which scopes to ask for (ADR 0038).
+    [Fact]
+    public async Task The_protected_resource_metadata_lists_the_scopes_of_every_operation_policy()
+    {
+        await using var app = await McpTestHost.StartAsync(new McpServiceDomainModule(), new ScopedServiceDomainModule());
+        using var http = app.GetTestClient();
+
+        using var metadata = JsonDocument.Parse(await http.GetStringAsync(new Uri(MetadataPath, UriKind.Relative), TestContext.Current.CancellationToken));
+
+        metadata.RootElement.GetProperty("scopes_supported").EnumerateArray().Select(scope => scope.GetString())
+            .ShouldBe([ScopedServiceDomainModule.WriteScope, ScopedServiceDomainModule.ReadScope]);
     }
 
     [Fact]

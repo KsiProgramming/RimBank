@@ -78,7 +78,7 @@ The realm also gains the user `rimbank-developer` (password `rimbank-developer-l
 - Deployments must set `Authentication:Authority` (already required by ADR 0019) or `Mcp:AuthorizationServer` to an HTTPS realm address.
 - Amends [ADR 0019](0019-authentication-baseline.md) (the MCP challenge and metadata; the dev MCP client and user) and [ADR 0021](0021-mcp-wiring-and-tool-conventions.md) (its error contract is now implemented here, and the 0.16 follow-ups are done).
 - Follow-ups:
-  - **1.15:** per-operation scopes in `scopes_supported` and on tools, through the SDK's authorization filters (`AddAuthorizationFilters`, `[Authorize]`).
+  - **1.15:** per-operation scopes in `scopes_supported` (done in [ADR 0038](0038-per-operation-authorisation-policies.md)). The policies on tools, through the SDK's authorization filters (`AddAuthorizationFilters`, `[Authorize]`), come with the first tools in 1.16.
   - **1.16:** the first `.Mcp` adapter uses `ToToolResult`, and HTTP/MCP parity tests compare its Problem Details with the `.Api`'s.
   - **4.14:** the money-moving scope.
   - **7.x:** forwarded headers for the `resource` address, the production identity provider, and RFC 8707 if it becomes available there.

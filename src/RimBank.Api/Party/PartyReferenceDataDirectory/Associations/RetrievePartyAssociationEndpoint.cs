@@ -26,7 +26,7 @@ public static class RetrievePartyAssociationEndpoint
     /// <returns>The endpoint's builder.</returns>
     public static RouteHandlerBuilder MapRetrievePartyAssociation(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapGet(Route, HandleAsync)
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Associations")
             .WithSummary("Retrieve details about association entries in the directory record")
             .WithDescription(

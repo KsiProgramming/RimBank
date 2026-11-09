@@ -28,7 +28,7 @@ public static class UpdateBankRelationsEndpoint
     public static RouteHandlerBuilder MapUpdateBankRelations(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPut(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("BankRelations")
             .WithSummary("Update details about a customer's bank relations entry for the customer")
             .WithDescription(

@@ -27,7 +27,7 @@ public static class RegisterPartyEndpoint
     public static RouteHandlerBuilder MapRegisterParty(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPost(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("PartyReferenceDataDirectoryEntry")
             .WithSummary("Register a customer entity in the catalog")
             .WithDescription(

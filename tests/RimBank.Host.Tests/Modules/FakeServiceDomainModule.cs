@@ -19,6 +19,8 @@ internal sealed class FakeServiceDomainModule(string serviceDomain, string route
         builder.Services.AddKeyedSingleton(serviceDomain, new FakeModuleMarker(serviceDomain));
     }
 
+    public void AddOperationPolicies(OperationPolicies policies) => calls.Add($"{serviceDomain}.AddOperationPolicies");
+
     public void AddMcpTools(IMcpServerBuilder tools) => calls.Add($"{serviceDomain}.AddMcpTools");
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

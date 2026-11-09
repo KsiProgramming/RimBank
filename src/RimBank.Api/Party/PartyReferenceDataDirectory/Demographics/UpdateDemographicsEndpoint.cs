@@ -27,7 +27,7 @@ public static class UpdateDemographicsEndpoint
     public static RouteHandlerBuilder MapUpdateDemographics(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPut(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Demographics")
             .WithSummary("Update details about a customer's demographic entry")
             .WithDescription(

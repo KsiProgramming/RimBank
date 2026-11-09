@@ -27,7 +27,7 @@ public static class UpdatePartyAssociationEndpoint
     public static RouteHandlerBuilder MapUpdatePartyAssociation(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapPut(Route, HandleAsync)
             .RequireIdempotencyKey()
-            .WithName(OperationId)
+            .RequireOperation(OperationId)
             .WithTags("Associations")
             .WithSummary("Update details about an association entry for the customer")
             .WithDescription(

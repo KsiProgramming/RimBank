@@ -3,11 +3,17 @@ namespace RimBank.Host;
 /// <summary>Registers and maps a list of <see cref="IServiceDomainModule"/>s, in list order (ADR 0014).</summary>
 public static class ServiceDomainModuleComposition
 {
-    /// <summary>Calls each module's <see cref="IServiceDomainModule.AddServices"/>, in list order.</summary>
+    /// <summary>
+    /// Calls each module's <see cref="IServiceDomainModule.AddServices"/>, then each module's
+    /// <see cref="IServiceDomainModule.AddOperationPolicies"/>, in list order, and registers the resulting
+    /// <see cref="OperationPolicyCatalog"/> (ADR 0038).
+    /// </summary>
     /// <param name="builder">The host builder.</param>
     /// <param name="modules">The modules to register.</param>
     /// <returns>The same builder.</returns>
-    /// <exception cref="InvalidOperationException">Two modules have the same service domain name.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Two modules have the same service domain name, or a BIAN operation is given more than one policy.
+    /// </exception>
     public static TBuilder AddServiceDomainModules<TBuilder>(this TBuilder builder, IReadOnlyList<IServiceDomainModule> modules)
         where TBuilder : IHostApplicationBuilder
     {
@@ -29,6 +35,14 @@ public static class ServiceDomainModuleComposition
             module.AddServices(builder);
         }
 
+        var catalog = new OperationPolicyCatalog();
+        var policies = new OperationPolicies(builder.Services.AddAuthorizationBuilder(), catalog);
+        foreach (var module in modules)
+        {
+            module.AddOperationPolicies(policies);
+        }
+
+        builder.Services.AddSingleton(catalog);
         return builder;
     }
 
