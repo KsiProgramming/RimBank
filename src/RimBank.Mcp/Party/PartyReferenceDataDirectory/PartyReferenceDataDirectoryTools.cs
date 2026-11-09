@@ -18,6 +18,8 @@ public static class PartyReferenceDataDirectoryTools
             .WithTools<UpdatePartyReferenceDataDirectoryEntryTool>()
             .WithTools<UpdateDemographicsTool>()
             .WithTools<ExchangeDemographicsTool>()
-            .WithTools<RetrieveDemographicsTool>();
+            .WithTools<RetrieveDemographicsTool>()
+            .WithTools<UpdateBankRelationsTool>()
+            .WithTools<RetrieveBankRelationsTool>();
     }
 }

@@ -22,8 +22,6 @@ public sealed class PartyToolCatalogTests(PostgresqlServer server)
         "Associations/Register",
         "Associations/Update",
         "Associations/Retrieve",
-        "BankRelations/Update",
-        "BankRelations/Retrieve",
     ];
 
     [Fact]
