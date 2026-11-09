@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    The MCP conventions every .Mcp adapter shares (ADR 0022): an Error becomes an isError tool result whose content is
-    the same RFC 9457 Problem Details as on HTTP, and an unexpected failure becomes shared.unexpected. It references
-    SharedKernel, RimBank.Problems, ASP.NET Core and the MCP C# SDK only, holds no business logic, and is used only by
-    .Mcp adapters and RimBank.Host (specs/tech-stack.md §4, §6).
+    The MCP tools of every service domain (ADR 0025, ADR 0039): one folder per context (<BusinessDomain>/<ServiceDomain>/,
+    namespace RimBank.<BusinessDomain>.<ServiceDomain>.Mcp), and at its root the MCP conventions they share (namespace
+    RimBank.Mcp, ADR 0022): an Error becomes an isError tool result whose content is the same RFC 9457 Problem Details
+    as on HTTP, an unexpected failure becomes shared.unexpected, and a tool's operation policy applies to its call and
+    to the tool list. The root conventions reference SharedKernel, RimBank.Problems, ASP.NET Core and the MCP C# SDK
+    only; a context's tools also use its core and Wolverine's IMessageBus, hold no business logic, and never reference
+    .Api or a .Postgresql adapter. RimBank.Host composes it (specs/tech-stack.md §4, §6).
   -->
   <PropertyGroup>
     <RootNamespace>RimBank.Mcp</RootNamespace>
@@ -15,9 +18,11 @@
 
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <PackageReference Include="WolverineFx" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RimBank.Core\RimBank.Core.csproj" />
     <ProjectReference Include="..\RimBank.SharedKernel\RimBank.SharedKernel.csproj" />
     <ProjectReference Include="..\RimBank.Problems\RimBank.Problems.csproj" />
   </ItemGroup>

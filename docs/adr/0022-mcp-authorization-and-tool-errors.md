@@ -72,6 +72,7 @@ The realm also gains the user `rimbank-developer` (password `rimbank-developer-l
 
 ## Consequences
 
+- *Amended by [ADR 0039](0039-party-mcp-tools.md):* `RimBank.Mcp` also holds `ToolResults.Structured`, `[ToolOperation]` and the `ToolAuthorizationFilter` added by `AddRimBankToolAuthorization()`. A call refused by its operation's policy is an `isError` result with `shared.forbidden` (403), and the SDK's `AddAuthorizationFilters` is not used.
 - *Amended by [ADR 0025](0025-one-api-project.md):* a context's MCP tools are a folder of `RimBank.Mcp` (namespace `RimBank.<BusinessDomain>.<ServiceDomain>.Mcp`), next to these conventions, not a project of their own.
 - A `.Mcp` adapter (1.16) answers with `await bus.InvokeAsync<Result<T>>(…)` and then `.ToToolResult(…)`. The filter takes care of the trace, `instance`, unbindable arguments and unexpected failures. CONTRIBUTING "MCP" says so.
 - MCP Inspector or Claude Code can connect to a local AppHost: they follow the 401 to the metadata, sign `rimbank-developer` in through `rimbank-mcp-client`, and call `/mcp` with the token. CONTRIBUTING describes it.

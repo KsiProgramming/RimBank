@@ -19,4 +19,23 @@ public static class McpServerBuilderExtensions
         mcp.Services.AddHttpContextAccessor();
         return mcp.WithRequestFilters(filters => filters.AddCallToolFilter(ToolErrorFilter.Wrap));
     }
+
+    /// <summary>
+    /// Makes every tool's <see cref="ToolOperationAttribute"/> apply (ADR 0038, ADR 0039): a caller who does not meet the
+    /// operation's policy does not see the tool in <c>tools/list</c>, and a call gets the <c>shared.forbidden</c> Problem
+    /// Details as an error result (<see cref="ToolAuthorizationFilter"/>).
+    /// </summary>
+    /// <param name="mcp">The MCP server builder, after <see cref="AddRimBankToolErrors"/>.</param>
+    /// <returns>The same builder.</returns>
+    public static IMcpServerBuilder AddRimBankToolAuthorization(this IMcpServerBuilder mcp)
+    {
+        ArgumentNullException.ThrowIfNull(mcp);
+
+        mcp.Services.AddHttpContextAccessor();
+        return mcp.WithRequestFilters(filters =>
+        {
+            filters.AddCallToolFilter(ToolAuthorizationFilter.WrapCall);
+            filters.AddListToolsFilter(ToolAuthorizationFilter.WrapList);
+        });
+    }
 }
