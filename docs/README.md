@@ -39,3 +39,4 @@ Two views of the same platform. Start with the one that matches your question; e
 - Every document states whether it describes `main` today or a *(target)* from the roadmap.
 - When a document and the code or an ADR disagree, the code and the ADR win: fix the document in the same pull request.
 - A phase that changes a diagrammed behaviour (a new context, operation, event, table or rule) updates the affected document as part of its definition of done.
+- The `update-docs` Claude Code skill ([`.claude/skills/update-docs/SKILL.md`](../.claude/skills/update-docs/SKILL.md)) maps a change to the documents it affects, updates them and renders every diagram. `plan-feature` uses it to plan the documentation tasks, and `open-phase-pr` runs it before every pull request.

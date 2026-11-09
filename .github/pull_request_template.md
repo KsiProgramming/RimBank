@@ -20,6 +20,7 @@ Planning package: `specs/YYYY-MM-DD-<slug>/`
 - [ ] Every new BIAN operation exposed over HTTP is also exposed as an MCP tool, with a parity test
 - [ ] GitHub Actions CI green (build, test, format, CodeQL)
 - [ ] An ADR in `docs/adr/` for any significant or BIAN-interpretation decision
+- [ ] Architecture and business documentation (`docs/architecture/`, `docs/business/`) updated for the change, with every Mermaid diagram rendering (the `update-docs` skill)
 - [ ] The roadmap checkbox ticked in the same PR
 
 ## Validation

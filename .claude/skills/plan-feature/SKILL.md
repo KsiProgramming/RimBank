@@ -120,8 +120,11 @@ How we know the implementation succeeded and can be merged. Start from the phase
 - [ ] All checks above pass in CI
 - [ ] Roadmap checkbox ticked in the same PR
 - [ ] ADRs written for significant decisions
-- [ ] ... (no secrets or PII in logs, docs updated, etc.)
+- [ ] Documentation updated with the `update-docs` skill: every affected `docs/architecture/` and `docs/business/` document, all Mermaid diagrams render
+- [ ] ... (no secrets or PII in logs, etc.)
 ```
+
+**Documentation tasks.** Before writing `plan.md`, use the `update-docs` skill's mapping table (`.claude/skills/update-docs/SKILL.md`, step 2) on the phase's scope. List the documents the phase will change as the last task group of `plan.md`, "Documentation". Name each document and what it gains, for example "Biz 02: glossary section for ProductDirectoryEntry" or "Arch 05: decision tree for Launch". If the phase has no documentation impact, say so there with the reason.
 
 ## 6. Wrap up
 
