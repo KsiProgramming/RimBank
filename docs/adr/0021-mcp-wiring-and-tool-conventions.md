@@ -59,7 +59,7 @@ How contexts register tools:
 | Update the Demographics Behavior Qualifier | `party_reference_data_directory_update_demographics` |
 | Retrieve a Current Account Payment | `current_account_retrieve_payment` |
 
-The name is set explicitly with `[McpServerTool(Name = …)]`. The description is the BIAN operation's description, and the input schema reuses the `.Api` request model (tech-stack §6).
+The name is set explicitly with `[McpServerTool(Name = …)]`. The description is the BIAN operation's description, and the input schema reuses the `.Api` request model (tech-stack §6). *Amended by [ADR 0039](0039-party-mcp-tools.md):* tools take camelCase parameters, and their results mirror the `.Api` response models with a `version`, proven equal by parity tests, because `.Mcp` never references `.Api`.
 
 **Annotations.** Every tool sets all four hints explicitly, so it never relies on the SDK or the protocol defaults (the protocol default for `destructiveHint` is `true`):
 

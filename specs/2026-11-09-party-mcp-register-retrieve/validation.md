@@ -12,8 +12,8 @@ The chosen focus is MCP client tests. The parity, authorisation and tool-list ch
 - [ ] **MCP client tests**: `tests/RimBank.Mcp.Tests/Party/PartyReferenceDataDirectory/`, with Testcontainers PostgreSQL and the in-process SDK client:
   - [ ] `tools/list` shows `party_reference_data_directory_register` and `party_reference_data_directory_retrieve`, each with a description, an input schema and the four annotations of the ADR 0021 table. Retrieve is `readOnly=true`, Register is `readOnly=false`, and both are `destructive=false`, `idempotent=true` and `openWorld=false`.
   - [ ] Register, then Retrieve, is a round-trip. Retrieve's `version` equals Register's.
-  - [ ] Idempotency: the same key gives the same result and one stream. Another payload with that key is an `isError` 409 `shared.idempotency-key-reused`. A missing or invalid key is 400.
-  - [ ] An invalid or missing `PartyType` is `isError` 400 `party.party-type-invalid` or `party.party-type-required`.
+  - [ ] Idempotency: the same key gives the same result and one stream. Another payload with that key is an `isError` 409 `shared.idempotency-key-reused`. An empty or invalid key is 400 `shared.idempotency-key-invalid`, and a missing one is `shared.tool-arguments-invalid`.
+  - [ ] An invalid or blank `partyType` is `isError` 400 `party.party-type-invalid` or `party.party-type-required`.
   - [ ] An unknown entry is `isError` 404. A malformed id is `isError` 400. Unbindable arguments are `shared.tool-arguments-invalid`.
   - [ ] Every `isError` result has Problem Details in `structuredContent`, the same JSON as text, `instance: /mcp`, a `traceId`, and no stack trace.
 - [ ] **Authorisation**:
@@ -21,7 +21,7 @@ The chosen focus is MCP client tests. The parity, authorisation and tool-list ch
   - [ ] With the write scope only, the same holds for retrieve.
 - [ ] **Parity**: `PartyMcpParityTests`. MCP and HTTP give equal BIAN fields, MCP's `version` equals HTTP's `ETag`, and the shared error cases have equal Problem Details (`type`, `status`, `errorCode`, `errors`).
 - [ ] **Tool-list guard**: `PartyToolCatalogTests`. The tools equal the implemented catalog operations minus the named 1.17 allow-list, and each tool's policy is its endpoint's `OperationId`.
-- [ ] **Host**: `RimBank.Host.Tests/Mcp`. An SDK denial of a fake `[Authorize]` tool maps to `shared.forbidden`. The existing `McpToolErrorTests`, `McpAuthorizationTests` and `McpCallerTests` stay green.
+- [ ] **Host**: `RimBank.Host.Tests/Mcp`. A fake `[ToolOperation]` tool is hidden without its scope and refused with `shared.forbidden`. The existing `McpToolErrorTests`, `McpAuthorizationTests` and `McpCallerTests` stay green.
 - [ ] **Architecture**: `RimBank.Architecture.Tests` green, in particular `mcp-dependencies`, `shared-mcp-dependencies`, `shared-mcp-only-in-mcp-and-host`, `assembly-names`, `context-namespaces-stop-at-the-adapter`, `adapters-dispatch-through-the-message-bus` and `cross-context-isolation`.
 - [ ] **Unchanged suites green**: `RimBank.Api.Tests` (incl. `AuthorisationTests`, `OperationAuthorizationCoverageTests` and conformance), `RimBank.Core.Tests` and `RimBank.Postgresql.Tests`.
 - [ ] `dotnet format --verify-no-changes`.
@@ -30,7 +30,7 @@ The chosen focus is MCP client tests. The parity, authorisation and tool-list ch
 ## Manual / demo checks
 Optional; not chosen as a merge gate.
 - [ ] `aspire run`, then MCP Inspector (`npx @modelcontextprotocol/inspector`) on `http://localhost:<host-port>/mcp`. Sign in as `rimbank-developer`.
-  - [ ] Call `party_reference_data_directory_register` with `{ "PartyType": "Person", "idempotencyKey": "demo-1" }`. It returns the entry id and `version` 1.
+  - [ ] Call `party_reference_data_directory_register` with `{ "partyType": "Person", "idempotencyKey": "demo-1" }`. It returns the entry id and `version` 1.
   - [ ] Call `party_reference_data_directory_retrieve` with that id. It returns the same entry.
   - [ ] Call `party_reference_data_directory_retrieve` with a random v7 GUID. It returns `isError` with 404 Problem Details.
 

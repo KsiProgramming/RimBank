@@ -62,7 +62,7 @@
 - [x] **1.13 Published language:** `PartyReferenceDataDirectoryEntryCreated/Updated` integration events, mapped from domain events (not from read models), carrying the state consumers need, versioned, published through the outbox, and pinned by a schema contract test.
 - [x] **1.14 Conformance:** OpenAPI and AsyncAPI conformance tests green for the implemented subset.
 - [x] **1.15 Authorisation policies:** per-operation policies (separate scopes for command and query operations), with tests.
-- [ ] **1.16 MCP adapter: Register & Retrieve:** `RimBank.Party.PartyReferenceDataDirectory.Mcp` tools for Register (command) and Retrieve (query, `readOnly`), with a parity test against the HTTP endpoints.
+- [x] **1.16 MCP adapter: Register & Retrieve:** `RimBank.Party.PartyReferenceDataDirectory.Mcp` tools for Register (command) and Retrieve (query, `readOnly`), with a parity test against the HTTP endpoints.
 - [ ] **1.17 MCP adapter: remaining operations:** Update and BQ tools; a test that the tool list matches the implemented BIAN operations.
 
 ## Stage 2: Product Directory

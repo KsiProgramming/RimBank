@@ -1,4 +1,5 @@
 using RimBank.Party.PartyReferenceDataDirectory.Api;
+using RimBank.Party.PartyReferenceDataDirectory.Mcp;
 using RimBank.Party.PartyReferenceDataDirectory.Postgresql;
 
 namespace RimBank.Host;
@@ -6,7 +7,7 @@ namespace RimBank.Host;
 /// <summary>
 /// The Party Reference Data Directory (BIAN service domain, business domain Party): its store, inline view, and write
 /// and read ports, so its command and query handlers run on the host's bus, and its HTTP endpoints (ADR 0014,
-/// ADR 0024), each protected by its operation's policy (ADR 0038). Its MCP tools arrive in roadmap 1.16.
+/// ADR 0024) and MCP tools (ADR 0021, ADR 0039), each protected by its operation's policy (ADR 0038).
 /// </summary>
 public sealed class PartyReferenceDataDirectoryModule : IServiceDomainModule
 {
@@ -23,9 +24,7 @@ public sealed class PartyReferenceDataDirectoryModule : IServiceDomainModule
     public void AddServices(IHostApplicationBuilder builder) => builder.AddPartyReferenceDataDirectoryPostgresql();
 
     /// <inheritdoc />
-    public void AddMcpTools(IMcpServerBuilder tools)
-    {
-    }
+    public void AddMcpTools(IMcpServerBuilder tools) => tools.AddPartyReferenceDataDirectoryTools();
 
     /// <inheritdoc />
     public void AddOperationPolicies(OperationPolicies policies)

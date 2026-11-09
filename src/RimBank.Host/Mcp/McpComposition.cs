@@ -41,6 +41,7 @@ public static class McpComposition
             .AddMcpServer(options => options.ServerInfo = new Implementation { Name = ServerName, Version = ServerVersion })
             .WithHttpTransport(options => options.SessionMode = HttpServerSessionMode.Stateless)
             .AddRimBankToolErrors()
+            .AddRimBankToolAuthorization()
             .AddServiceDomainMcpTools(modules);
 
         return builder;

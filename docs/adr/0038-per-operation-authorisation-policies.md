@@ -65,7 +65,7 @@ The Party Reference Data Directory has 13 operations: 8 commands (Register, Upda
 - Test tokens grant every catalog scope by default (`TestTokens.Issue(scopes: …)`), so tests that are not about authorisation keep working. Denial tests pass explicit scopes.
 - Deployments must grant callers the scopes they need. A token without any RimBank scope can no longer call a BIAN operation.
 - Follow-ups:
-  - **1.16 / 1.17:** each MCP tool carries its operation's policy (`[Authorize(Policy = …)]` with `AddAuthorizationFilters`), and a test checks that the tool and the endpoint share it.
+  - **1.16 / 1.17:** each MCP tool carries its operation's policy, and a test checks that the tool and the endpoint share it. *Done in [ADR 0039](0039-party-mcp-tools.md) with `[ToolOperation(OperationId)]` instead of `[Authorize]`, so that a refused call is the `shared.forbidden` Problem Details.*
   - **4.14:** the money-moving scope, a third scope next to read and write for the Deposit and Payment operations.
   - **7.2 / later:** resource-level authorisation (which party a caller may see) is not part of this decision.
   - **7.x:** scope provisioning in the production identity provider.
