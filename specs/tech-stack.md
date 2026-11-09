@@ -108,8 +108,8 @@ Before a service domain is created, its mapping must be checked against the BIAN
    ├─ RimBank.Postgresql.Tests/       # store, messaging and idempotency conventions with two test-only fake contexts, Testcontainers (ADR 0016–0018)
    ├─ RimBank.Host.Testing/           # shared helpers for in-memory host tests: test-signed access tokens (ADR 0019), used by Host.Tests, Api.Tests and Mcp.Tests
    ├─ RimBank.SharedKernel.Testing/   # shared test helpers: typed ID contract (ADR 0008), FsCheck money generators (ADR 0009), decider/projection helpers (0.6)
-   ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by RimBank.Api.Tests: spec loaders, route and channel assertions (ADR 0020)
-   ├─ RimBank.Conformance.Tests/      # the harness on the real Party YAML and a test-only fake context (ADR 0020)
+   ├─ RimBank.Conformance.Testing/    # BIAN conformance harness used by RimBank.Api.Tests: spec loaders, route, channel, body, status and payload assertions, and each context's ADR catalogue in Catalogues/ (ADR 0020, ADR 0037)
+   ├─ RimBank.Conformance.Tests/      # the harness on the real Party YAML, the catalogue tests, and a test-only fake context (ADR 0020, ADR 0037)
    ├─ RimBank.Core.Tests/             # domain + application of every context (no I/O), same folders as RimBank.Core (ADR 0023)
    │  └─ Party/PartyReferenceDataDirectory/
    └─ Party/
@@ -336,7 +336,7 @@ CQRS is applied **logically everywhere** and **physically where needed**. Every 
 | Property-based | FsCheck | Money arithmetic, balance invariants, evolve/decide laws, projection/aggregate agreement |
 | Integration | Testcontainers (PostgreSQL), Alba | Marten persistence and projections (inline and async daemon), Wolverine outbox, HTTP endpoints end to end |
 | Architecture | ArchUnitNET | Dependency rules and CQRS rules in §4, naming rules in §3, cross-context isolation in §8.4 |
-| Contract | OpenAPI/AsyncAPI conformance tests (`RimBank.Conformance.Testing`: Microsoft.OpenApi, YamlDotNet, [ADR 0020](../docs/adr/0020-bian-conformance-harness.md)); published-event schema snapshots (`JsonSchemaExporter` against committed approved files, [ADR 0036](../docs/adr/0036-party-published-language.md)) | Implemented routes and channels exist in the BIAN v14 ext-DDD YAML with the spec's method, `Retrieve` is `GET` and nothing else is; published integration events stay backwards compatible |
+| Contract | OpenAPI/AsyncAPI conformance tests (`RimBank.Conformance.Testing`: Microsoft.OpenApi, YamlDotNet, [ADR 0020](../docs/adr/0020-bian-conformance-harness.md); bodies, 2xx statuses and event payloads as a subset of the BIAN schemas, with ADR-cited deviations, [ADR 0037](../docs/adr/0037-bian-body-and-payload-conformance.md)); published-event schema snapshots (`JsonSchemaExporter` against committed approved files, [ADR 0036](../docs/adr/0036-party-published-language.md)) | Implemented routes and channels exist in the BIAN v14 ext-DDD YAML with the spec's method, `Retrieve` is `GET` and nothing else is; request, response and event payload fields exist in the BIAN schema unless an ADR decided otherwise; published integration events stay backwards compatible |
 | MCP | MCP C# SDK client in-process against the test host | Tool list, input schemas, results, Problem Details errors, and parity with the HTTP endpoint for the same operation |
 | Mutation (later) | Stryker.NET | The `RimBank.Core` folders of money-moving domains (`--mutate "<BusinessDomain>/<ServiceDomain>/**"`) |
 

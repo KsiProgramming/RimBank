@@ -7,7 +7,7 @@ namespace RimBank.Conformance.Testing;
 /// with <see cref="BianSpecifications.LoadAsync"/>, reads its routes with <c>ImplementedRoute.From</c>, and
 /// declares the BIAN operations and channels it implements. Every problem found is reported in one failure.
 /// </summary>
-public static class BianConformance
+public static partial class BianConformance
 {
     private const string Get = "GET";
 

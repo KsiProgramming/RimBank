@@ -1206,6 +1206,7 @@
         "dependencies": {
           "Microsoft.OpenApi": "[2.13.0, )",
           "Microsoft.OpenApi.YamlReader": "[2.13.0, )",
+          "RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage": "[0.1.0-alpha, )",
           "Shouldly": "[4.3.0, )",
           "YamlDotNet": "[18.1.0, )"
         }

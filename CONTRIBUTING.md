@@ -135,18 +135,29 @@ The host runs one Wolverine bus ([ADR 0017](docs/adr/0017-wolverine-wiring.md)).
 
 ### BIAN conformance
 
-Each context's folder of `tests/RimBank.Api.Tests` (which references `tests/RimBank.Conformance.Testing`) has one conformance test that checks its routes and channels against its BIAN v14 specification ([ADR 0020](docs/adr/0020-bian-conformance-harness.md)). Declare the BIAN operation ids the context implements (as the spec's `operationId`), and the channel addresses it publishes to:
+Each context's folder of `tests/RimBank.Api.Tests` (which references `tests/RimBank.Conformance.Testing`) has one conformance class that checks its routes, bodies and published events against its BIAN v14 specification ([ADR 0020](docs/adr/0020-bian-conformance-harness.md), [ADR 0037](docs/adr/0037-bian-body-and-payload-conformance.md)). What the context implements and publishes comes from its ADR catalogue in `tests/RimBank.Conformance.Testing/Catalogues/` (the rows that are not `deferred`), and its deliberate differences from BIAN come from a deviation list next to the test:
 
 ```csharp
-var specification = await BianSpecifications.LoadAsync("PartyReferenceDataDirectory");
-var routes = ImplementedRoute.From(factory.Services.GetRequiredService<EndpointDataSource>());
+var specification = await BianSpecifications.LoadAsync(PartyReferenceDataDirectoryCatalogue.ServiceDomain);
+var endpoints = host.Alba.Services.GetRequiredService<EndpointDataSource>();
 
-routes.ShouldConformTo(specification, ["PartyReferenceDataDirectoryEntry/Register", "PartyReferenceDataDirectoryEntry/Retrieve"]);
-string[] published = ["PartyReferenceDataDirectoryEntry/Created"];
-published.ShouldBeChannelsOf(specification);
+ImplementedRoute.From(endpoints).ShouldConformTo(specification, PartyReferenceDataDirectoryCatalogue.Implemented);
+ImplementedEndpoint.From(endpoints).ShouldHaveBodiesConformingTo(specification, httpJsonOptions, PartyReferenceDataDirectoryConformanceDeviations.All);
+PartyReferenceDataDirectoryCatalogue.Published.ShouldHavePayloadsConformingTo(specification, wireJsonOptions, PartyReferenceDataDirectoryConformanceDeviations.All);
 ```
 
-The test fails if a route under `/<ServiceDomain>/` is not in the spec or uses another method than the spec (BIAN uses `POST` for `Register` and `PUT` for most other commands), if a `Retrieve` is not `GET` or a command is `GET`, if a declared operation is not mapped, or if a channel is not in the AsyncAPI file. Path parameter names do not matter (`{id}` matches `{partyreferencedatadirectoryid}`). Add each new operation to the declared list in the same PR that maps it.
+The tests fail if:
+
+- a route under `/<ServiceDomain>/` is not in the spec, or uses another method than the spec (BIAN uses `POST` for `Register` and `PUT` for most other commands);
+- a `Retrieve` is not `GET`, or a command is `GET`;
+- a catalogued operation is not mapped;
+- an endpoint declares no 2xx response (`.Produces<T>(status)`), or a 2xx the spec does not declare;
+- an endpoint reads a body where the spec declares none, or reads none where it declares one;
+- a request, response or event payload property is not in the BIAN schema at the same JSON path, or has an incompatible JSON type.
+
+Path parameter names do not matter (`{id}` matches `{partyreferencedatadirectoryid}`). HTTP property names must match exactly. Event names are compared without regard to case (they are camelCase on the wire). Fewer fields than BIAN is always fine.
+
+When you add an operation or an event, set its phase in the catalogue in the same PR. When you need a field that BIAN does not have, or one shaped differently, first decide it in an ADR. Then add a `ConformanceDeviation` row for its JSON path, citing that ADR (`"ADR 0031: …"`). A row without an ADR, or a row that no longer matches anything, fails the test.
 
 ### Architecture rules
 

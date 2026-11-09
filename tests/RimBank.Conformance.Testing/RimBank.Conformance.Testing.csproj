@@ -4,6 +4,8 @@
     specifications from doc-0/release14.0.0/ and asserts that the routes and channels a context implements exist in
     them, with the spec's method, and that Retrieve operations are GET queries and every other operation a command.
     A class library that each context's .Api.Tests references; its own tests live in RimBank.Conformance.Tests.
+    Since roadmap 1.14 it also checks request, response and event payload bodies against the BIAN schemas, and holds
+    each context's ADR operation and channel catalogue (Catalogues/), which references its .PublishedLanguage (ADR 0037).
   -->
   <PropertyGroup>
     <RootNamespace>RimBank.Conformance.Testing</RootNamespace>
@@ -18,5 +20,9 @@
     <PackageReference Include="Microsoft.OpenApi.YamlReader" />
     <PackageReference Include="YamlDotNet" />
     <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Party\RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage\RimBank.Party.PartyReferenceDataDirectory.PublishedLanguage.csproj" />
   </ItemGroup>
 </Project>
