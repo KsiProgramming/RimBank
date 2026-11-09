@@ -14,6 +14,7 @@ public static class PartyReferenceDataDirectoryTools
 
         return tools
             .WithTools<RegisterPartyTool>()
-            .WithTools<RetrievePartyReferenceDataDirectoryEntryTool>();
+            .WithTools<RetrievePartyReferenceDataDirectoryEntryTool>()
+            .WithTools<UpdatePartyReferenceDataDirectoryEntryTool>();
     }
 }
