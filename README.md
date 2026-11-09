@@ -7,7 +7,7 @@
 
 The code is meant to read like the business it serves. Every BIAN service domain becomes a bounded context, and its names, flows and capabilities come from BIAN and banking, not from frameworks. Every capability is available both as a BIAN HTTP API and as an [MCP](https://modelcontextprotocol.io) tool for AI agents, over the same core and with the same business rules.
 
-> **Status:** early development, Stage 0 (Foundations). See the [roadmap](specs/roadmap.md).
+> **Status:** early development. Stage 0 (Foundations) and Stage 1 (Party Reference Data Directory) are done; Stage 2 (Product Directory) is next. See the [roadmap](specs/roadmap.md).
 > RimBank is not a licensed bank and provides no regulatory certification.
 
 ## How BIAN maps to the code
@@ -54,6 +54,7 @@ To run RimBank (Docker required): `dotnet run --project src/RimBank.AppHost`, th
 - [Mission](specs/mission.md): why RimBank exists, guiding principles, quality bar, non-goals
 - [Tech stack and architecture rules](specs/tech-stack.md)
 - [Roadmap](specs/roadmap.md) and its Definition of done
+- [Architecture and business documentation](docs/README.md): C4, data model, sequences, flows, dependencies, security; BIAN positioning, party glossary, relationships, value streams, use cases
 - [Architecture decision records](docs/adr/)
 - [BIAN v14 specifications](doc-0/release14.0.0/)
 

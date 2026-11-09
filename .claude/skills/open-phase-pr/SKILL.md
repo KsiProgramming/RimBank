@@ -37,6 +37,8 @@ Stop and report if any check fails. Never open a PR on a red local build.
 
   If `scripts/` changed, also run `python -m unittest discover -s scripts`.
 
+- **Documentation.** Invoke the `update-docs` skill on the branch, every time, before pushing. It maps the diff to `docs/architecture/*` and `docs/business/*`, updates them, renders every Mermaid diagram and checks the links. It then commits the documentation changes on the branch. Keep its report for the PR body. A phase is not ready if a diagram fails to render or a document still describes the old behaviour.
+
 ## 3. Push and write the body
 
 - `git push -u origin <branch>`.
@@ -44,7 +46,7 @@ Stop and report if any check fails. Never open a PR on a red local build.
   - **Roadmap phase:** `Phase: <number> <title>`, `Planning package: specs/<folder>/`, then `Closes #<issue>`.
   - **Summary:** what changed and why, in business language, grouped by type or concern. Name the commands vs queries (CQRS) and any ADR written or amended.
   - **Definition of done:** copy every item from the template. Tick what is met, write `N/A: <reason>` for items that do not apply, and leave **CI green** unticked (CI has not run yet).
-  - **Validation:** the commands from step 2 with their results (test counts), and the manual or break-on-purpose checks from `validation.md` that were run.
+  - **Validation:** the commands from step 2 with their results (test counts), and the manual or break-on-purpose checks from `validation.md` that were run. Add a **Documentation** line from the `update-docs` report: the documents updated and the diagram render count, or "No documentation impact" with the reason.
   - **Review focus:** the decisions a reviewer should challenge, and the open questions from `requirements.md`.
   - End with the attribution line from the session's system reminder, if there is one.
 - Title: imperative, describes the change, ends with `(roadmap <phase>)`. Look at `gh pr list --state merged --limit 5` for the house style.
