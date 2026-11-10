@@ -111,7 +111,9 @@ flowchart LR
 | Error hygiene | RFC 9457 only; no stack traces; `traceId` for support | [ADR 0015](../adr/0015-problem-details-mapping.md) |
 | Data isolation | Per-context schema and login role with no grants elsewhere | Testcontainers isolation test |
 | Integrity | Idempotency, optimistic concurrency, append-only events | [ADR 0018](../adr/0018-idempotency-keys-for-commands.md), [ADR 0027](../adr/0027-optimistic-concurrency-for-commands.md) |
-| Supply chain | CodeQL, Dependabot, NuGet audit, locked restore, nuget.org-only source mapping; SBOM and signed releases planned (7.5) | [ADR 0005](../adr/0005-ci-and-supply-chain-policy.md), [ADR 0013](../adr/0013-warning-and-package-governance.md) |
+| Supply chain | SHA-pinned actions, read-only default token; CodeQL, Dependabot, dependency review (blocks moderate+ vulnerabilities and GPL/AGPL), OpenSSF Scorecard, NuGet audit, locked restore, nuget.org-only source mapping; SBOM and signed releases planned (7.5) | [ADR 0005](../adr/0005-ci-and-supply-chain-policy.md), [ADR 0013](../adr/0013-warning-and-package-governance.md), [ADR 0041](../adr/0041-open-source-repository-governance.md) |
+| Change control | `main` ruleset: PR, code-owner approval and green required checks for every change; no direct or force push; admin bypass only inside a PR; fork workflows wait for maintainer approval | [ADR 0041](../adr/0041-open-source-repository-governance.md), [CONTRIBUTING](../../CONTRIBUTING.md#branch-protection-maintainers) |
+| Repository secrets and disclosure | Secret scanning with push protection; private vulnerability reporting | [SECURITY.md](../../SECURITY.md), [ADR 0041](../adr/0041-open-source-repository-governance.md) |
 
 ### 3.3 STRIDE summary (Party context)
 
@@ -152,10 +154,15 @@ flowchart LR
     PR[Pull request] --> B[Restore locked<br/>Build warnings-as-errors]
     B --> F[dotnet format verify]
     F --> T[Tests: unit, property,<br/>architecture, conformance,<br/>Testcontainers, MCP parity]
-    T --> Q[CodeQL]
-    Q --> M[Merge to main]
+    PR --> Q[CodeQL<br/>actions and C#]
+    PR --> DR["Dependency review<br/>(vulnerabilities, licences)"]
+    T --> G{"main ruleset:<br/>checks green, code-owner approval"}
+    Q --> G
+    DR --> G
+    G --> M[Squash merge to main]
+    M --> BOARD[Roadmap board sync]
+    M --> SC[OpenSSF Scorecard]
     M --> R["Release: SBOM, signed tag,<br/>container image (7.5)"]
-    PR --> BOARD[Roadmap board sync]
 ```
 
-Workflows: `.github/workflows/ci.yml`, `codeql.yml`, `roadmap-board.yml`.
+Workflows: `.github/workflows/ci.yml`, `codeql.yml`, `dependency-review.yml`, `scorecard.yml` (also weekly), `roadmap-board.yml` (only when the roadmap changes). Required checks and the ruleset: [CONTRIBUTING](../../CONTRIBUTING.md#branch-protection-maintainers).

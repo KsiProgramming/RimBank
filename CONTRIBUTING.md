@@ -232,7 +232,7 @@ dotnet test --project tests/RimBank.Architecture.Tests
 
 ### What CI runs
 
-Every push to `main` and every pull request runs two workflows (policy: [ADR 0005](docs/adr/0005-ci-and-supply-chain-policy.md)):
+Every push to `main` and every pull request runs these workflows (policy: [ADR 0005](docs/adr/0005-ci-and-supply-chain-policy.md) and [ADR 0041](docs/adr/0041-open-source-repository-governance.md)):
 
 - **`ci` / `build`**: the same commands you can run locally:
 
@@ -245,8 +245,14 @@ Every push to `main` and every pull request runs two workflows (policy: [ADR 000
   ```
 
 - **`codeql` / `analyze (actions)` and `analyze (csharp)`**: static analysis of the workflows and the C# code (the `security-and-quality` suite). It also runs weekly.
+- **`dependency-review`** (pull requests only): fails if the PR adds a dependency with a known vulnerability of moderate severity or worse, or a GPL/AGPL licence.
+- **`scorecard`** (pushes to `main` and weekly): OpenSSF Scorecard grades the repository's supply-chain practices and uploads its findings to Security > Code scanning.
+
+`dependency-review` and `scorecard` need public-repository features and are skipped while the repository is private.
 
 Dependabot opens weekly PRs for NuGet packages, GitHub Actions and the .NET SDK.
+
+Pull requests from forks run their workflows only after a maintainer approves the run. No workflow uses `pull_request_target`, and the default token is read-only.
 
 When you change a workflow:
 
@@ -278,23 +284,29 @@ Every issue and pull request carries **one `type:`** label, any **`area:`** labe
 | `stage:` | `stage:0` … `stage:8` | Which roadmap stage (synced) |
 | | `roadmap-phase` | An issue mirrored from the roadmap (synced: edit the roadmap, not the issue) |
 | | `dependencies` | Opened by Dependabot |
+| | `good first issue`, `help wanted` | GitHub's community labels: small, well-scoped work for newcomers, and work the maintainer would welcome help with. Listed on the repository's `/contribute` page |
 
 A new label is added to `LABELS` in a PR, never created by hand, so the taxonomy stays in one place. A new bounded context adds its `context:` label in the same PR as its BIAN mapping ADR.
 
 ### Branch protection (maintainers)
 
-Configure a branch ruleset for `main` in the repository settings:
+`main` is protected by the repository ruleset **`main`** ([ADR 0041](docs/adr/0041-open-source-repository-governance.md), Settings > Rules > Rulesets):
 
-- Require a pull request before merging, with at least one approval, and dismiss stale approvals when new commits are pushed.
-- Require review from code owners ([.github/CODEOWNERS](.github/CODEOWNERS)).
-- Require these status checks to pass, and require branches to be up to date: `build`, `analyze (actions)`, `analyze (csharp)`.
-- Block force pushes and branch deletion.
+- A pull request is required, with one approval. Stale approvals are dismissed when new commits are pushed, and review threads must be resolved.
+- Review from code owners ([.github/CODEOWNERS](.github/CODEOWNERS)) is required.
+- These status checks must pass on a branch that is up to date with `main`: `build`, `analyze (actions)`, `analyze (csharp)`, `dependency-review`.
+- History stays linear (squash merge only). Force pushes and deletion of `main` are blocked.
+- **Bypass:** only the repository admin, and only inside a pull request. That lets the single maintainer merge their own green PR without a second approver. Nobody can push to `main` directly.
+
+To check the live ruleset: `gh api repos/KsiProgramming/RimBank/rulesets`. When a second maintainer joins, remove the bypass (see GOVERNANCE.md).
 
 ## Commits and pull requests
 
-- Write commit messages in the imperative mood ("Add Money arithmetic"), and keep each one focused.
+- Work from a fork (or a branch, for maintainers) and open a pull request against `main`. Only the maintainer merges ([GOVERNANCE.md](GOVERNANCE.md)).
+- Write commit messages in the imperative mood ("Add Money arithmetic"), and keep each one focused. PRs are squash-merged, so the PR title becomes the commit on `main`: make it imperative too.
 - Fill in the pull request template, including the Definition of done checklist.
-- At least one maintainer review is required before merging.
+- A maintainer review is required before merging.
+- New to the project? Start with an issue labelled [`good first issue`](https://github.com/KsiProgramming/RimBank/labels/good%20first%20issue), or ask in [Discussions](https://github.com/KsiProgramming/RimBank/discussions).
 
 ## Code of Conduct and security
 

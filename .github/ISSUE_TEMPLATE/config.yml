@@ -3,3 +3,6 @@ contact_links:
   - name: Report a security vulnerability
     url: https://github.com/KsiProgramming/RimBank/security/advisories/new
     about: Please report vulnerabilities privately, never in a public issue.
+  - name: Ask a question or share an idea
+    url: https://github.com/KsiProgramming/RimBank/discussions
+    about: Questions about BIAN, the architecture or how to use RimBank belong in Discussions.

@@ -1,0 +1,21 @@
+# Categories for GitHub's generated release notes, keyed on the type: labels (CONTRIBUTING.md#labels).
+changelog:
+  exclude:
+    labels: [invalid, duplicate, wontfix]
+  categories:
+    - title: Security
+      labels: [type:security]
+    - title: Features
+      labels: [type:feature]
+    - title: Bug fixes
+      labels: [type:bug]
+    - title: Architecture decisions
+      labels: [type:adr]
+    - title: Documentation
+      labels: [type:docs]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: Maintenance
+      labels: [type:chore]
+    - title: Other changes
+      labels: ["*"]
