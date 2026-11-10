@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use RimBank in research or teaching, please cite it as below."
+title: "RimBank: an open-source core banking platform implementing BIAN v14"
+type: software
+authors:
+  - name: "RimBank contributors"
+  - family-names: "Said"
+    given-names: "LaBani"
+    alias: "KsiProgramming"
+repository-code: "https://github.com/KsiProgramming/RimBank"
+abstract: >-
+  RimBank is an open-source core banking platform built in .NET that implements the
+  BIAN Service Landscape v14 using Domain-Driven Design, event sourcing and hexagonal
+  architecture. Every capability is exposed both as a BIAN HTTP API and as a Model
+  Context Protocol tool for AI agents.
+keywords:
+  - core banking
+  - BIAN
+  - domain-driven design
+  - event sourcing
+  - hexagonal architecture
+  - .NET
+  - Model Context Protocol
+license: MIT
