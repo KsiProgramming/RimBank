@@ -25,4 +25,13 @@
     <Using Include="Shouldly" />
     <Using Include="Xunit" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The published-language schema tests (roadmap 1.13) read their approved contracts from, and write received files
+      to, Publication/Approved in this source folder. [CallerFilePath] cannot locate it on CI, where
+      ContinuousIntegrationBuild maps source paths to /_/, so the real project directory is embedded instead.
+    -->
+    <AssemblyMetadata Include="ProjectDirectory" Value="$(MSBuildProjectDirectory)" />
+  </ItemGroup>
 </Project>

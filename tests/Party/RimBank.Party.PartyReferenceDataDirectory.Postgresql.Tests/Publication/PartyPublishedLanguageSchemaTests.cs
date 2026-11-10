@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -132,6 +132,14 @@ public sealed class PartyPublishedLanguageSchemaTests
     private static Published.PartyReferenceDataDirectoryEntryUpdated Updated() =>
         new(_eventId, _at, _entryId, 2, Published.PartyTypes.Organisation, Published.DirectoryEntryDateTypes.RefreshDate, _at);
 
-    private static string ApprovedPath(string identity, [CallerFilePath] string thisFile = "") =>
-        Path.Combine(Path.GetDirectoryName(thisFile)!, "Approved", identity + ".approved.json");
+    // The project directory is embedded at build time (see the .csproj): [CallerFilePath] is mapped to /_/ on CI.
+    private static string ApprovedPath(string identity) =>
+        Path.Combine(ProjectDirectory(), "Publication", "Approved", identity + ".approved.json");
+
+    private static string ProjectDirectory() =>
+        typeof(PartyPublishedLanguageSchemaTests).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "ProjectDirectory")
+            .Value
+            .ShouldNotBeNull();
 }
